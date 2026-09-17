@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="HR360 TechX - Next-Gen 360 Human Resources & Talent Cloud Single Page Application">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HR360 TechX">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%234F46E5%22/><text y=%22.9em%22 font-size=%2255%22 x=%2218%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22>360</text></svg>">
+
+  <title>HR360 TechX — 360° Workforce & Talent Cloud</title>
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #0F172A;
+      color: #F8FAFC;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    #loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100vw;
+      background: radial-gradient(circle at 50% 40%, #1E1B4B 0%, #0F172A 70%);
+      transition: opacity 0.5s ease-out;
+    }
+    .logo-badge {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .logo-badge::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 23px;
+      background: linear-gradient(135deg, #6366F1, #A855F7);
+      z-index: -1;
+      opacity: 0.6;
+      filter: blur(8px);
+      animation: pulse 2s infinite alternate;
+    }
+    .logo-badge svg {
+      width: 40px;
+      height: 40px;
+      fill: #FFFFFF;
+    }
+    .brand-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #FFFFFF;
+      margin-bottom: 6px;
+    }
+    .brand-title span {
+      background: linear-gradient(135deg, #818CF8, #C084FC);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-subtitle {
+      font-size: 14px;
+      font-weight: 500;
+      color: #94A3B8;
+      margin-bottom: 32px;
+      letter-spacing: 0.5px;
+    }
+    .spinner-bar {
+      width: 180px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .spinner-bar::before {
+      content: '';
+      position: absolute;
+      height: 100%;
+      width: 40%;
+      background: linear-gradient(90deg, #4F46E5, #06B6D4);
+      border-radius: 999px;
+      animation: loadprogress 1.4s ease-in-out infinite;
+    }
+    @keyframes loadprogress {
+      0% { left: -40%; width: 30%; }
+      50% { width: 60%; }
+      100% { left: 100%; width: 30%; }
+    }
+    @keyframes pulse {
+      0% { opacity: 0.3; transform: scale(0.96); }
+      100% { opacity: 0.8; transform: scale(1.04); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading-container">
+    <div class="logo-badge">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+      </svg>
+    </div>
+    <div class="brand-title">HR360 <span>TechX</span></div>
+    <div class="brand-subtitle">Workforce Intelligence & 360° Management</div>
+    <div class="spinner-bar"></div>
+  </div>
+
+  <script src="flutter.js" defer></script>
+  <script>
+    window.addEventListener('load', function(ev) {
+      if (typeof _flutter !== 'undefined') {
+        _flutter.loader.loadEntrypoint({
+          serviceWorker: {
+            serviceWorkerVersion: null,
+          },
+          onEntrypointLoaded: function(engineInitializer) {
+            engineInitializer.initializeEngine().then(function(appRunner) {
+              var loader = document.getElementById('loading-container');
+              if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(function() {
+                  loader.remove();
+                }, 500);
+              }
+              appRunner.runApp();
+            });
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
