@@ -2,15 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../controllers/app_state.dart';
+import '../core/auth/auth_state.dart';
 import '../theme/app_theme.dart';
 import 'action_dialogs.dart';
 
 class AppHeader extends StatelessWidget {
   final VoidCallback? onMenuPressed;
+  final String? shellLabel;
 
-  const AppHeader({super.key, this.onMenuPressed});
+  const AppHeader({super.key, this.onMenuPressed, this.shellLabel});
 
-  String _getTabTitle(int index) {
+  String _getTabTitle(int index, {bool employeeShell = false}) {
+    if (employeeShell) {
+      switch (index) {
+        case 0:
+          return 'My Overview';
+        case 1:
+          return 'Leave & Attendance';
+        case 2:
+          return '360° Performance';
+        default:
+          return 'Overview';
+      }
+    }
     switch (index) {
       case 0:
         return 'Executive Overview';
@@ -66,7 +80,10 @@ class AppHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _getTabTitle(appState.currentTab),
+                  _getTabTitle(
+                    appState.currentTab,
+                    employeeShell: shellLabel == 'Employee',
+                  ),
                   style: TextStyle(
                     fontSize: isMobile ? 17 : 20,
                     fontWeight: FontWeight.w800,
@@ -74,13 +91,38 @@ class AppHeader extends StatelessWidget {
                     letterSpacing: -0.5,
                   ),
                 ),
-                Text(
-                  todayFormatted,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: textSecondary,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      todayFormatted,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: textSecondary,
+                      ),
+                    ),
+                    if (shellLabel != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          shellLabel!,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.primaryLight,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -371,6 +413,73 @@ class AppHeader extends StatelessWidget {
                 size: 19,
                 color: isDark ? const Color(0xFFFBBF24) : AppTheme.primary,
               ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Account / Logout
+          PopupMenuButton<String>(
+            offset: const Offset(0, 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(color: borderColor),
+            ),
+            color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+            onSelected: (value) async {
+              if (value == 'logout') {
+                await context.read<AuthState>().logout();
+              }
+            },
+            itemBuilder: (context) {
+              final auth = context.read<AuthState>();
+              final name = auth.user?.name ?? 'Signed in';
+              final org = auth.company?.subdomain ?? '';
+              return [
+                PopupMenuItem(
+                  enabled: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: textPrimary,
+                        ),
+                      ),
+                      if (org.isNotEmpty)
+                        Text(
+                          auth.isDemo ? 'Demo session' : '@$org',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: textSecondary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout_rounded, size: 18, color: AppTheme.danger),
+                      SizedBox(width: 10),
+                      Text('Sign out'),
+                    ],
+                  ),
+                ),
+              ];
+            },
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkCard : AppTheme.lightCardHover,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: borderColor),
+              ),
+              child: Icon(Icons.person_outline_rounded, size: 20, color: textPrimary),
             ),
           ),
         ],

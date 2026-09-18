@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/app_state.dart';
+import '../core/auth/auth_state.dart';
+import '../core/permissions/permission_gate.dart';
+import '../core/permissions/tab_access.dart';
 import '../theme/app_theme.dart';
 
 class AppSidebar extends StatelessWidget {
-  const AppSidebar({super.key});
+  const AppSidebar({super.key, this.employeeShell = false});
+
+  /// When true, only self-service tabs (Dashboard / Leave / Performance).
+  final bool employeeShell;
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final auth = context.watch<AuthState>();
     final isDark = appState.isDarkMode;
     final isCollapsed = appState.isSidebarCollapsed;
 
@@ -16,6 +23,13 @@ class AppSidebar extends StatelessWidget {
     final borderColor = isDark ? AppTheme.darkBorder : AppTheme.lightBorder;
     final textPrimary = isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
     final textSecondary = isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
+
+    final userName =
+        auth.user?.name.isNotEmpty == true ? auth.user!.name : 'User';
+    final roleLabel = auth.user?.designationName.isNotEmpty == true
+        ? auth.user!.designationName
+        : (auth.company?.name ?? 'HR360');
+    final companyLabel = auth.company?.name ?? 'Talent Cloud OS';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -29,7 +43,6 @@ class AppSidebar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Brand Header
           Container(
             height: 72,
             padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 12 : 20),
@@ -39,7 +52,8 @@ class AppSidebar extends StatelessWidget {
               ),
             ),
             child: Row(
-              mainAxisAlignment: isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
+              mainAxisAlignment:
+                  isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
@@ -78,35 +92,28 @@ class AppSidebar extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                'HR360',
+                                'HR',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
                                   color: textPrimary,
-                                  letterSpacing: -0.5,
+                                  letterSpacing: -0.3,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primary.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text(
-                                  'TECHX',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppTheme.primaryLight,
-                                    letterSpacing: 0.5,
-                                  ),
+                              const Text(
+                                '360',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.primaryLight,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                             ],
                           ),
                           Text(
-                            'Talent Cloud OS',
+                            companyLabel,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -131,8 +138,6 @@ class AppSidebar extends StatelessWidget {
               ],
             ),
           ),
-
-          // Menu Items
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
@@ -150,32 +155,65 @@ class AppSidebar extends StatelessWidget {
                       ),
                     ),
                   ),
-                _SidebarItem(
-                  index: 0,
-                  icon: Icons.grid_view_rounded,
-                  label: 'Dashboard',
-                  isCollapsed: isCollapsed,
+                PermissionGate(
+                  module: employeeShell ? 'Dashboard' : TabAccess.moduleFor(0),
+                  child: _SidebarItem(
+                    index: 0,
+                    icon: Icons.grid_view_rounded,
+                    label: 'Dashboard',
+                    isCollapsed: isCollapsed,
+                  ),
                 ),
-                _SidebarItem(
-                  index: 1,
-                  icon: Icons.groups_rounded,
-                  label: 'Workforce Hub',
-                  isCollapsed: isCollapsed,
-                  badge: '${appState.totalWorkforceCount}',
+                if (employeeShell) ...[
+                  PermissionGate(
+                    module: 'Leave',
+                    child: _SidebarItem(
+                      index: 1,
+                      icon: Icons.event_available_rounded,
+                      label: 'Leave & Attendance',
+                      isCollapsed: isCollapsed,
+                    ),
+                  ),
+                  PermissionGate(
+                    module: 'Performance',
+                    child: _SidebarItem(
+                      index: 2,
+                      icon: Icons.radar_rounded,
+                      label: '360° Performance',
+                      isCollapsed: isCollapsed,
+                    ),
+                  ),
+                ] else ...[
+                PermissionGate(
+                  module: TabAccess.moduleFor(1),
+                  child: _SidebarItem(
+                    index: 1,
+                    icon: Icons.groups_rounded,
+                    label: 'Workforce Hub',
+                    isCollapsed: isCollapsed,
+                    badge: '${appState.totalWorkforceCount}',
+                  ),
                 ),
-                _SidebarItem(
-                  index: 2,
-                  icon: Icons.radar_rounded,
-                  label: '360° Performance',
-                  isCollapsed: isCollapsed,
+                PermissionGate(
+                  module: TabAccess.moduleFor(2),
+                  child: _SidebarItem(
+                    index: 2,
+                    icon: Icons.radar_rounded,
+                    label: '360° Performance',
+                    isCollapsed: isCollapsed,
+                  ),
                 ),
-                _SidebarItem(
-                  index: 3,
-                  icon: Icons.event_available_rounded,
-                  label: 'Leave & Attendance',
-                  isCollapsed: isCollapsed,
-                  badge: '${appState.leaveRequests.where((r) => r.status == "Pending").length}',
-                  badgeColor: AppTheme.warning,
+                PermissionGate(
+                  module: TabAccess.moduleFor(3),
+                  child: _SidebarItem(
+                    index: 3,
+                    icon: Icons.event_available_rounded,
+                    label: 'Leave & Attendance',
+                    isCollapsed: isCollapsed,
+                    badge:
+                        '${appState.leaveRequests.where((r) => r.status == "Pending").length}',
+                    badgeColor: AppTheme.warning,
+                  ),
                 ),
                 if (!isCollapsed) ...[
                   const SizedBox(height: 16),
@@ -192,25 +230,30 @@ class AppSidebar extends StatelessWidget {
                     ),
                   ),
                 ],
-                _SidebarItem(
-                  index: 4,
-                  icon: Icons.view_kanban_rounded,
-                  label: 'Talent Pipeline',
-                  isCollapsed: isCollapsed,
-                  badge: '${appState.openRequisitionsCount}',
-                  badgeColor: AppTheme.accent,
+                PermissionGate(
+                  module: TabAccess.moduleFor(4),
+                  child: _SidebarItem(
+                    index: 4,
+                    icon: Icons.view_kanban_rounded,
+                    label: 'Talent Pipeline',
+                    isCollapsed: isCollapsed,
+                    badge: '${appState.openRequisitionsCount}',
+                    badgeColor: AppTheme.accent,
+                  ),
                 ),
-                _SidebarItem(
-                  index: 5,
-                  icon: Icons.account_balance_wallet_rounded,
-                  label: 'Payroll & Analytics',
-                  isCollapsed: isCollapsed,
+                PermissionGate(
+                  module: TabAccess.moduleFor(5),
+                  child: _SidebarItem(
+                    index: 5,
+                    icon: Icons.account_balance_wallet_rounded,
+                    label: 'Payroll & Analytics',
+                    isCollapsed: isCollapsed,
+                  ),
                 ),
+                ],
               ],
             ),
           ),
-
-          // Uncollapse button if collapsed
           if (isCollapsed)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -220,8 +263,6 @@ class AppSidebar extends StatelessWidget {
                 tooltip: 'Expand Sidebar',
               ),
             ),
-
-          // User Profile Card at Bottom
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: isCollapsed ? 10 : 16,
@@ -237,20 +278,30 @@ class AppSidebar extends StatelessWidget {
               ),
             ),
             child: isCollapsed
-                ? const Center(
+                ? Center(
                     child: CircleAvatar(
                       radius: 18,
-                      backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+                      backgroundColor: AppTheme.primary,
+                      child: Text(
+                        userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   )
                 : Row(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 18,
-                        backgroundImage: NetworkImage(
-                          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+                        backgroundColor: AppTheme.primary,
+                        child: Text(
+                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -259,7 +310,7 @@ class AppSidebar extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Dr. Sarah Jenkins',
+                              userName,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 13,
@@ -268,7 +319,7 @@ class AppSidebar extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              'Chief People Officer',
+                              roleLabel,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
@@ -279,14 +330,34 @@ class AppSidebar extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppTheme.success,
-                          shape: BoxShape.circle,
+                      if (auth.isDemo)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.warning.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'DEMO',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.warning,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppTheme.success,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
                     ],
                   ),
           ),
@@ -320,7 +391,8 @@ class _SidebarItem extends StatelessWidget {
     final isDark = appState.isDarkMode;
 
     const activeColor = AppTheme.primary;
-    final inactiveText = isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
+    final inactiveText =
+        isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
@@ -338,7 +410,9 @@ class _SidebarItem extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: isSelected
-                  ? (isDark ? AppTheme.primary.withOpacity(0.18) : AppTheme.primary.withOpacity(0.1))
+                  ? (isDark
+                      ? AppTheme.primary.withOpacity(0.18)
+                      : AppTheme.primary.withOpacity(0.1))
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
               border: isSelected
@@ -346,7 +420,8 @@ class _SidebarItem extends StatelessWidget {
                   : null,
             ),
             child: Row(
-              mainAxisAlignment: isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment:
+                  isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 Icon(
                   icon,

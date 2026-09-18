@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: HR360 Flutter Replica API
+  version: 1.0.0
+  description: Standalone API under HR360techx/api — not part of the original PHP HR app.
+servers:
+  - url: http://localhost/HR360techx/api
+paths:
+  /auth/login:
+    post:
+      summary: Tenant login
+  /auth/me:
+    get:
+      summary: Current session profile
+  /leave:
+    get:
+      summary: Leave list
+  /leave/types:
+    get:
+      summary: Leave types + balances
+  /leave/apply:
+    post:
+      summary: Apply leave
+  /leave/approve:
+    post:
+      summary: Approve leave
+  /leave/reject:
+    post:
+      summary: Reject leave
