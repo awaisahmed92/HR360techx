@@ -1,11 +1,6 @@
-# Serve the Flutter web build as a single-page application.
 :3000 {
-    root * /app/build/web
+    root * /srv
     encode gzip zstd
     try_files {path} /index.html
     file_server
-    header {
-        X-Content-Type-Options nosniff
-        Referrer-Policy strict-origin-when-cross-origin
-    }
 }
