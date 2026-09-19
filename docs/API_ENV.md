@@ -1,43 +1,60 @@
-# API environment (local + production)
+# Production Compose (Coolify) + API URLs
 
-## Why you saw 502
-Flutter now correctly calls `https://hr360techx.com/api/...`.
-**502 Bad Gateway** means Caddy reached `/api` but the **Laravel `api` container was down / unreachable**.
+## Compose services
+| Service | Role |
+|---------|------|
+| `db` | MySQL 8 + volume `mysql_data` |
+| `api` | Laravel on `0.0.0.0:8000` |
+| `web` | Flutter SPA (Caddy); proxies `/api` → `api:8000` |
 
-## Coolify (required)
-1. Delete or stop any **Flutter-only / single Dockerfile** resource for this domain.
-2. Create a **Docker Compose** resource pointing at this repo.
-3. Compose file: `docker-compose.yml` (services **`web`** + **`api`**).
-4. On **`api`** set:
-   - `APP_KEY` — generate with `php artisan key:generate --show` locally
-   - `APP_URL=https://hr360techx.com`
-   - `DB_CONNECTION=mysql`
-   - `DB_HOST` / `DB_PORT` / `DB_DATABASE` / `DB_USERNAME` / `DB_PASSWORD`
-   - Master DB vars if used (`DB_MASTER_*`)
-5. On **`web`** set:
-   - `API_UPSTREAM=api:8000`  ← must be `host:port`, **no** `http://`
-6. Deploy. Wait until **`api` is healthy** (`/up` returns 200), then test login.
-
-### Quick checks after deploy
-| URL | Expected |
-|-----|----------|
-| `https://hr360techx.com/` | Flutter login |
-| `https://hr360techx.com/up` | Laravel health JSON/OK (via proxy) |
-| `POST https://hr360techx.com/api/auth/login` | JSON (not 502 / not HTML) |
-
-If `api` logs show DB connection refused → fix `DB_HOST` (Coolify DB service name or public host).  
-If `api` restarts → missing `APP_KEY` or crash on boot (check logs).
-
-## Flutter API URL resolution
-1. `--dart-define=API_BASE_URL=...` override  
-2. **Web** → `{origin}/api` (production = same host)  
-3. **Web debug** `localhost:xxxxx` → XAMPP  
-4. **Mobile release** → `https://hr360techx.com/api`  
-5. **Android emulator** → `http://10.0.2.2/HR360techx/backend/public/api`  
-6. **iOS simulator** → XAMPP localhost  
-
-## Local (unchanged)
-```bash
-# XAMPP Apache + MySQL
-flutter run -d chrome
+## Coolify variables (Compose resource, enable **Interpolation**)
 ```
+DB_DATABASE=hr360_production
+DB_USERNAME=hr360_user
+DB_PASSWORD=<strong-password>
+DB_ROOT_PASSWORD=<different-strong-password>
+DB_HOST=db
+DB_PORT=3306
+APP_KEY=<from: php artisan key:generate --show>
+APP_URL=https://hr360techx.com
+```
+
+Optional master DB (defaults to same `db` service):
+```
+DB_MASTER_HOST=db
+DB_MASTER_DATABASE=hr360_master
+DB_MASTER_USERNAME=hr360_user
+DB_MASTER_PASSWORD=<same-or-other>
+HR360_TOKEN_SECRET=<long-random-string>
+```
+
+`API_UPSTREAM=api:8000` is already set on **web** only.
+
+## After first successful deploy
+In the **api** container terminal:
+```bash
+php artisan migrate --force
+```
+
+This app is **not** Laravel Breeze/Jetstream users. Login uses tenant `employee` rows
+(plus `hr360_master.tenants`). After migrate you still need:
+
+1. Master DB `hr360_master` with a `tenants` row (e.g. subdomain `demo` → tenant DB).
+2. At least one employee in the tenant DB with bcrypt password.
+
+Import from local XAMPP dumps (`hr360_master` + `hr360_demo`) or run your SQL under `database/` if that is how the schema is bootstrapped.
+
+Create login (example, after schema exists) — prefer importing a known admin from local, or insert via SQL with a bcrypt hash. There is no public registration page.
+
+## Verify
+| URL | Expect |
+|-----|--------|
+| `https://hr360techx.com/` | Flutter login |
+| `https://hr360techx.com/up` | Laravel OK |
+| `POST /api/auth/login` | JSON (not 502) |
+
+## Flutter API URL (local unchanged)
+1. `--dart-define=API_BASE_URL=...`  
+2. Web prod → `{origin}/api`  
+3. `flutter run` localhost:port → XAMPP  
+4. Mobile release → `https://hr360techx.com/api`  
