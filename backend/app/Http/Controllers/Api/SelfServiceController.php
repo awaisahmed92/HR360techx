@@ -36,10 +36,13 @@ class SelfServiceController extends Controller
 
         return response()->json(['success' => true, 'profile' => [
             'employee_id' => (int) $e->employee_id,
-            'name' => (string) $e->name,
+            'name' => UiPrefsController::displayName($e),
+            'first_name' => ltrim(trim((string) ($e->name ?? '')), " \t,"),
+            'surname' => ltrim(trim((string) ($e->surname ?? '')), " \t,"),
             'user_name' => (string) ($e->user_name ?? ''),
             'email' => (string) ($e->email ?? ''),
-            'phone' => (string) ($e->phone ?? ''),
+            'phone' => (string) ($e->phone ?? $e->contact_number ?? ''),
+            'contact_number' => (string) ($e->contact_number ?? ''),
             'cnic' => (string) ($e->cnic ?? ''),
             'employee_code' => (string) ($e->employee_code ?? ''),
             'designation_id' => (int) ($e->designation ?? 0),
@@ -50,6 +53,29 @@ class SelfServiceController extends Controller
             'line_manager_name' => (string) ($e->line_manager_name ?? ''),
             'profile_picture' => $e->profile_picture ?? null,
             'status' => (int) ($e->status ?? 0),
+            'gender' => isset($e->gender) ? (int) $e->gender : null,
+            'date_of_birth' => $e->date_of_birth ?? null,
+            'joining_date' => $e->joining_date ?? null,
+            'blood_group' => (string) ($e->blood_group ?? ''),
+            'marital_status' => (string) ($e->marital_status ?? ''),
+            'religion' => (string) ($e->religion ?? ''),
+            'address' => (string) ($e->address ?? ''),
+            'employee_type' => (int) ($e->employee_type ?? 0),
+            'personal_email' => (string) ($e->personal_email ?? ''),
+            'salutation' => (string) ($e->salutation ?? ''),
+            'preferred_name' => (string) ($e->preferred_name ?? ''),
+            'nickname' => (string) ($e->nickname ?? ''),
+            'pronoun' => (string) ($e->pronoun ?? ''),
+            'nationality' => (string) ($e->nationality ?? ''),
+            'race' => (string) ($e->race ?? ''),
+            'home_phone' => (string) ($e->home_phone ?? ''),
+            'office_phone' => (string) ($e->office_phone ?? ''),
+            'mobile_number' => (string) ($e->mobile_number ?? ''),
+            'ssn' => (string) ($e->ssn ?? ''),
+            'grade' => (string) ($e->grade ?? ''),
+            'grade_step' => (string) ($e->grade_step ?? ''),
+            'employee_category' => (string) ($e->employee_category ?? ''),
+            'calculated_service_date' => $e->calculated_service_date ?? null,
         ]]);
     }
 
@@ -59,11 +85,42 @@ class SelfServiceController extends Controller
         $data = $request->validate([
             'email' => 'nullable|email|max:191',
             'phone' => 'nullable|string|max:50',
+            'personal_email' => 'nullable|email|max:191',
+            'preferred_name' => 'nullable|string|max:120',
+            'nickname' => 'nullable|string|max:80',
+            'salutation' => 'nullable|string|max:40',
+            'pronoun' => 'nullable|string|max:40',
+            'date_of_birth' => 'nullable|date',
+            'gender' => 'nullable|integer',
+            'nationality' => 'nullable|string|max:80',
+            'blood_group' => 'nullable|string|max:10',
+            'religion' => 'nullable|string|max:80',
+            'race' => 'nullable|string|max:80',
+            'marital_status' => 'nullable|string|max:40',
+            'mobile_number' => 'nullable|string|max:50',
+            'home_phone' => 'nullable|string|max:50',
+            'office_phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:255',
+            'ssn' => 'nullable|string|max:80',
         ]);
-        DB::table('employee')->where('employee_id', $uid)->update([
-            'email' => $data['email'] ?? null,
-            'phone' => $data['phone'] ?? null,
-        ]);
+
+        $update = [];
+        foreach ($data as $key => $value) {
+            if (!Schema::hasColumn('employee', $key)) {
+                continue;
+            }
+            if ($key === 'phone' && Schema::hasColumn('employee', 'phone')) {
+                $update['phone'] = $value;
+                if (Schema::hasColumn('employee', 'contact_number')) {
+                    $update['contact_number'] = $value;
+                }
+                continue;
+            }
+            $update[$key] = $value;
+        }
+        if (!empty($update)) {
+            DB::table('employee')->where('employee_id', $uid)->update($update);
+        }
 
         return response()->json(['success' => true, 'message' => 'Profile updated.']);
     }
@@ -167,14 +224,41 @@ class SelfServiceController extends Controller
     {
         $uid = (int) ($request->attributes->get('hr_claims')['employee_id'] ?? 0);
         $types = DB::table('leave_type')->orderBy('name')->get(['id', 'name', 'days']);
-        $balances = DB::table('leave_type')
-            ->leftJoin('leave', function ($j) use ($uid) {
-                $j->on('leave_type.id', '=', 'leave.leave_type')->where('leave.employee', $uid);
-            })
-            ->groupBy('leave_type.id', 'leave_type.name', 'leave_type.days')
-            ->orderBy('leave_type.name')
-            ->selectRaw('leave_type.name as name, leave_type.days as total_days, COUNT(`leave`.id) as used_leaves')
-            ->get();
+        $hasAssigned = Schema::hasColumn('leave', 'assigned');
+        $balances = [];
+
+        foreach ($types as $t) {
+            $typeId = (int) $t->id;
+            $quota = (float) $t->days;
+            if ($hasAssigned) {
+                $assigned = (float) DB::table('leave')
+                    ->where('employee', $uid)
+                    ->where('leave_type', $typeId)
+                    ->where('assigned', '>', 0)
+                    ->sum('assigned');
+                if ($assigned > 0) {
+                    $quota = $assigned;
+                }
+            }
+
+            $usedQ = DB::table('leave')
+                ->where('employee', $uid)
+                ->where('leave_type', $typeId)
+                ->where('status', '!=', 2);
+            if ($hasAssigned) {
+                $usedQ->where(function ($w) {
+                    $w->whereNull('assigned')->orWhere('assigned', '<=', 0);
+                });
+            }
+            $usedDays = (float) $usedQ->sum('days');
+
+            $balances[] = [
+                'name' => (string) $t->name,
+                'leave_type_id' => $typeId,
+                'total_days' => $quota,
+                'used_leaves' => $usedDays,
+            ];
+        }
 
         return response()->json([
             'success' => true,
@@ -257,21 +341,32 @@ class SelfServiceController extends Controller
             'reason' => 'nullable|string',
         ]);
 
+        $days = (int) ($data['days'] ?? 1);
+        $block = $this->thresholdBlockMessage($uid, (int) $data['leave_type_id'], $days);
+        if ($block !== null) {
+            return response()->json(['success' => false, 'message' => $block], 422);
+        }
+
         $typeName = (string) (DB::table('leave_type')->where('id', $data['leave_type_id'])->value('name') ?? 'Leave');
         $empName = (string) (DB::table('employee')->where('employee_id', $uid)->value('name') ?? 'Employee');
 
-        $id = DB::table('leave')->insertGetId([
+        $payload = [
             'leave_type' => $data['leave_type_id'],
             'employee' => $uid,
             'from' => $data['from'],
             'to' => $data['to'],
-            'days' => $data['days'] ?? 1,
+            'days' => $days,
             'reason' => $data['reason'] ?? '',
             'status' => 0,
             'date' => now(),
             'added_by' => $uid,
             'approval_pending_level' => 1,
-        ]);
+        ];
+        if (Schema::hasColumn('leave', 'assigned')) {
+            $payload['assigned'] = 0;
+        }
+
+        $id = DB::table('leave')->insertGetId($payload);
 
         $title = 'Leave #'.$id.' — '.$empName.': '.$typeName;
         try {
@@ -590,6 +685,37 @@ class SelfServiceController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Timesheet '.$label.'.']);
         }
+    }
+
+    /**
+     * If designation has an active threshold for this leave type and requested days
+     * exceed threshold_to, block the application (PHP leave_threshold max band).
+     */
+    protected function thresholdBlockMessage(int $employeeId, int $leaveTypeId, int $days): ?string
+    {
+        if (!Schema::hasTable('leave_threshold')) {
+            return null;
+        }
+        $designation = (int) (DB::table('employee')->where('employee_id', $employeeId)->value('designation') ?? 0);
+        if ($designation < 1) {
+            return null;
+        }
+        $rows = DB::table('leave_threshold')
+            ->where('designation_id', $designation)
+            ->where('status', 1)
+            ->get();
+        foreach ($rows as $r) {
+            $ids = array_map('intval', explode(',', (string) $r->leave_type_id));
+            if (!in_array($leaveTypeId, $ids, true)) {
+                continue;
+            }
+            $max = (int) $r->threshold_to;
+            if ($max > 0 && $days > $max) {
+                return "Leave exceeds threshold: max {$max} day(s) for your designation.";
+            }
+        }
+
+        return null;
     }
 
     protected function mapAttendance(object $row): array

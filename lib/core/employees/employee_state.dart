@@ -88,6 +88,57 @@ class EmployeeState extends ChangeNotifier {
     }
   }
 
+  Future<String?> fetchNextEmployeeCode() async {
+    try {
+      final res = await _api.dio.get('/employees/next-code');
+      final data = res.data;
+      if (data is Map && data['success'] == true) {
+        return (data['user_name'] ?? data['employee_code'])?.toString();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Returns created employee_id on success, or throws via error string pattern.
+  Future<({int? id, String? code, String? error})> createReturningId(Map<String, dynamic> body) async {
+    try {
+      final res = await _api.dio.post('/employees', data: body);
+      final data = res.data;
+      if (data is Map && data['success'] == true) {
+        final id = (data['employee_id'] as num?)?.toInt();
+        final code = (data['user_name'] ?? data['employee_code'])?.toString();
+        await load();
+        return (id: id, code: code, error: null);
+      }
+      return (
+        id: null,
+        code: null,
+        error: (data is Map ? data['message'] : null)?.toString() ?? 'Create failed',
+      );
+    } on DioException catch (e) {
+      return (id: null, code: null, error: _dioMsg(e));
+    } catch (e) {
+      return (id: null, code: null, error: e.toString());
+    }
+  }
+
+  Future<Map<String, dynamic>?> getById(int id) async {
+    try {
+      final res = await _api.dio.get('/employees/$id');
+      final data = res.data;
+      if (data is Map && data['success'] == true) {
+        return asStringKeyedMap(data);
+      }
+      error = (data is Map ? data['message'] : null)?.toString() ?? 'Load failed';
+      notifyListeners();
+      return null;
+    } on DioException catch (e) {
+      error = _dioMsg(e);
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<String?> update(int id, Map<String, dynamic> body) async {
     try {
       final res = await _api.dio.post('/employees/$id', data: body);
@@ -97,6 +148,35 @@ class EmployeeState extends ChangeNotifier {
         return null;
       }
       return (data is Map ? data['message'] : null)?.toString() ?? 'Update failed';
+    } on DioException catch (e) {
+      return _dioMsg(e);
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> loadLeaveAssignments(int employeeId) async {
+    try {
+      final res = await _api.dio.get('/employees/$employeeId/leave-assignments');
+      final data = res.data;
+      if (data is Map && data['success'] == true) {
+        return ((data['assignments'] as List?) ?? [])
+            .whereType<Map>()
+            .map((e) => asStringKeyedMap(e))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<String?> saveLeaveAssignments(int employeeId, List<Map<String, dynamic>> assignments) async {
+    try {
+      final res = await _api.dio.post('/employees/$employeeId/leave-assignments', data: {
+        'assignments': assignments,
+      });
+      final data = res.data;
+      if (data is Map && data['success'] == true) return null;
+      return (data is Map ? data['message'] : null)?.toString() ?? 'Save failed';
     } on DioException catch (e) {
       return _dioMsg(e);
     } catch (e) {

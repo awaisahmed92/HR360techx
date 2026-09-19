@@ -104,9 +104,33 @@ class _LeaveViewState extends State<LeaveView> {
                   icon: const Icon(Icons.menu, size: 18),
                   onSelected: (v) async {
                     if (!rows[i].canApprove) return;
+                    final remarksCtrl = TextEditingController();
+                    final ok = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(v == 'approve' ? 'Approve Leave' : 'Reject Leave'),
+                        content: TextField(
+                          controller: remarksCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Remarks (optional)',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLines: 2,
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: Text(v == 'approve' ? 'Approve' : 'Reject'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (ok != true || !context.mounted) return;
                     final err = v == 'approve'
-                        ? await leave.approve(rows[i].id)
-                        : await leave.reject(rows[i].id);
+                        ? await leave.approve(rows[i].id, remarks: remarksCtrl.text.trim())
+                        : await leave.reject(rows[i].id, remarks: remarksCtrl.text.trim());
+                    remarksCtrl.dispose();
                     if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

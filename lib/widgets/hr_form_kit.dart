@@ -184,13 +184,13 @@ class HrFormRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: HrUi.labelWidth,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final narrow = !c.maxWidth.isFinite || c.maxWidth < 340;
+          final labelWidget = SizedBox(
+            width: narrow ? null : HrUi.labelWidth,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: narrow ? MainAxisAlignment.start : MainAxisAlignment.end,
               children: [
                 Flexible(
                   child: Text.rich(
@@ -214,7 +214,7 @@ class HrFormRow extends StatelessWidget {
                           ),
                       ],
                     ),
-                    textAlign: TextAlign.right,
+                    textAlign: narrow ? TextAlign.left : TextAlign.right,
                   ),
                 ),
                 if (showInfo) ...[
@@ -223,10 +223,26 @@ class HrFormRow extends StatelessWidget {
                 ],
               ],
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(child: child),
-        ],
+          );
+          if (narrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                labelWidget,
+                const SizedBox(height: 6),
+                child,
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              labelWidget,
+              const SizedBox(width: 16),
+              Expanded(child: child),
+            ],
+          );
+        },
       ),
     );
   }
@@ -428,60 +444,56 @@ class HrDataGridPage extends StatelessWidget {
               border: Border.all(color: HrUi.border(context)),
             ),
             clipBehavior: Clip.antiAlias,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: MediaQuery.of(context).size.width - 80,
-                ),
-                child: Theme(
-                  data: Theme.of(context).copyWith(
-                    dataTableTheme: DataTableThemeData(
-                      dataTextStyle: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: textPrimary,
-                      ),
-                    ),
-                  ),
-                  child: DataTable(
-                    headingRowColor: WidgetStateProperty.all(header),
-                    headingTextStyle: GoogleFonts.inter(
-                      color: HrUi.onHeader(context),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
+            child: HrFitDataTableHost(
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  dataTableTheme: DataTableThemeData(
                     dataTextStyle: GoogleFonts.inter(
-                      fontSize: 13,
+                      fontSize: columns.length > 6 ? 12 : 13,
                       color: textPrimary,
                     ),
-                    columnSpacing: 28,
-                    horizontalMargin: 16,
-                    columns: columns
-                        .map((c) => DataColumn(label: Text(c)))
-                        .toList(),
-                    rows: rows.isEmpty
-                        ? [
-                            DataRow(
-                              cells: List.generate(
-                                columns.length,
-                                (i) => DataCell(
-                                  i == 0
-                                      ? Text(
-                                          emptyMessage,
-                                          style: TextStyle(color: HrUi.muted(context)),
-                                        )
-                                      : const SizedBox.shrink(),
-                                ),
+                  ),
+                ),
+                child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(header),
+                  headingTextStyle: GoogleFonts.inter(
+                    color: HrUi.onHeader(context),
+                    fontWeight: FontWeight.w700,
+                    fontSize: columns.length > 6 ? 11 : 12,
+                  ),
+                  dataTextStyle: GoogleFonts.inter(
+                    fontSize: columns.length > 6 ? 12 : 13,
+                    color: textPrimary,
+                  ),
+                  columnSpacing: columns.length > 6 ? 14 : 22,
+                  horizontalMargin: columns.length > 6 ? 10 : 14,
+                  columns: columns
+                      .map((c) => DataColumn(
+                            label: Text(c, overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  rows: rows.isEmpty
+                      ? [
+                          DataRow(
+                            cells: List.generate(
+                              columns.length,
+                              (i) => DataCell(
+                                i == 0
+                                    ? Text(
+                                        emptyMessage,
+                                        style: TextStyle(color: HrUi.muted(context)),
+                                      )
+                                    : const SizedBox.shrink(),
                               ),
                             ),
-                          ]
-                        : [
-                            for (final r in rows)
-                              DataRow(
-                                cells: r.map((w) => DataCell(w)).toList(),
-                              ),
-                          ],
-                  ),
+                          ),
+                        ]
+                      : [
+                          for (final r in rows)
+                            DataRow(
+                              cells: r.map((w) => DataCell(w)).toList(),
+                            ),
+                        ],
                 ),
               ),
             ),
@@ -552,6 +564,50 @@ class HrStatusPill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Fits [child] (usually a [DataTable]) to the content pane width.
+/// Uses a visible scrollbar when columns still overflow.
+class HrFitDataTableHost extends StatefulWidget {
+  const HrFitDataTableHost({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<HrFitDataTableHost> createState() => _HrFitDataTableHostState();
+}
+
+class _HrFitDataTableHostState extends State<HrFitDataTableHost> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = constraints.maxWidth.isFinite ? constraints.maxWidth : 400.0;
+        return Scrollbar(
+          controller: _scroll,
+          thumbVisibility: true,
+          trackVisibility: true,
+          scrollbarOrientation: ScrollbarOrientation.bottom,
+          child: SingleChildScrollView(
+            controller: _scroll,
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: w),
+              child: widget.child,
+            ),
+          ),
+        );
+      },
     );
   }
 }

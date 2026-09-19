@@ -5,6 +5,7 @@ import '../core/auth/auth_state.dart';
 import '../core/employees/employee_state.dart';
 import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
+import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
 /// WebHR-style Employee Salary: Salary / Tax / Payment / Allocation / Banks.
@@ -24,7 +25,7 @@ class _EmployeePayViewState extends State<EmployeePayView> {
   String? _empName;
   bool _busy = false;
 
-  static const _accent = Color(0xFFA67C5D);
+  Color get _accent => HrTheme.brand(context);
   static const _tabs = [
     'Salary',
     'Tax',

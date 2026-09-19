@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../controllers/app_state.dart';
-import '../theme/app_theme.dart';
-import '../theme/hr_theme.dart';
-import '../widgets/radar_chart_widget.dart';
-import '../widgets/action_dialogs.dart';
 
+import '../core/auth/auth_state.dart';
+import '../core/performance/performance_state.dart';
+import '../theme/hr_theme.dart';
+import '../widgets/hr_form_kit.dart';
+
+/// API-backed Performance: Reviews · Indicators · Appraisals.
 class PerformanceView extends StatefulWidget {
   const PerformanceView({super.key});
 
@@ -14,453 +15,560 @@ class PerformanceView extends StatefulWidget {
 }
 
 class _PerformanceViewState extends State<PerformanceView> {
-  int _selectedEmployeeIndex = 0;
+  late final PerformanceState _state;
+
+  @override
+  void initState() {
+    super.initState();
+    _state = PerformanceState(context.read<AuthState>());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _state.load());
+  }
+
+  @override
+  void dispose() {
+    _state.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    final isDark = appState.isDarkMode;
-    final isDesktop = MediaQuery.of(context).size.width >= 1050;
-
-    final cardBg = isDark ? AppTheme.darkCard : AppTheme.lightCard;
-    final borderColor = isDark ? AppTheme.darkBorder : AppTheme.lightBorder;
-    final textPrimary = isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary;
-    final textSecondary = isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
-
-    final selectedEmp = appState.allEmployeesRaw[_selectedEmployeeIndex.clamp(0, appState.allEmployeesRaw.length - 1)];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Banner
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [const Color(0xFF1E1B4B), const Color(0xFF312E81)]
-                    : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: HrTheme.brand(context).withOpacity(0.3)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.warningGradient,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.radar_rounded, color: Colors.white, size: 28),
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '360° Continuous Feedback & Growth Hub',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Holistic multi-rater appraisals: Peer, Manager, Self, and Cross-functional feedback cycles.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: HrTheme.brand(context),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  icon: const Icon(Icons.star_rate_rounded, color: Colors.white, size: 18),
-                  label: const Text('Log 360 Feedback', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                  onPressed: () => ActionDialogs.showAddReviewDialog(context),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Interactive Employee 360 Radar Deep Dive
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Individual 360° Competency Radar',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: textPrimary,
-                      ),
-                    ),
-                    // Dropdown to switch employee
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppTheme.darkSurface : AppTheme.lightCardHover,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: borderColor),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: _selectedEmployeeIndex,
-                          dropdownColor: isDark ? AppTheme.darkSurface : Colors.white,
-                          items: List.generate(
-                            appState.allEmployeesRaw.length,
-                            (index) => DropdownMenuItem(
-                              value: index,
-                              child: Text(
-                                '${appState.allEmployeesRaw[index].name} (${appState.allEmployeesRaw[index].role})',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: textPrimary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedEmployeeIndex = val);
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                if (isDesktop)
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Radar Chart
-                      Expanded(
-                        flex: 5,
-                        child: SizedBox(
-                          height: 280,
-                          child: RadarChartWidget(
-                            isDark: isDark,
-                            polygonColor: HrTheme.brandLight(context),
-                            data: selectedEmp.competencies,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 32),
-                      // Breakdown bars
-                      Expanded(
-                        flex: 4,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                  backgroundImage: NetworkImage(selectedEmp.avatar),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      selectedEmp.name,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                        color: textPrimary,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Overall Rating: ${selectedEmp.rating} / 5.0 ★',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppTheme.warning,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 18),
-                            ...selectedEmp.competencies.entries.map((entry) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 5),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          entry.key,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: textSecondary,
-                                          ),
-                                        ),
-                                        Text(
-                                          '${(entry.value * 100).toInt()}%',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w800,
-                                            color: textPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Container(
-                                      height: 6,
-                                      width: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
-                                        borderRadius: BorderRadius.circular(3),
-                                      ),
-                                      child: FractionallySizedBox(
-                                        alignment: Alignment.centerLeft,
-                                        widthFactor: entry.value,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            gradient: HrTheme.gradient(context),
-                                            borderRadius: BorderRadius.circular(3),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )
-                else ...[
-                  SizedBox(
-                    height: 260,
-                    child: RadarChartWidget(
-                      isDark: isDark,
-                      polygonColor: HrTheme.brandLight(context),
-                      data: selectedEmp.competencies,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Company OKRs & Goal Milestones
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Q3/Q4 Strategic OKRs & Key Milestones',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildOKRItem('Single Page Application Performance', 'Target: Sub-second load & 60fps render time', 0.94, AppTheme.success, isDark),
-                _buildOKRItem('Talent Retention & Satisfaction Index', 'Target: >92% eNPS across global engineering hub', 0.88, HrTheme.brand(context), isDark),
-                _buildOKRItem('360 Appraisal Cycle Completion', 'Target: 100% peer & manager reviews finalized', 0.76, AppTheme.warning, isDark),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Feed of 360 Reviews
-          Text(
-            'Recent 360 Feedback Syntheses (${appState.reviews.length} Logged)',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: textPrimary,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Column(
-            children: appState.reviews.map((rev) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: borderColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundImage: NetworkImage(rev.reviewerAvatar),
-                            ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${rev.reviewerName} (${rev.reviewerRole}) → ${rev.employeeName}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: textPrimary,
-                                  ),
-                                ),
-                                Text(
-                                  '${rev.reviewType} • ${rev.date}',
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    color: textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.warning.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.star_rounded, size: 16, color: AppTheme.warning),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${rev.score} / 5.0',
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppTheme.warning,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      '"${rev.feedback}"',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontStyle: FontStyle.italic,
-                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOKRItem(String title, String subtitle, double progress, Color color, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return AnimatedBuilder(
+      animation: _state,
+      builder: (context, _) {
+        return ColoredBox(
+          color: HrUi.pageBg(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppTheme.darkTextPrimary : AppTheme.lightTextPrimary,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Row(
+                  children: [
+                    Text('Performance',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: HrUi.label(context),
+                        )),
+                    const Spacer(),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 0, label: Text('Reviews')),
+                        ButtonSegment(value: 1, label: Text('Indicators')),
+                        ButtonSegment(value: 2, label: Text('Appraisals')),
+                        ButtonSegment(value: 3, label: Text('Goals')),
+                        ButtonSegment(value: 4, label: Text('Types')),
+                        ButtonSegment(value: 5, label: Text('Cycles')),
+                      ],
+                      selected: {_state.tab},
+                      onSelectionChanged: (s) => _state.setTab(s.first),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(backgroundColor: HrTheme.brand(context)),
+                      onPressed: () {
+                        if (_state.tab == 0) _addReview();
+                        if (_state.tab == 1) _addIndicator();
+                        if (_state.tab == 2) _addAppraisal();
+                        if (_state.tab == 3) _addGoal();
+                        if (_state.tab == 4) _addGoalType();
+                        if (_state.tab == 5) _addCycle();
+                      },
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add'),
+                    ),
+                    IconButton(onPressed: () => _state.load(), icon: const Icon(Icons.refresh)),
+                  ],
                 ),
               ),
-              Text(
-                '${(progress * 100).toInt()}% Done',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: color,
+              if (_state.error != null)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(_state.error!, style: const TextStyle(color: Colors.redAccent)),
                 ),
+              Expanded(
+                child: _state.busy && _state.reviews.isEmpty && _state.goals.isEmpty
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView(
+                        padding: const EdgeInsets.all(20),
+                        children: [
+                          if (_state.tab == 0) ..._reviews(),
+                          if (_state.tab == 1) ..._indicators(),
+                          if (_state.tab == 2) ..._appraisals(),
+                          if (_state.tab == 3) ..._goals(),
+                          if (_state.tab == 4) ..._goalTypes(),
+                          if (_state.tab == 5) ..._cycles(),
+                        ],
+                      ),
               ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 11.5,
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Container(
-            height: 7,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: progress,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [color, color.withOpacity(0.7)]),
-                  borderRadius: BorderRadius.circular(4),
-                ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _reviews() {
+    if (_state.reviews.isEmpty) {
+      return [Text('No reviews yet.', style: TextStyle(color: HrUi.muted(context)))];
+    }
+    return _state.reviews
+        .map((r) => ListTile(
+              title: Text('${r['employee_name']} · ${r['indicator_name'] ?? 'General'}'),
+              subtitle: Text('Rating ${r['rating']} · ${r['review_date'] ?? ''} · ${r['comments'] ?? ''}'),
+              leading: CircleAvatar(
+                backgroundColor: HrTheme.brand(context).withOpacity(0.15),
+                child: Text('${r['rating']}',
+                    style: TextStyle(color: HrTheme.brand(context), fontWeight: FontWeight.w800, fontSize: 12)),
               ),
+            ))
+        .toList();
+  }
+
+  List<Widget> _indicators() {
+    if (_state.indicators.isEmpty) {
+      return [Text('No indicators yet.', style: TextStyle(color: HrUi.muted(context)))];
+    }
+    return _state.indicators
+        .map((i) => ListTile(
+              title: Text('${i['name']}'),
+              subtitle: Text('${i['description'] ?? ''}'),
+            ))
+        .toList();
+  }
+
+  List<Widget> _appraisals() {
+    if (_state.appraisals.isEmpty) {
+      return [Text('No appraisals yet.', style: TextStyle(color: HrUi.muted(context)))];
+    }
+    return _state.appraisals
+        .map((a) {
+          final stage = '${a['stage_label'] ?? a['current_stage'] ?? 'Goal Setting'}';
+          final done = '${a['current_stage']}' == 'acknowledged';
+          return ListTile(
+            title: Text('${a['employee_name']} · ${a['period'] ?? ''}'),
+            subtitle: Text(
+              '${a['cycle_name'] != null && '${a['cycle_name']}'.isNotEmpty ? '${a['cycle_name']} · ' : ''}'
+              '$stage · ${a['status_label']} · Score ${a['overall_score'] ?? '—'} · ${a['final_rating'] ?? ''}',
+            ),
+            trailing: done
+                ? Icon(Icons.check_circle, color: Colors.green.shade600)
+                : TextButton(
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final err = await _state.advanceAppraisal((a['id'] as num).toInt());
+                      if (err != null) {
+                        messenger.showSnackBar(SnackBar(content: Text(err)));
+                      } else {
+                        messenger.showSnackBar(const SnackBar(content: Text('Stage advanced')));
+                      }
+                    },
+                    child: const Text('Next stage →'),
+                  ),
+          );
+        })
+        .toList();
+  }
+
+  List<Widget> _goals() {
+    if (_state.goals.isEmpty) {
+      return [Text('No goals yet.', style: TextStyle(color: HrUi.muted(context)))];
+    }
+    return _state.goals
+        .map((g) {
+          final appraisalId = (g['appraisal_id'] as num?)?.toInt();
+          Map<String, dynamic>? linked;
+          if (appraisalId != null) {
+            for (final a in _state.appraisals) {
+              if ((a['id'] as num?)?.toInt() == appraisalId) {
+                linked = a;
+                break;
+              }
+            }
+          }
+          return ListTile(
+            title: Text('${g['title']}'),
+            subtitle: Text(
+                '${g['employee_name']} · ${g['goal_type_name'] ?? '—'} · '
+                '${linked != null ? 'Appraisal ${linked['period'] ?? linked['id']} · ' : ''}'
+                'Target ${g['target_value'] ?? '—'} · ${g['status_label']} · Score ${g['score']}'),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final err = await _state.deleteGoal((g['id'] as num).toInt());
+                if (err != null) messenger.showSnackBar(SnackBar(content: Text(err)));
+              },
+            ),
+          );
+        })
+        .toList();
+  }
+
+  List<Widget> _cycles() {
+    if (_state.cycles.isEmpty) {
+      return [Text('No cycles yet. Add a review cycle to group appraisals.', style: TextStyle(color: HrUi.muted(context)))];
+    }
+    return _state.cycles
+        .map((c) => ListTile(
+              title: Text('${c['name']}'),
+              subtitle: Text('${c['status_label']} · ${c['period_start'] ?? ''} → ${c['period_end'] ?? ''}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final err = await _state.deleteCycle((c['id'] as num).toInt());
+                  if (err != null) messenger.showSnackBar(SnackBar(content: Text(err)));
+                },
+              ),
+            ))
+        .toList();
+  }
+
+  List<Widget> _goalTypes() {
+    if (_state.goalTypes.isEmpty) {
+      return [Text('No goal types yet.', style: TextStyle(color: HrUi.muted(context)))];
+    }
+    return _state.goalTypes
+        .map((t) => ListTile(
+              title: Text('${t['name']}'),
+              subtitle: Text('${t['description'] ?? ''}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final err = await _state.deleteGoalType((t['id'] as num).toInt());
+                  if (err != null) messenger.showSnackBar(SnackBar(content: Text(err)));
+                },
+              ),
+            ))
+        .toList();
+  }
+
+  Future<void> _addReview() async {
+    final employees = (_state.options['employees'] as List?) ?? [];
+    final indicators = (_state.options['indicators'] as List?) ?? [];
+    int? empId;
+    int? indId;
+    final rating = TextEditingController(text: '4');
+    final comments = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Log Review'),
+          content: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<int>(
+                  value: empId,
+                  decoration: const InputDecoration(labelText: 'Employee *'),
+                  items: employees.whereType<Map>().map((e) {
+                    final id = (e['id'] as num?)?.toInt();
+                    return DropdownMenuItem(value: id, child: Text('${e['name']}'));
+                  }).toList(),
+                  onChanged: (v) => setLocal(() => empId = v),
+                ),
+                DropdownButtonFormField<int>(
+                  value: indId,
+                  decoration: const InputDecoration(labelText: 'Indicator'),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('—')),
+                    ...indicators.whereType<Map>().map((e) {
+                      final id = (e['id'] as num?)?.toInt();
+                      return DropdownMenuItem(value: id, child: Text('${e['name']}'));
+                    }),
+                  ],
+                  onChanged: (v) => setLocal(() => indId = v),
+                ),
+                TextField(
+                  controller: rating,
+                  decoration: const InputDecoration(labelText: 'Rating (0–10)'),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(controller: comments, decoration: const InputDecoration(labelText: 'Comments'), maxLines: 2),
+              ],
             ),
           ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || empId == null) return;
+    final err = await _state.saveReview({
+      'employee_id': empId,
+      'indicator_id': indId,
+      'rating': double.tryParse(rating.text) ?? 0,
+      'comments': comments.text.trim(),
+    });
+    if (mounted && err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
+  }
+
+  Future<void> _addIndicator() async {
+    final name = TextEditingController();
+    final desc = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Indicator'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: name, decoration: const InputDecoration(labelText: 'Name *')),
+            TextField(controller: desc, decoration: const InputDecoration(labelText: 'Description')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
         ],
       ),
     );
+    if (ok != true || name.text.trim().isEmpty) return;
+    final err = await _state.saveIndicator({
+      'name': name.text.trim(),
+      'description': desc.text.trim(),
+    });
+    if (mounted && err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
+  }
+
+  Future<void> _addAppraisal() async {
+    final employees = (_state.options['employees'] as List?) ?? [];
+    int? empId;
+    int? cycleId;
+    final period = TextEditingController(text: '2026 H1');
+    final score = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Add Appraisal'),
+          content: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<int>(
+                  value: empId,
+                  decoration: const InputDecoration(labelText: 'Employee *'),
+                  items: employees.whereType<Map>().map((e) {
+                    final id = (e['id'] as num?)?.toInt();
+                    return DropdownMenuItem(value: id, child: Text('${e['name']}'));
+                  }).toList(),
+                  onChanged: (v) => setLocal(() => empId = v),
+                ),
+                DropdownButtonFormField<int?>(
+                  value: cycleId,
+                  decoration: const InputDecoration(labelText: 'Cycle'),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('—')),
+                    ..._state.cycles.map((c) {
+                      final id = (c['id'] as num?)?.toInt();
+                      return DropdownMenuItem(value: id, child: Text('${c['name']}'));
+                    }),
+                  ],
+                  onChanged: (v) => setLocal(() => cycleId = v),
+                ),
+                TextField(controller: period, decoration: const InputDecoration(labelText: 'Period')),
+                TextField(
+                  controller: score,
+                  decoration: const InputDecoration(labelText: 'Overall Score'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || empId == null) return;
+    final err = await _state.saveAppraisal({
+      'employee_id': empId,
+      'cycle_id': cycleId,
+      'period': period.text.trim(),
+      'overall_score': double.tryParse(score.text),
+      'status': 0,
+    });
+    if (mounted && err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
+  }
+
+  Future<void> _addGoal() async {
+    final employees = (_state.options['employees'] as List?) ?? [];
+    final types = (_state.options['goal_types'] as List?) ?? [];
+    int? empId;
+    int? typeId;
+    int? appraisalId;
+    final title = TextEditingController();
+    final target = TextEditingController();
+    final metric = TextEditingController();
+    final period = TextEditingController(text: '2026 H1');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Add Goal'),
+          content: SizedBox(
+            width: 360,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<int>(
+                    value: empId,
+                    decoration: const InputDecoration(labelText: 'Employee *'),
+                    items: employees.whereType<Map>().map((e) {
+                      final id = (e['id'] as num?)?.toInt();
+                      return DropdownMenuItem(value: id, child: Text('${e['name']}'));
+                    }).toList(),
+                    onChanged: (v) => setLocal(() => empId = v),
+                  ),
+                  DropdownButtonFormField<int?>(
+                    value: typeId,
+                    decoration: const InputDecoration(labelText: 'Goal type'),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('—')),
+                      ...types.whereType<Map>().map((e) {
+                        final id = (e['id'] as num?)?.toInt();
+                        return DropdownMenuItem(value: id, child: Text('${e['name']}'));
+                      }),
+                    ],
+                    onChanged: (v) => setLocal(() => typeId = v),
+                  ),
+                  DropdownButtonFormField<int?>(
+                    value: appraisalId,
+                    decoration: const InputDecoration(labelText: 'Link to appraisal'),
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('—')),
+                      ..._state.appraisals.map((a) {
+                        final id = (a['id'] as num?)?.toInt();
+                        final label = '${a['employee_name'] ?? ''} · ${a['period'] ?? id}';
+                        return DropdownMenuItem(value: id, child: Text(label));
+                      }),
+                    ],
+                    onChanged: (v) => setLocal(() => appraisalId = v),
+                  ),
+                  TextField(controller: title, decoration: const InputDecoration(labelText: 'Title *')),
+                  TextField(controller: metric, decoration: const InputDecoration(labelText: 'Metric')),
+                  TextField(controller: target, decoration: const InputDecoration(labelText: 'Target')),
+                  TextField(controller: period, decoration: const InputDecoration(labelText: 'Period')),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || empId == null || title.text.trim().isEmpty) return;
+    final err = await _state.saveGoal({
+      'employee_id': empId,
+      'goal_type_id': typeId,
+      'appraisal_id': appraisalId,
+      'title': title.text.trim(),
+      'metric': metric.text.trim(),
+      'target_value': target.text.trim(),
+      'period': period.text.trim(),
+      'status': 0,
+    });
+    if (mounted && err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
+  }
+
+  Future<void> _addGoalType() async {
+    final name = TextEditingController();
+    final desc = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Goal Type'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: name, decoration: const InputDecoration(labelText: 'Name *')),
+            TextField(controller: desc, decoration: const InputDecoration(labelText: 'Description')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (ok != true || name.text.trim().isEmpty) return;
+    final err = await _state.saveGoalType({
+      'name': name.text.trim(),
+      'description': desc.text.trim(),
+    });
+    if (mounted && err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
+  }
+
+  Future<void> _addCycle() async {
+    final name = TextEditingController();
+    final start = TextEditingController(text: '2026-01-01');
+    final end = TextEditingController(text: '2026-06-30');
+    int status = 1;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: const Text('Add Review Cycle'),
+          content: SizedBox(
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: name, decoration: const InputDecoration(labelText: 'Name *')),
+                TextField(controller: start, decoration: const InputDecoration(labelText: 'Period start (YYYY-MM-DD)')),
+                TextField(controller: end, decoration: const InputDecoration(labelText: 'Period end (YYYY-MM-DD)')),
+                DropdownButtonFormField<int>(
+                  value: status,
+                  decoration: const InputDecoration(labelText: 'Status'),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('Open')),
+                    DropdownMenuItem(value: 0, child: Text('Closed')),
+                  ],
+                  onChanged: (v) => setLocal(() => status = v ?? 1),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || name.text.trim().isEmpty) return;
+    final err = await _state.saveCycle({
+      'name': name.text.trim(),
+      'period_start': start.text.trim(),
+      'period_end': end.text.trim(),
+      'status': status,
+    });
+    if (mounted && err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
   }
 }

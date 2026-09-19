@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../controllers/app_state.dart';
 import '../core/auth/auth_state.dart';
 import '../core/self_service/self_service_state.dart';
+import '../core/util/person_name.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
 import 'action_dialogs.dart';
@@ -189,15 +190,20 @@ class AppHeader extends StatelessWidget {
           // Quick Action Add Button
           PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'employee') {
-                ActionDialogs.showAddEmployeeDialog(context);
-              } else if (value == 'leave') {
-                ActionDialogs.showApplyLeaveDialog(context);
-              } else if (value == 'review') {
-                ActionDialogs.showAddReviewDialog(context);
-              } else if (value == 'candidate') {
-                ActionDialogs.showAddCandidateDialog(context);
-              }
+              // Defer past PopupMenu disposal to avoid mouse_tracker assertions.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
+                final app = context.read<AppState>();
+                if (value == 'employee') {
+                  app.requestOpenEmployeeForm();
+                } else if (value == 'leave') {
+                  ActionDialogs.showApplyLeaveDialog(context);
+                } else if (value == 'review') {
+                  ActionDialogs.showAddReviewDialog(context);
+                } else if (value == 'candidate') {
+                  ActionDialogs.showAddCandidateDialog(context);
+                }
+              });
             },
             offset: const Offset(0, 48),
             shape: RoundedRectangleBorder(
@@ -500,13 +506,21 @@ class AppHeader extends StatelessWidget {
             ),
             color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
             onSelected: (value) async {
-              if (value == 'logout') {
-                await context.read<AuthState>().logout();
-              }
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (!context.mounted) return;
+                if (value == 'logout') {
+                  await context.read<AuthState>().logout();
+                } else if (value == 'profile') {
+                  context.read<AppState>().openScreen(moduleId: 'dashboard', subId: 'my_info');
+                } else if (value == 'settings') {
+                  context.read<AppState>().openScreen(moduleId: 'dashboard', subId: 'account_settings');
+                }
+              });
             },
             itemBuilder: (context) {
               final auth = context.read<AuthState>();
-              final name = auth.user?.name ?? 'Signed in';
+                  final name = cleanDisplayName(auth.user?.name);
+              final role = auth.user?.designationName ?? '';
               final org = auth.company?.subdomain ?? '';
               return [
                 PopupMenuItem(
@@ -515,12 +529,14 @@ class AppHeader extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        name.isEmpty ? 'Signed in' : name,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
                           color: textPrimary,
                         ),
                       ),
+                      if (role.isNotEmpty)
+                        Text(role, style: TextStyle(fontSize: 12, color: textSecondary)),
                       if (org.isNotEmpty)
                         Text(
                           auth.isDemo ? 'Demo session' : '@$org',
@@ -529,6 +545,27 @@ class AppHeader extends StatelessWidget {
                             color: textSecondary,
                           ),
                         ),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'profile',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_outline, size: 18),
+                      SizedBox(width: 10),
+                      Text('My Info'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings_outlined, size: 18),
+                      SizedBox(width: 10),
+                      Text('Account Settings'),
                     ],
                   ),
                 ),

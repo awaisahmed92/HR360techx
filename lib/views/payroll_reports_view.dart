@@ -173,9 +173,12 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
             if (_structure.isEmpty)
               const Text('No define-salary rows yet.')
             else
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+              HrFitDataTableHost(
                 child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(HrTheme.brand(context)),
+                  headingTextStyle: TextStyle(color: HrTheme.onBrand(context), fontWeight: FontWeight.w600),
+                  columnSpacing: 14,
+                  horizontalMargin: 10,
                   columns: const [
                     DataColumn(label: Text('Employee')),
                     DataColumn(label: Text('Basic')),
@@ -186,7 +189,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                   rows: _structure
                       .map(
                         (r) => DataRow(cells: [
-                          DataCell(Text('${r['employee_name'] ?? r['name'] ?? r['employee_id']}')),
+                          DataCell(Text('${r['employee_name'] ?? r['name'] ?? r['employee_id']}', overflow: TextOverflow.ellipsis)),
                           DataCell(Text('${r['basic_salary'] ?? 0}')),
                           DataCell(Text('${r['total_allowance'] ?? 0}')),
                           DataCell(Text('${r['total_deduction'] ?? 0}')),
@@ -244,9 +247,12 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
             if (_sheet.isEmpty)
               const Text('No processed rows for this month.')
             else
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+              HrFitDataTableHost(
                 child: DataTable(
+                  headingRowColor: WidgetStateProperty.all(HrTheme.brand(context)),
+                  headingTextStyle: TextStyle(color: HrTheme.onBrand(context), fontWeight: FontWeight.w600),
+                  columnSpacing: 14,
+                  horizontalMargin: 10,
                   columns: const [
                     DataColumn(label: Text('Employee')),
                     DataColumn(label: Text('Days')),
@@ -257,7 +263,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                   rows: _sheet
                       .map(
                         (r) => DataRow(cells: [
-                          DataCell(Text('${r['employee_name'] ?? r['name'] ?? r['employee_id']}')),
+                          DataCell(Text('${r['employee_name'] ?? r['name'] ?? r['employee_id']}', overflow: TextOverflow.ellipsis)),
                           DataCell(Text('${r['days'] ?? ''}')),
                           DataCell(Text('${r['total_allowance'] ?? 0}')),
                           DataCell(Text('${r['tax_amount'] ?? 0}')),

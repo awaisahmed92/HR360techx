@@ -47,6 +47,7 @@ class AuthController extends Controller
                 'user' => [
                     'employee_id' => 0,
                     'name' => 'Superuser',
+                    'surname' => '',
                     'user_name' => $suUser,
                     'email' => (string) ($company->email ?? ''),
                     'designation_id' => 0,
@@ -65,6 +66,7 @@ class AuthController extends Controller
                     'subdomain' => trim($data['subdomain']),
                 ],
                 'permissions' => TenantManager::normalizePermissions([], true),
+                'ui_prefs' => UiPrefsController::prefsForEmployee(null, $company),
             ]);
         }
 
@@ -102,7 +104,8 @@ class AuthController extends Controller
             'token' => $token,
             'user' => [
                 'employee_id' => $employeeId,
-                'name' => (string) ($user->name ?? ''),
+                'name' => UiPrefsController::displayName($user),
+                'surname' => trim((string) ($user->surname ?? '')),
                 'user_name' => (string) ($user->user_name ?? $data['username']),
                 'email' => (string) ($user->email ?? ''),
                 'designation_id' => $designationId,
@@ -121,6 +124,7 @@ class AuthController extends Controller
                 'subdomain' => trim($data['subdomain']),
             ],
             'permissions' => TenantManager::normalizePermissions($rolls, $allAccess),
+            'ui_prefs' => UiPrefsController::prefsForEmployee($user, $company),
         ]);
     }
 
@@ -173,7 +177,10 @@ class AuthController extends Controller
             'success' => true,
             'user' => [
                 'employee_id' => $employeeId,
-                'name' => (string) ($user->name ?? ''),
+                'name' => $user
+                    ? UiPrefsController::displayName($user)
+                    : (!empty($claims['is_superuser']) ? 'Superuser' : ''),
+                'surname' => trim((string) ($user->surname ?? '')),
                 'user_name' => (string) ($user->user_name ?? ''),
                 'email' => (string) ($user->email ?? ''),
                 'designation_id' => $designationId,
@@ -192,6 +199,7 @@ class AuthController extends Controller
                 'subdomain' => (string) $claims['subdomain'],
             ],
             'permissions' => TenantManager::normalizePermissions($rolls, $allAccess),
+            'ui_prefs' => UiPrefsController::prefsForEmployee($user, $company),
         ]);
     }
 

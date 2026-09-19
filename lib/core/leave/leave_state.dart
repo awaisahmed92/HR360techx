@@ -89,10 +89,10 @@ class LeaveState extends ChangeNotifier {
     }
   }
 
-  Future<String?> approve(int id) async {
+  Future<String?> approve(int id, {String remarks = ''}) async {
     if (_auth.isDemo) return 'Not available in demo mode.';
     try {
-      await _repo.approve(id);
+      await _repo.approve(id, remarks: remarks);
       await load();
       return null;
     } catch (e) {
@@ -100,11 +100,50 @@ class LeaveState extends ChangeNotifier {
     }
   }
 
-  Future<String?> reject(int id) async {
+  Future<String?> reject(int id, {String remarks = ''}) async {
     if (_auth.isDemo) return 'Not available in demo mode.';
     try {
-      await _repo.reject(id);
+      await _repo.reject(id, remarks: remarks);
       await load();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  List<Map<String, dynamic>> thresholds = [];
+
+  Future<void> loadThresholds() async {
+    if (_auth.isDemo) {
+      thresholds = [];
+      notifyListeners();
+      return;
+    }
+    try {
+      thresholds = await _repo.fetchThresholds();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    }
+    notifyListeners();
+  }
+
+  Future<String?> saveThreshold(Map<String, dynamic> body, {int? id}) async {
+    if (_auth.isDemo) return 'Not available in demo mode.';
+    try {
+      await _repo.saveThreshold(body, id: id);
+      await loadThresholds();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<String?> deleteThreshold(int id) async {
+    if (_auth.isDemo) return 'Not available in demo mode.';
+    try {
+      await _repo.deleteThreshold(id);
+      await loadThresholds();
       return null;
     } catch (e) {
       return e.toString();

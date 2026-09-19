@@ -4,6 +4,7 @@ import 'controllers/app_state.dart';
 import 'core/auth/auth_state.dart';
 import 'core/leave/leave_state.dart';
 import 'core/self_service/self_service_state.dart';
+import 'core/settings/ui_prefs_repository.dart';
 import 'theme/app_theme.dart';
 import 'theme/hr_theme.dart';
 import 'views/login_view.dart';
@@ -16,12 +17,20 @@ import 'views/employee_roles_view.dart';
 import 'views/performance_view.dart';
 import 'views/leave_view.dart';
 import 'views/recruitment_view.dart';
+import 'views/training_view.dart';
+import 'views/lifecycle_views.dart';
+import 'views/letters_notifications_view.dart';
 import 'views/payroll_phase3_view.dart';
 import 'views/payroll_setup_view.dart';
 import 'views/payroll_reports_view.dart';
+import 'views/hr_reports_view.dart';
 import 'views/employee_pay_view.dart';
 import 'views/payroll_view.dart';
 import 'views/attendance_view.dart';
+import 'views/admin_attendance_view.dart';
+import 'views/schedule_view.dart';
+import 'views/devices_view.dart';
+import 'views/attendance_register_view.dart';
 import 'views/travel_view.dart';
 import 'views/timesheet_view.dart';
 import 'views/approvals_inbox_view.dart';
@@ -95,6 +104,8 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _notifsBootstrapped = false;
+  bool _themeBootstrapped = false;
+  UiPrefsRepository? _uiPrefs;
 
   bool _isAdminShell(AuthState auth) {
     if (auth.permissions.all || auth.user?.isAdmin == true) return true;
@@ -107,9 +118,34 @@ class _MainShellState extends State<MainShell> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_notifsBootstrapped) return;
     final auth = context.read<AuthState>();
-    if (auth.isDemo || auth.status != AuthStatus.authenticated) return;
+    final app = context.read<AppState>();
+
+    _uiPrefs ??= UiPrefsRepository(getSession: () => auth.session);
+    app.uiPrefsLoader = () => _uiPrefs!.fetch();
+    app.uiPrefsSaver = (prefs) => _uiPrefs!.save(prefs);
+
+    if (auth.status != AuthStatus.authenticated) {
+      _themeBootstrapped = false;
+      _notifsBootstrapped = false;
+      return;
+    }
+
+    if (!_themeBootstrapped) {
+      _themeBootstrapped = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final prefs = auth.session?.uiPrefs;
+        if (prefs != null) {
+          app.applyUiPrefs(prefs);
+        } else if (!auth.isDemo) {
+          app.loadUiPrefsFromServer();
+        }
+      });
+    }
+
+    if (_notifsBootstrapped) return;
+    if (auth.isDemo) return;
     _notifsBootstrapped = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -139,6 +175,22 @@ class _MainShellState extends State<MainShell> {
         return const PerformanceView();
       case 'recruitment':
         return const RecruitmentView();
+      case 'training':
+        return const TrainingView();
+      case 'training_calendar':
+        return const TrainingView(initialTab: 1);
+      case 'training_trainers':
+        return const TrainingView(initialTab: 2);
+      case 'training_types':
+        return const TrainingView(initialTab: 3);
+      case 'termination':
+        return const TerminationView();
+      case 'loan_applications':
+        return const LoanApplicationView();
+      case 'letters':
+        return const LettersView();
+      case 'notifications':
+        return const NotificationsView();
       case 'leave':
         return const LeaveView();
       case 'payroll':
@@ -153,8 +205,18 @@ class _MainShellState extends State<MainShell> {
         return const PayrollSetupView();
       case 'payroll_reports':
         return const PayrollReportsView();
+      case 'hr_reports':
+        return const HrReportsView();
       case 'attendance':
         return const AttendanceView();
+      case 'admin_attendance':
+        return const AdminAttendanceView();
+      case 'schedule':
+        return const ScheduleView();
+      case 'attendance_register':
+        return const AttendanceRegisterView();
+      case 'devices':
+        return const DevicesView();
       case 'travel':
         return const TravelView();
       case 'timesheet':
@@ -211,6 +273,16 @@ class _MainShellState extends State<MainShell> {
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
+                    layoutBuilder: (currentChild, previousChildren) {
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          ...previousChildren,
+                          if (currentChild != null)
+                            Positioned.fill(child: currentChild),
+                        ],
+                      );
+                    },
                     child: KeyedSubtree(
                       key: ValueKey('${appState.moduleId}-${appState.subId}'),
                       child: body,

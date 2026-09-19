@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/auth/auth_state.dart';
 import '../core/employees/employee_state.dart';
+import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
 /// Employee Roles — module View / Add / Edit / Delete (no Copy / Templates).
@@ -21,8 +22,6 @@ class _EmployeeRolesViewState extends State<EmployeeRolesView> {
   List<Map<String, dynamic>> _catalog = [];
   bool _loadingRoles = false;
   bool _saving = false;
-
-  static const _accent = Color(0xFFA67C5D);
 
   @override
   void initState() {
@@ -184,7 +183,7 @@ class _EmployeeRolesViewState extends State<EmployeeRolesView> {
                   ),
                   const SizedBox(width: 12),
                   FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: _accent),
+                    style: HrTheme.filledButton(context),
                     onPressed: _saving || _selectedId == null ? null : _save,
                     child: Text(_saving ? 'Saving…' : 'Save Roles'),
                   ),
@@ -234,7 +233,7 @@ class _EmployeeRolesViewState extends State<EmployeeRolesView> {
             ),
             Switch(
               value: enabled,
-              activeColor: _accent,
+              activeColor: HrTheme.brand(context),
               onChanged: (v) => _setModuleEnabled(key, v),
             ),
           ],
@@ -280,7 +279,7 @@ class _EmployeeRolesViewState extends State<EmployeeRolesView> {
     return Center(
       child: Checkbox(
         value: _screen(module, screen)[flag] == true,
-        activeColor: _accent,
+        activeColor: HrTheme.brand(context),
         onChanged: (v) => _setFlag(module, screen, flag, v ?? false),
       ),
     );

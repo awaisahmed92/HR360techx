@@ -47,10 +47,10 @@ class SelfServiceState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String?> saveProfile({required String email, required String phone}) async {
+  Future<String?> saveProfile({required String email, required String phone, Map<String, dynamic>? extra}) async {
     if (_auth.isDemo) return 'Not available in demo mode.';
     try {
-      await _repo.updateProfile(email: email, phone: phone);
+      await _repo.updateProfile(email: email, phone: phone, extra: extra);
       await loadProfile();
       return null;
     } catch (e) {

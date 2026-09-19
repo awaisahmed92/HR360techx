@@ -105,23 +105,73 @@ class AppState extends ChangeNotifier {
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
 
-  void toggleTheme() {
-    _isDarkMode = !_isDarkMode;
-    notifyListeners();
-    _persist();
-  }
-
   // Brand accent (WebHR-style theme colors)
   String _brandThemeId = BrandThemes.defaultId;
   String get brandThemeId => _brandThemeId;
   BrandThemeOption get brandTheme => BrandThemes.byId(_brandThemeId);
   Color get brandColor => brandTheme.color;
 
+  /// Open Employees → Add form after navigation (Quick Action / deep link).
+  bool pendingOpenEmployeeForm = false;
+
+  void requestOpenEmployeeForm() {
+    pendingOpenEmployeeForm = true;
+    openScreen(moduleId: 'employees', subId: 'employees');
+  }
+
+  bool consumeOpenEmployeeForm() {
+    if (!pendingOpenEmployeeForm) return false;
+    pendingOpenEmployeeForm = false;
+    return true;
+  }
+
+  Future<void> Function(Map<String, dynamic> prefs)? uiPrefsSaver;
+  Future<Map<String, dynamic>?> Function()? uiPrefsLoader;
+
   void setBrandTheme(String id) {
     if (_brandThemeId == id) return;
     _brandThemeId = id;
     notifyListeners();
     _persist();
+    _syncPrefsToServer();
+  }
+
+  /// Apply prefs from login /me or GET /settings/ui-prefs (DB wins over local).
+  void applyUiPrefs(Map<String, dynamic>? prefs, {bool persistLocal = true}) {
+    if (prefs == null) return;
+    final id = (prefs['brand_theme_id'] ?? '').toString();
+    final dark = prefs['dark_mode'];
+    var changed = false;
+    if (id.isNotEmpty && id != _brandThemeId) {
+      _brandThemeId = id;
+      changed = true;
+    }
+    if (dark is bool && dark != _isDarkMode) {
+      _isDarkMode = dark;
+      changed = true;
+    }
+    if (changed) {
+      notifyListeners();
+      if (persistLocal) _persist();
+    }
+  }
+
+  Future<void> loadUiPrefsFromServer() async {
+    final loader = uiPrefsLoader;
+    if (loader == null) return;
+    try {
+      final prefs = await loader();
+      applyUiPrefs(prefs);
+    } catch (_) {}
+  }
+
+  void _syncPrefsToServer() {
+    final saver = uiPrefsSaver;
+    if (saver == null) return;
+    saver({
+      'brand_theme_id': _brandThemeId,
+      'dark_mode': _isDarkMode,
+    });
   }
 
   /// Set by MainShell so Themes / Profile can navigate correctly.
@@ -140,6 +190,13 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefDark, _isDarkMode);
     await prefs.setString(_prefBrand, _brandThemeId);
+  }
+
+  void toggleTheme() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
+    _persist();
+    _syncPrefsToServer();
   }
 
   // Clock In / Out Simulation

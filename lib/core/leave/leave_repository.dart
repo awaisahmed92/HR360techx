@@ -312,6 +312,54 @@ class LeaveRepository {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchThresholds() async {
+    try {
+      final res = await _client().dio.get('/leave-thresholds');
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException(
+          (data is Map ? data['message'] : null)?.toString() ?? 'Load failed',
+        );
+      }
+      return (data['rows'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
+  Future<void> saveThreshold(Map<String, dynamic> body, {int? id}) async {
+    try {
+      final res = id == null
+          ? await _client().dio.post('/leave-thresholds', data: body)
+          : await _client().dio.post('/leave-thresholds/$id', data: body);
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException(
+          (data is Map ? data['message'] : null)?.toString() ?? 'Save failed',
+        );
+      }
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
+  Future<void> deleteThreshold(int id) async {
+    try {
+      final res = await _client().dio.post('/leave-thresholds/$id/delete');
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException(
+          (data is Map ? data['message'] : null)?.toString() ?? 'Delete failed',
+        );
+      }
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
   Future<void> _act(String path, int id, String remarks) async {
     try {
       final res = await _client().dio.post(path, data: {

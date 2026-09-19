@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../controllers/app_state.dart';
 import '../core/auth/auth_state.dart';
+import '../core/util/person_name.dart';
 import '../navigation/module_catalog.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
@@ -235,7 +236,10 @@ class WebHrTopBar extends StatelessWidget {
     final auth = context.watch<AuthState>();
     final isDark = app.isDarkMode;
     final brand = HrTheme.brand(context);
+    final onBrand = HrTheme.onBrand(context);
     final title = app.activeSub.label;
+    final displayName = cleanDisplayName(auth.user?.name);
+    final role = auth.user?.designationName ?? '';
 
     return Container(
       height: 56,
@@ -278,7 +282,7 @@ class WebHrTopBar extends StatelessWidget {
           ),
           const Spacer(),
           SizedBox(
-            width: 240,
+            width: 220,
             height: 36,
             child: TextField(
               decoration: InputDecoration(
@@ -296,6 +300,52 @@ class WebHrTopBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            tooltip: 'Quick Action',
+            offset: const Offset(0, 42),
+            onSelected: (value) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
+                if (value == 'employee') {
+                  context.read<AppState>().requestOpenEmployeeForm();
+                }
+              });
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'employee',
+                child: Row(
+                  children: [
+                    Icon(Icons.person_add_outlined, size: 18),
+                    SizedBox(width: 10),
+                    Text('Add Employee'),
+                  ],
+                ),
+              ),
+            ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: brand,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, size: 16, color: onBrand),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Quick Action',
+                    style: TextStyle(
+                      color: onBrand,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Theme',
             onPressed: () => app.openScreen(moduleId: 'dashboard', subId: 'account_settings'),
@@ -309,13 +359,90 @@ class WebHrTopBar extends StatelessWidget {
               color: brand,
             ),
           ),
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: () => context.read<AuthState>().logout(),
-            icon: Icon(Icons.logout_rounded, color: HrTheme.textMuted(context)),
+          PopupMenuButton<String>(
+            tooltip: 'Account',
+            offset: const Offset(0, 42),
+            onSelected: (value) {
+              WidgetsBinding.instance.addPostFrameCallback((_) async {
+                if (!context.mounted) return;
+                if (value == 'profile') {
+                  context.read<AppState>().openScreen(moduleId: 'dashboard', subId: 'my_info');
+                } else if (value == 'settings') {
+                  context.read<AppState>().openScreen(moduleId: 'dashboard', subId: 'account_settings');
+                } else if (value == 'logout') {
+                  await context.read<AuthState>().logout();
+                }
+              });
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                enabled: false,
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: brand.withOpacity(0.15),
+                      child: Icon(Icons.person, color: brand, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName.isEmpty ? 'Signed in' : displayName,
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                          if (role.isNotEmpty)
+                            Text(role, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'profile',
+                child: Row(
+                  children: [
+                    Icon(Icons.person_outline, size: 18),
+                    SizedBox(width: 10),
+                    Text('My Info'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings_outlined, size: 18),
+                    SizedBox(width: 10),
+                    Text('Account Settings'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout_rounded, size: 18, color: Color(0xFFEF4444)),
+                    SizedBox(width: 10),
+                    Text('Sign out'),
+                  ],
+                ),
+              ),
+            ],
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: brand.withOpacity(0.15),
+              child: Icon(Icons.person_outline, size: 18, color: brand),
+            ),
           ),
         ],
       ),
     );
   }
 }
+

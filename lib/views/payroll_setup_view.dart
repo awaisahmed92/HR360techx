@@ -34,7 +34,7 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
     'Company Logo',
   ];
 
-  static const _accent = Color(0xFFA67C5D);
+  Color get _accent => HrTheme.brand(context);
 
   // Local edit buffers
   late Map<String, dynamic> _setup;

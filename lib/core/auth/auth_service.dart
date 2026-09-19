@@ -87,6 +87,7 @@ class AuthService {
         'company': data['company'],
         'permissions': data['permissions'],
         'is_demo': false,
+        'ui_prefs': data['ui_prefs'],
       });
       await _persist(session);
       return session;
@@ -127,6 +128,7 @@ class AuthService {
           'company': data['company'],
           'permissions': data['permissions'],
           'is_demo': false,
+          'ui_prefs': data['ui_prefs'],
         });
         await _persist(updated);
         return updated;

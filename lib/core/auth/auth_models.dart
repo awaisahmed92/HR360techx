@@ -1,3 +1,5 @@
+import '../util/person_name.dart';
+
 class AuthUser {
   final int employeeId;
   final String name;
@@ -28,7 +30,7 @@ class AuthUser {
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     return AuthUser(
       employeeId: (json['employee_id'] as num?)?.toInt() ?? 0,
-      name: (json['name'] ?? '').toString(),
+      name: cleanDisplayName((json['name'] ?? '').toString()),
       userName: (json['user_name'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
       designationId: (json['designation_id'] as num?)?.toInt() ?? 0,
@@ -228,6 +230,7 @@ class AuthSession {
   final AuthCompany company;
   final AuthPermissions permissions;
   final bool isDemo;
+  final Map<String, dynamic>? uiPrefs;
 
   const AuthSession({
     required this.token,
@@ -235,9 +238,15 @@ class AuthSession {
     required this.company,
     required this.permissions,
     this.isDemo = false,
+    this.uiPrefs,
   });
 
   factory AuthSession.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic>? prefs;
+    final raw = json['ui_prefs'];
+    if (raw is Map) {
+      prefs = Map<String, dynamic>.from(raw);
+    }
     return AuthSession(
       token: (json['token'] ?? '').toString(),
       user: AuthUser.fromJson(
@@ -252,6 +261,7 @@ class AuthSession {
             : null,
       ),
       isDemo: json['is_demo'] == true,
+      uiPrefs: prefs,
     );
   }
 
@@ -261,5 +271,6 @@ class AuthSession {
         'company': company.toJson(),
         'permissions': permissions.toJson(),
         'is_demo': isDemo,
+        if (uiPrefs != null) 'ui_prefs': uiPrefs,
       };
 }

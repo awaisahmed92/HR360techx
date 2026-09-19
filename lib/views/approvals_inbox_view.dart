@@ -103,6 +103,26 @@ class _ApprovalsInboxViewState extends State<ApprovalsInboxView> {
                       },
                       child: const Text('Approve'),
                     ),
+                    if (kind == 'leave' || kind == 'travel' || kind == 'timesheet')
+                      TextButton(
+                        onPressed: () async {
+                          String? err;
+                          if (kind == 'leave') {
+                            err = await leave.reject(id);
+                          } else if (kind == 'travel') {
+                            err = await ss.travelAct('reject', id);
+                          } else if (kind == 'timesheet') {
+                            err = await ss.timesheetAct('reject', id);
+                          }
+                          await ss.loadApprovals();
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(err ?? 'Rejected'),
+                            backgroundColor: err == null ? AppTheme.success : AppTheme.danger,
+                          ));
+                        },
+                        child: Text('Reject', style: TextStyle(color: AppTheme.danger)),
+                      ),
                   ],
                 ),
               );

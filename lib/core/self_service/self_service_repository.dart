@@ -69,8 +69,16 @@ class SelfServiceRepository {
   }
 
   Future<Map<String, dynamic>> profile() => _get('/profile');
-  Future<void> updateProfile({required String email, required String phone}) =>
-      _post('/profile', {'email': email, 'phone': phone}).then((_) {});
+  Future<void> updateProfile({
+    required String email,
+    required String phone,
+    Map<String, dynamic>? extra,
+  }) =>
+      _post('/profile', {
+        'email': email,
+        'phone': phone,
+        ...?extra,
+      }).then((_) {});
 
   Future<Map<String, dynamic>> attendanceToday() => _get('/attendance/today');
   Future<Map<String, dynamic>> attendanceMonth(String month) =>

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/auth/auth_state.dart';
 import '../core/leave/leave_repository.dart';
 import '../core/leave/leave_state.dart';
+import '../core/network/api_client.dart';
 import '../core/self_service/self_service_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_controls.dart';
@@ -29,6 +31,7 @@ class _LeaveModuleSettingsViewState extends State<LeaveModuleSettingsView> {
 
   static const _items = [
     'Leaves Options',
+    'Leave Thresholds',
     'Approvals',
     'Notifications',
     'Data Grid',
@@ -85,8 +88,12 @@ class _LeaveModuleSettingsViewState extends State<LeaveModuleSettingsView> {
                 err = await ss.saveApprovalSettings('leave');
               } else if (_nav == 'Notifications') {
                 err = await ss.saveNotificationSettings('leave');
+              } else if (_nav == 'Leave Thresholds') {
+                // Thresholds save per-row
+                err = null;
               }
               if (!mounted) return;
+              if (_nav == 'Leave Thresholds') return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(err ?? 'Settings saved'),
@@ -97,6 +104,7 @@ class _LeaveModuleSettingsViewState extends State<LeaveModuleSettingsView> {
             },
             child: switch (_nav) {
               'Leaves Options' => _LeaveOptionsPanel(onManageTypes: widget.onManageTypes),
+              'Leave Thresholds' => const _LeaveThresholdsPanel(),
               'Approvals' => const _LeaveApprovalsPanel(),
               'Notifications' => const _LeaveNotificationsPanel(),
               _ => Text(
@@ -160,6 +168,192 @@ class _LeaveOptionsPanel extends StatelessWidget {
             value: o[e.$1] == true,
             onChanged: (v) => leave.patchModuleOption(e.$1, v),
           ),
+      ],
+    );
+  }
+}
+
+class _LeaveThresholdsPanel extends StatefulWidget {
+  const _LeaveThresholdsPanel();
+
+  @override
+  State<_LeaveThresholdsPanel> createState() => _LeaveThresholdsPanelState();
+}
+
+class _LeaveThresholdsPanelState extends State<_LeaveThresholdsPanel> {
+  int? _designationId;
+  final Set<int> _typeIds = {};
+  final _from = TextEditingController(text: '1');
+  final _to = TextEditingController(text: '5');
+  int? _editId;
+  List<Map<String, dynamic>> _designations = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final leave = context.read<LeaveState>();
+      await leave.loadThresholds();
+      await leave.loadManagedTypes();
+      await _loadDesignations();
+    });
+  }
+
+  Future<void> _loadDesignations() async {
+    try {
+      final client = ApiClient(tokenProvider: () async => context.read<AuthState>().session?.token);
+      final res = await client.dio.get('/employees/meta');
+      final data = res.data;
+      if (data is Map && data['success'] == true) {
+        final opts = data['options'];
+        if (opts is Map && opts['designations'] is List) {
+          setState(() {
+            _designations = (opts['designations'] as List)
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList();
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _from.dispose();
+    _to.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final leave = context.watch<LeaveState>();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Leave Thresholds',
+            style: TextStyle(fontWeight: FontWeight.w800, color: HrUi.label(context), fontSize: 16)),
+        Text('Max days by designation & leave type (blocks apply when exceeded).',
+            style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<int>(
+          value: _designationId,
+          decoration: const InputDecoration(labelText: 'Designation', isDense: true),
+          items: [
+            const DropdownMenuItem(value: null, child: Text('—')),
+            ..._designations.map((d) {
+              final id = (d['id'] as num?)?.toInt();
+              return DropdownMenuItem(value: id, child: Text('${d['name']}'));
+            }),
+          ],
+          onChanged: (v) => setState(() => _designationId = v),
+        ),
+        const SizedBox(height: 8),
+        Text('Leave Types', style: TextStyle(fontWeight: FontWeight.w600, color: HrUi.label(context))),
+        Wrap(
+          spacing: 8,
+          children: leave.managedTypes.map((t) {
+            final sel = _typeIds.contains(t.id);
+            return FilterChip(
+              label: Text(t.name),
+              selected: sel,
+              onSelected: (v) => setState(() {
+                if (v) {
+                  _typeIds.add(t.id);
+                } else {
+                  _typeIds.remove(t.id);
+                }
+              }),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _from,
+                decoration: const InputDecoration(labelText: 'Threshold From', isDense: true),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _to,
+                decoration: const InputDecoration(labelText: 'Threshold To (max days)', isDense: true),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: () async {
+            if (_designationId == null || _typeIds.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Select designation and at least one leave type.')),
+              );
+              return;
+            }
+            final err = await leave.saveThreshold({
+              'designation_id': _designationId,
+              'leave_type_ids': _typeIds.toList(),
+              'threshold_from': int.tryParse(_from.text) ?? 0,
+              'threshold_to': int.tryParse(_to.text) ?? 0,
+              'status': 1,
+            }, id: _editId);
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err ?? 'Saved')));
+            if (err == null) {
+              setState(() {
+                _editId = null;
+                _typeIds.clear();
+              });
+            }
+          },
+          child: Text(_editId == null ? 'Add Threshold' : 'Update Threshold'),
+        ),
+        const SizedBox(height: 20),
+        if (leave.thresholds.isEmpty)
+          Text('No thresholds yet.', style: TextStyle(color: HrUi.muted(context)))
+        else
+          ...leave.thresholds.map((r) {
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text('${r['designation_name']} · ${r['leave_type_label']}'),
+              subtitle: Text('From ${r['threshold_from']} → To ${r['threshold_to']} days'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    onPressed: () {
+                      setState(() {
+                        _editId = (r['id'] as num?)?.toInt();
+                        _designationId = (r['designation_id'] as num?)?.toInt();
+                        _from.text = '${r['threshold_from']}';
+                        _to.text = '${r['threshold_to']}';
+                        _typeIds
+                          ..clear()
+                          ..addAll(((r['leave_type_ids'] as List?) ?? []).map((e) => (e as num).toInt()));
+                      });
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    onPressed: () async {
+                      final id = (r['id'] as num?)?.toInt();
+                      if (id == null) return;
+                      final err = await leave.deleteThreshold(id);
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err ?? 'Deleted')));
+                    },
+                  ),
+                ],
+              ),
+            );
+          }),
       ],
     );
   }

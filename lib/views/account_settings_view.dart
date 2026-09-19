@@ -27,7 +27,7 @@ class _AccountSettingsViewState extends State<AccountSettingsView> {
     'Personal Information',
   ];
 
-  String _navItem = 'Approvals';
+  String _navItem = 'Themes';
   String _module = 'travel';
 
   @override
@@ -48,16 +48,12 @@ class _AccountSettingsViewState extends State<AccountSettingsView> {
       navItems: _nav,
       selectedNav: _navItem,
       onNav: (item) {
-        if (item == 'Personal Information') {
-          app.setTab(app.profileTabIndex);
-          return;
-        }
         setState(() => _navItem = item);
         if (item == 'Approvals' || item == 'Notifications') {
           ss.loadWorkflowSettings(_module);
         }
       },
-      onSave: (_navItem == 'Themes' || _navItem == 'Security')
+      onSave: (_navItem == 'Themes' || _navItem == 'Security' || _navItem == 'Personal Information')
           ? null
           : () async {
               final err = _navItem == 'Approvals'
@@ -92,6 +88,7 @@ class _AccountSettingsViewState extends State<AccountSettingsView> {
             },
           ),
         'Security' => const _SecurityPanel(),
+        'Personal Information' => const _PersonalInfoPanel(),
         _ => const SizedBox.shrink(),
       },
     );
@@ -128,6 +125,241 @@ class _SecurityPanel extends StatefulWidget {
 
   @override
   State<_SecurityPanel> createState() => _SecurityPanelState();
+}
+
+class _PersonalInfoPanel extends StatefulWidget {
+  const _PersonalInfoPanel();
+
+  @override
+  State<_PersonalInfoPanel> createState() => _PersonalInfoPanelState();
+}
+
+class _PersonalInfoPanelState extends State<_PersonalInfoPanel> {
+  final _email = TextEditingController();
+  final _personalEmail = TextEditingController();
+  final _preferred = TextEditingController();
+  final _lastName = TextEditingController();
+  final _nickname = TextEditingController();
+  final _phone = TextEditingController();
+  final _mobile = TextEditingController();
+  final _dob = TextEditingController();
+  final _nationality = TextEditingController();
+  final _ssn = TextEditingController();
+  final _religion = TextEditingController();
+  final _race = TextEditingController();
+  String? _salutation;
+  String? _pronoun;
+  String? _blood;
+  String? _marital;
+  int? _gender;
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ss = context.read<SelfServiceState>();
+      await ss.loadProfile();
+      final p = ss.profile;
+      if (!mounted || p == null) return;
+      _email.text = '${p['email'] ?? ''}';
+      _personalEmail.text = '${p['personal_email'] ?? ''}';
+      _preferred.text = '${p['preferred_name'] ?? p['first_name'] ?? p['name'] ?? ''}';
+      _lastName.text = '${p['surname'] ?? ''}';
+      _nickname.text = '${p['nickname'] ?? ''}';
+      _phone.text = '${p['phone'] ?? ''}';
+      _mobile.text = '${p['mobile_number'] ?? ''}';
+      _dob.text = '${p['date_of_birth'] ?? ''}';
+      _nationality.text = '${p['nationality'] ?? ''}';
+      _ssn.text = '${p['ssn'] ?? ''}';
+      _religion.text = '${p['religion'] ?? ''}';
+      _race.text = '${p['race'] ?? ''}';
+      _salutation = p['salutation']?.toString();
+      _pronoun = p['pronoun']?.toString();
+      _blood = p['blood_group']?.toString();
+      _marital = p['marital_status']?.toString();
+      _gender = (p['gender'] as num?)?.toInt();
+      setState(() => _loaded = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_email, _personalEmail, _preferred, _lastName, _nickname, _phone, _mobile, _dob, _nationality, _ssn, _religion, _race]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ss = context.watch<SelfServiceState>();
+    if (!_loaded && ss.profile == null) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Personal Information',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: HrUi.label(context)),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'Employee ID: ${ss.profile?['employee_code'] ?? ss.profile?['user_name'] ?? '—'}',
+          style: TextStyle(color: HrUi.muted(context), fontSize: 12),
+        ),
+        const SizedBox(height: 16),
+        HrFormRow(
+          label: 'Email Address',
+          child: TextField(controller: _email, decoration: hrFieldDecoration(context, hint: 'Email Address')),
+        ),
+        HrFormRow(
+          label: 'Personal Email',
+          child: TextField(controller: _personalEmail, decoration: hrFieldDecoration(context, hint: 'Personal Email Address')),
+        ),
+        HrFormRow(
+          label: 'Salutation',
+          child: HrDropdown<String>(
+            value: _salutation,
+            hint: '—',
+            items: ['Mr', 'Mrs', 'Ms', 'Miss', 'Dr', 'Eng']
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: (v) => setState(() => _salutation = v),
+          ),
+        ),
+        HrFormRow(
+          label: 'Preferred Name *',
+          child: TextField(controller: _preferred, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'Last Name',
+          child: TextField(controller: _lastName, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'Nickname',
+          child: TextField(controller: _nickname, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'Pronoun',
+          child: HrDropdown<String>(
+            value: _pronoun,
+            hint: '—',
+            items: ['He/Him', 'She/Her', 'They/Them', 'Prefer not to say']
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: (v) => setState(() => _pronoun = v),
+          ),
+        ),
+        HrFormRow(
+          label: 'Date of Birth',
+          child: TextField(controller: _dob, decoration: hrFieldDecoration(context, hint: 'YYYY-MM-DD')),
+        ),
+        HrFormRow(
+          label: 'Gender',
+          child: HrDropdown<int>(
+            value: _gender,
+            hint: '—',
+            items: const [
+              DropdownMenuItem(value: 1, child: Text('Male')),
+              DropdownMenuItem(value: 2, child: Text('Female')),
+              DropdownMenuItem(value: 3, child: Text('Other')),
+            ],
+            onChanged: (v) => setState(() => _gender = v),
+          ),
+        ),
+        HrFormRow(
+          label: 'Nationality',
+          child: TextField(controller: _nationality, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'Blood Group',
+          child: HrDropdown<String>(
+            value: _blood,
+            hint: '—',
+            items: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: (v) => setState(() => _blood = v),
+          ),
+        ),
+        HrFormRow(
+          label: 'Religion',
+          child: TextField(controller: _religion, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'Race',
+          child: TextField(controller: _race, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'Marital Status',
+          child: HrDropdown<String>(
+            value: _marital,
+            hint: '—',
+            items: ['Single', 'Married', 'Divorced', 'Widowed']
+                .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                .toList(),
+            onChanged: (v) => setState(() => _marital = v),
+          ),
+        ),
+        HrFormRow(
+          label: 'Phone',
+          child: TextField(controller: _phone, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'Mobile Number',
+          child: TextField(controller: _mobile, decoration: hrFieldDecoration(context)),
+        ),
+        HrFormRow(
+          label: 'SSN',
+          child: TextField(controller: _ssn, decoration: hrFieldDecoration(context)),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton(
+            style: HrTheme.filledButton(context),
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final err = await ss.saveProfile(
+                email: _email.text.trim(),
+                phone: _phone.text.trim(),
+                extra: {
+                  'personal_email': _personalEmail.text.trim(),
+                  'preferred_name': _preferred.text.trim(),
+                  'nickname': _nickname.text.trim(),
+                  'salutation': _salutation,
+                  'pronoun': _pronoun,
+                  'date_of_birth': _dob.text.trim().isEmpty ? null : _dob.text.trim(),
+                  'gender': _gender,
+                  'nationality': _nationality.text.trim(),
+                  'blood_group': _blood,
+                  'religion': _religion.text.trim(),
+                  'race': _race.text.trim(),
+                  'marital_status': _marital,
+                  'mobile_number': _mobile.text.trim(),
+                  'ssn': _ssn.text.trim(),
+                },
+              );
+              if (!mounted) return;
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(err ?? 'Personal information saved'),
+                  backgroundColor: err == null ? const Color(0xFF10B981) : Colors.redAccent,
+                ),
+              );
+            },
+            child: const Text('Save Personal Information'),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _SecurityPanelState extends State<_SecurityPanel> {
