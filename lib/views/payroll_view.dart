@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../controllers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 import '../widgets/action_dialogs.dart';
 
 class PayrollView extends StatelessWidget {
@@ -53,7 +54,7 @@ class PayrollView extends StatelessWidget {
                       title: 'Monthly Gross Payroll',
                       value: currency.format(totalMonthlyGross),
                       subtitle: 'Across ${appState.totalWorkforceCount} team members',
-                      color: AppTheme.primary,
+                      color: HrTheme.brand(context),
                       icon: Icons.account_balance_rounded,
                       isDark: isDark,
                       cardBg: cardBg,
@@ -131,7 +132,7 @@ class PayrollView extends StatelessWidget {
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: HrTheme.brand(context),
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -261,7 +262,7 @@ class PayrollView extends StatelessWidget {
                       const SizedBox(width: 14),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
+                          backgroundColor: HrTheme.brand(context),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 
 // -------------------------------------------------------------
 // 1. Department Distribution Bar Chart
@@ -12,7 +13,7 @@ class DepartmentBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final depts = [
-      {'name': 'Engineering', 'count': 42, 'color': AppTheme.primary},
+      {'name': 'Engineering', 'count': 42, 'color': HrTheme.brand(context)},
       {'name': 'Product', 'count': 18, 'color': AppTheme.accent},
       {'name': 'Design', 'count': 14, 'color': AppTheme.cyan},
       {'name': 'HR & Talent', 'count': 12, 'color': AppTheme.success},
@@ -105,17 +106,29 @@ class AttendanceTrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brand = HrTheme.brand(context);
+    final brandLight = HrTheme.brandLight(context);
     return CustomPaint(
       size: const Size(double.infinity, 120),
-      painter: _TrendChartPainter(isDark: isDark),
+      painter: _TrendChartPainter(
+        isDark: isDark,
+        brand: brand,
+        brandLight: brandLight,
+      ),
     );
   }
 }
 
 class _TrendChartPainter extends CustomPainter {
   final bool isDark;
+  final Color brand;
+  final Color brandLight;
 
-  _TrendChartPainter({required this.isDark});
+  _TrendChartPainter({
+    required this.isDark,
+    required this.brand,
+    required this.brandLight,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -162,8 +175,8 @@ class _TrendChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppTheme.primary.withOpacity(0.35),
-          AppTheme.primary.withOpacity(0.0),
+          brand.withOpacity(0.35),
+          brand.withOpacity(0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, h))
       ..style = PaintingStyle.fill;
@@ -172,7 +185,7 @@ class _TrendChartPainter extends CustomPainter {
 
     // Stroke
     final strokePaint = Paint()
-      ..color = AppTheme.primaryLight
+      ..color = brandLight
       ..strokeWidth = 3.0
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -180,7 +193,7 @@ class _TrendChartPainter extends CustomPainter {
     canvas.drawPath(path, strokePaint);
 
     // Draw dots and day labels
-    final dotPaint = Paint()..color = AppTheme.primary;
+    final dotPaint = Paint()..color = brand;
     final dotInner = Paint()..color = Colors.white;
 
     final textPainter = TextPainter(

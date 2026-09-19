@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../controllers/app_state.dart';
 import '../models/candidate.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 import '../widgets/action_dialogs.dart';
 
 class RecruitmentView extends StatelessWidget {
@@ -57,7 +58,7 @@ class RecruitmentView extends StatelessWidget {
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: HrTheme.brand(context),
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -242,10 +243,9 @@ class _CandidateCard extends StatelessWidget {
                     ),
                     Text(
                       candidate.role,
-                      style: const TextStyle(
-                        fontSize: 11.5,
+                      style: TextStyle(fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryLight,
+                        color: HrTheme.brandLight(context),
                       ),
                     ),
                   ],
@@ -312,7 +312,7 @@ class _CandidateCard extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: HrTheme.brand(context),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),

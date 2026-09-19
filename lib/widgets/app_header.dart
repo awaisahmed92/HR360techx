@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../controllers/app_state.dart';
 import '../core/auth/auth_state.dart';
+import '../core/self_service/self_service_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 import 'action_dialogs.dart';
 
 class AppHeader extends StatelessWidget {
@@ -14,33 +16,34 @@ class AppHeader extends StatelessWidget {
 
   String _getTabTitle(int index, {bool employeeShell = false}) {
     if (employeeShell) {
-      switch (index) {
-        case 0:
-          return 'My Overview';
-        case 1:
-          return 'Leave & Attendance';
-        case 2:
-          return '360° Performance';
-        default:
-          return 'Overview';
-      }
+      const titles = [
+        'My Overview',
+        'Attendance',
+        'Leave',
+        'Travel',
+        'Timesheet',
+        'Approvals',
+        'My Profile',
+        'Performance',
+        'Settings',
+      ];
+      return titles[index.clamp(0, titles.length - 1)];
     }
-    switch (index) {
-      case 0:
-        return 'Executive Overview';
-      case 1:
-        return 'Workforce Directory';
-      case 2:
-        return '360° Performance & Feedback';
-      case 3:
-        return 'Leave & Attendance Tracking';
-      case 4:
-        return 'Talent Pipeline & Kanban';
-      case 5:
-        return 'Payroll & Workforce Analytics';
-      default:
-        return 'Overview';
-    }
+    const titles = [
+      'Executive Overview',
+      'Workforce Directory',
+      '360° Performance',
+      'Leave',
+      'Talent Pipeline',
+      'Payroll',
+      'Attendance',
+      'Travel',
+      'Timesheet',
+      'Approvals',
+      'My Profile',
+      'Settings',
+    ];
+    return titles[index.clamp(0, titles.length - 1)];
   }
 
   @override
@@ -48,6 +51,9 @@ class AppHeader extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final isDark = appState.isDarkMode;
     final isMobile = MediaQuery.of(context).size.width < 900;
+    final brand = appState.brandColor;
+    final onBrand =
+        brand.computeLuminance() > 0.55 ? const Color(0xFF1F2937) : Colors.white;
 
     final bgColor = isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
     final borderColor = isDark ? AppTheme.darkBorder : AppTheme.lightBorder;
@@ -109,15 +115,15 @@ class AppHeader extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.primary.withOpacity(0.12),
+                          color: brand.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           shellLabel!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color: AppTheme.primaryLight,
+                            color: brand,
                           ),
                         ),
                       ),
@@ -199,12 +205,12 @@ class AppHeader extends StatelessWidget {
               side: BorderSide(color: borderColor),
             ),
             color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
                 value: 'employee',
                 child: Row(
                   children: [
-                    Icon(Icons.person_add_rounded, size: 18, color: AppTheme.primaryLight),
+                    Icon(Icons.person_add_rounded, size: 18, color: HrTheme.brandLight(context)),
                     SizedBox(width: 10),
                     Text('Onboard New Employee'),
                   ],
@@ -244,24 +250,24 @@ class AppHeader extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                gradient: AppTheme.brandGradient(brand),
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primary.withOpacity(0.3),
+                    color: brand.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: Row(
-                children: const [
-                  Icon(Icons.add_rounded, size: 18, color: Colors.white),
-                  SizedBox(width: 6),
+                children: [
+                  Icon(Icons.add_rounded, size: 18, color: onBrand),
+                  const SizedBox(width: 6),
                   Text(
                     'Quick Action',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: onBrand,
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
                     ),
@@ -272,127 +278,195 @@ class AppHeader extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // Notification Bell
-          PopupMenuButton<void>(
-            offset: const Offset(0, 50),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: borderColor),
+          // Themes shortcut
+          InkWell(
+            onTap: () => appState.setTab(appState.themesTabIndex),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkCard : AppTheme.lightCardHover,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.palette_outlined, size: 20, color: brand),
             ),
-            color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-            itemBuilder: (context) {
-              return [
-                PopupMenuItem<void>(
-                  enabled: false,
-                  child: SizedBox(
-                    width: 320,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          const SizedBox(width: 8),
+
+          // Notification Bell (API-backed approvals cascade)
+          Builder(
+            builder: (context) {
+              final ss = context.watch<SelfServiceState>();
+              final live = ss.inboxNotifications;
+              final unread = ss.unreadNotifications;
+              final useLive = !context.watch<AuthState>().isDemo;
+              final items = useLive
+                  ? live
+                  : appState.notifications
+                      .map((n) => {
+                            'title': n['title'],
+                            'body': n['desc'],
+                            'created_at': n['time'],
+                            'is_read': n['read'] == true,
+                          })
+                      .toList();
+              final unreadShow = useLive ? unread : appState.unreadNotificationsCount;
+
+              return PopupMenuButton<void>(
+                offset: const Offset(0, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: borderColor),
+                ),
+                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                onOpened: () {
+                  if (useLive) ss.loadNotifications();
+                },
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem<void>(
+                      enabled: false,
+                      child: SizedBox(
+                        width: 340,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Notifications',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
-                                color: textPrimary,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                appState.markAllNotificationsRead();
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Mark all read', style: TextStyle(fontSize: 12)),
-                            ),
-                          ],
-                        ),
-                        const Divider(),
-                        ...appState.notifications.map((n) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: (n['color'] as Color).withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(10),
+                                Text(
+                                  'Notifications',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    color: textPrimary,
                                   ),
-                                  child: Icon(n['icon'] as IconData, color: n['color'] as Color, size: 18),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
+                                TextButton(
+                                  onPressed: () {
+                                    if (useLive) {
+                                      ss.markNotificationsRead();
+                                    } else {
+                                      appState.markAllNotificationsRead();
+                                    }
+                                    Navigator.pop(context);
+                                  },
+                                  child: const Text('Mark all read',
+                                      style: TextStyle(fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                            const Divider(),
+                            if (items.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Text('No notifications',
+                                    style: TextStyle(color: textSecondary)),
+                              )
+                            else
+                              ...items.take(8).map((n) {
+                                final title = (n['title'] ?? '').toString();
+                                final body =
+                                    (n['body'] ?? n['desc'] ?? '').toString();
+                                final time =
+                                    (n['created_at'] ?? n['time'] ?? '').toString();
+                                final unreadItem = n['is_read'] != true && n['read'] != true;
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        n['title'] as String,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 13,
-                                          color: textPrimary,
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: HrTheme.brandSoft(context),
+                                          borderRadius: BorderRadius.circular(10),
                                         ),
+                                        child: Icon(Icons.notifications_active_outlined,
+                                            color: HrTheme.brand(context), size: 18),
                                       ),
-                                      Text(
-                                        n['desc'] as String,
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: textSecondary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        n['time'] as String,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: textSecondary.withOpacity(0.7),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              title,
+                                              style: TextStyle(
+                                                fontWeight: unreadItem
+                                                    ? FontWeight.w800
+                                                    : FontWeight.w600,
+                                                fontSize: 13,
+                                                color: textPrimary,
+                                              ),
+                                            ),
+                                            Text(
+                                              body,
+                                              style: TextStyle(
+                                                fontSize: 11.5,
+                                                color: textSecondary,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              time,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: textSecondary.withOpacity(0.7),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                ),
-              ];
-            },
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCard : AppTheme.lightCardHover,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: borderColor),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Icon(Icons.notifications_none_rounded, size: 20, color: textPrimary),
-                  if (appState.unreadNotificationsCount > 0)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        width: 7,
-                        height: 7,
-                        decoration: const BoxDecoration(
-                          color: AppTheme.danger,
-                          shape: BoxShape.circle,
+                                );
+                              }),
+                          ],
                         ),
                       ),
                     ),
-                ],
-              ),
-            ),
+                  ];
+                },
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.darkCard : AppTheme.lightCardHover,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: borderColor),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(Icons.notifications_none_rounded,
+                          size: 20, color: textPrimary),
+                      if (unreadShow > 0)
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: AppTheme.danger,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              unreadShow > 9 ? '9+' : '$unreadShow',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 8),
 
@@ -411,7 +485,7 @@ class AppHeader extends StatelessWidget {
               child: Icon(
                 isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
                 size: 19,
-                color: isDark ? const Color(0xFFFBBF24) : AppTheme.primary,
+                color: isDark ? const Color(0xFFFBBF24) : brand,
               ),
             ),
           ),

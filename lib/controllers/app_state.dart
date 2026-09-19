@@ -1,32 +1,149 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/employee.dart';
 import '../models/leave_request.dart';
 import '../models/review_item.dart';
 import '../models/candidate.dart';
+import '../navigation/module_catalog.dart';
+import '../theme/brand_themes.dart';
 
 class AppState extends ChangeNotifier {
-  // Navigation
-  int _currentTab = 0;
-  int get currentTab => _currentTab;
+  AppState() {
+    _loadPrefs();
+  }
 
-  void setTab(int index) {
-    if (_currentTab != index) {
-      _currentTab = index;
-      notifyListeners();
+  static const _prefDark = 'hr360_dark_mode';
+  static const _prefBrand = 'hr360_brand_theme';
+
+  // ── WebHR module navigation ──
+  String _moduleId = 'dashboard';
+  String _subId = 'home';
+  String get moduleId => _moduleId;
+  String get subId => _subId;
+  HrModuleNav get activeModule => ModuleCatalog.byId(_moduleId);
+  HrSubNav get activeSub => ModuleCatalog.subById(activeModule, _subId);
+  String get activeScreen => activeSub.screen;
+
+  void selectModule(String id) {
+    if (_moduleId == id) return;
+    _moduleId = id;
+    _subId = ModuleCatalog.byId(id).children.first.id;
+    notifyListeners();
+  }
+
+  void selectSub(String id) {
+    if (_subId == id) return;
+    _subId = id;
+    notifyListeners();
+  }
+
+  void openScreen({required String moduleId, required String subId}) {
+    _moduleId = moduleId;
+    _subId = subId;
+    notifyListeners();
+  }
+
+  // Legacy tab index (kept for older widgets that still call setTab)
+  int get currentTab {
+    // Best-effort map for AppHeader titles
+    switch (activeScreen) {
+      case 'my_dashboard':
+      case 'hr_dashboard':
+        return 0;
+      case 'employees':
+      case 'employees_dashboard':
+        return 1;
+      case 'performance':
+        return 2;
+      case 'leave':
+        return 3;
+      case 'recruitment':
+        return 4;
+      case 'payroll':
+      case 'payroll_setup':
+        return 5;
+      case 'attendance':
+        return 6;
+      case 'travel':
+        return 7;
+      case 'timesheet':
+      case 'timesheet_dashboard':
+        return 8;
+      case 'approvals':
+        return 9;
+      case 'profile':
+        return 10;
+      case 'settings':
+        return 11;
+      default:
+        return 0;
     }
   }
 
+  void setTab(int index) {
+    // Map old indices → new module/sub for compatibility
+    const map = <int, (String, String)>{
+      0: ('dashboard', 'home'),
+      1: ('employees', 'employees'),
+      2: ('employees', 'performance'),
+      3: ('timesheet', 'leaves'),
+      4: ('employees', 'recruitment'),
+      5: ('payroll', 'pay_dashboard'),
+      6: ('timesheet', 'attendance'),
+      7: ('employees', 'travels'),
+      8: ('timesheet', 'worksheet'),
+      9: ('dashboard', 'approvals'),
+      10: ('dashboard', 'my_info'),
+      11: ('dashboard', 'account_settings'),
+    };
+    final t = map[index];
+    if (t == null) return;
+    openScreen(moduleId: t.$1, subId: t.$2);
+  }
+
   // Dark Mode Toggle
-  bool _isDarkMode = true;
+  bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
 
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
     notifyListeners();
+    _persist();
+  }
+
+  // Brand accent (WebHR-style theme colors)
+  String _brandThemeId = BrandThemes.defaultId;
+  String get brandThemeId => _brandThemeId;
+  BrandThemeOption get brandTheme => BrandThemes.byId(_brandThemeId);
+  Color get brandColor => brandTheme.color;
+
+  void setBrandTheme(String id) {
+    if (_brandThemeId == id) return;
+    _brandThemeId = id;
+    notifyListeners();
+    _persist();
+  }
+
+  /// Set by MainShell so Themes / Profile can navigate correctly.
+  bool adminShell = true;
+  int get profileTabIndex => 10;
+  int get themesTabIndex => 11;
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isDarkMode = prefs.getBool(_prefDark) ?? false;
+    _brandThemeId = prefs.getString(_prefBrand) ?? BrandThemes.defaultId;
+    notifyListeners();
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefDark, _isDarkMode);
+    await prefs.setString(_prefBrand, _brandThemeId);
   }
 
   // Clock In / Out Simulation
-  bool _isClockedIn = true;
+  bool _isClockedIn = false;
   DateTime _clockInTime = DateTime.now().subtract(const Duration(hours: 3, minutes: 42));
   bool get isClockedIn => _isClockedIn;
   DateTime get clockInTime => _clockInTime;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 import '../widgets/radar_chart_widget.dart';
 import '../widgets/action_dialogs.dart';
 
@@ -45,7 +46,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                     : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+              border: Border.all(color: HrTheme.brand(context).withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -83,7 +84,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                 ),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: HrTheme.brand(context),
                     padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
@@ -164,7 +165,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                           height: 280,
                           child: RadarChartWidget(
                             isDark: isDark,
-                            polygonColor: AppTheme.primaryLight,
+                            polygonColor: HrTheme.brandLight(context),
                             data: selectedEmp.competencies,
                           ),
                         ),
@@ -247,7 +248,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                                         widthFactor: entry.value,
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            gradient: AppTheme.primaryGradient,
+                                            gradient: HrTheme.gradient(context),
                                             borderRadius: BorderRadius.circular(3),
                                           ),
                                         ),
@@ -267,7 +268,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                     height: 260,
                     child: RadarChartWidget(
                       isDark: isDark,
-                      polygonColor: AppTheme.primaryLight,
+                      polygonColor: HrTheme.brandLight(context),
                       data: selectedEmp.competencies,
                     ),
                   ),
@@ -298,7 +299,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                 ),
                 const SizedBox(height: 16),
                 _buildOKRItem('Single Page Application Performance', 'Target: Sub-second load & 60fps render time', 0.94, AppTheme.success, isDark),
-                _buildOKRItem('Talent Retention & Satisfaction Index', 'Target: >92% eNPS across global engineering hub', 0.88, AppTheme.primary, isDark),
+                _buildOKRItem('Talent Retention & Satisfaction Index', 'Target: >92% eNPS across global engineering hub', 0.88, HrTheme.brand(context), isDark),
                 _buildOKRItem('360 Appraisal Cycle Completion', 'Target: 100% peer & manager reviews finalized', 0.76, AppTheme.warning, isDark),
               ],
             ),

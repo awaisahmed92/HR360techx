@@ -99,7 +99,7 @@ class AuthService {
           e.type == DioExceptionType.connectionTimeout) {
         throw AuthException(
           'Cannot reach API at ${AppConfig.apiBaseUrl}. '
-          'Start XAMPP or use Demo login (org: demo / admin / admin123).',
+          'Start Apache + MySQL in XAMPP, then try again.',
         );
       }
       throw AuthException('Network error: ${e.message}');
@@ -135,6 +135,38 @@ class AuthService {
       // Keep cached session on soft failure
     }
     return _session;
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (_session == null || _session!.isDemo) {
+      throw AuthException('Password change is not available in demo mode.');
+    }
+    try {
+      final client = ApiClient(tokenProvider: () async => _session?.token);
+      final response = await client.dio.post(
+        '/auth/change-password',
+        data: {
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        },
+      );
+      final data = response.data;
+      if (data is! Map || data['success'] != true) {
+        throw AuthException(
+          (data is Map ? data['message'] : null)?.toString() ??
+              'Could not change password.',
+        );
+      }
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      if (body is Map && body['message'] != null) {
+        throw AuthException(body['message'].toString());
+      }
+      throw AuthException('Network error: ${e.message}');
+    }
   }
 
   Future<void> _persist(AuthSession session) async {

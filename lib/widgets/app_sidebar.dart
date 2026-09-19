@@ -18,6 +18,9 @@ class AppSidebar extends StatelessWidget {
     final auth = context.watch<AuthState>();
     final isDark = appState.isDarkMode;
     final isCollapsed = appState.isSidebarCollapsed;
+    final brand = appState.brandColor;
+    final onBrand =
+        brand.computeLuminance() > 0.55 ? const Color(0xFF1F2937) : Colors.white;
 
     final bgColor = isDark ? AppTheme.darkSurface : AppTheme.lightSurface;
     final borderColor = isDark ? AppTheme.darkBorder : AppTheme.lightBorder;
@@ -61,21 +64,21 @@ class AppSidebar extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
+                        gradient: AppTheme.brandGradient(brand),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primary.withOpacity(0.35),
+                            color: brand.withOpacity(0.35),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           '360',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: onBrand,
                             fontWeight: FontWeight.w900,
                             fontSize: 14,
                             letterSpacing: -0.5,
@@ -100,12 +103,12 @@ class AppSidebar extends StatelessWidget {
                                   letterSpacing: -0.3,
                                 ),
                               ),
-                              const Text(
+                              Text(
                                 '360',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
-                                  color: AppTheme.primaryLight,
+                                  color: brand,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -146,7 +149,7 @@ class AppSidebar extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(left: 12, bottom: 8, top: 4),
                     child: Text(
-                      'MAIN PLATFORM',
+                      employeeShell ? 'SELF SERVICE' : 'MAIN PLATFORM',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
@@ -155,101 +158,73 @@ class AppSidebar extends StatelessWidget {
                       ),
                     ),
                   ),
-                PermissionGate(
-                  module: employeeShell ? 'Dashboard' : TabAccess.moduleFor(0),
-                  child: _SidebarItem(
-                    index: 0,
-                    icon: Icons.grid_view_rounded,
-                    label: 'Dashboard',
-                    isCollapsed: isCollapsed,
-                  ),
-                ),
                 if (employeeShell) ...[
+                  _SidebarItem(index: 0, icon: Icons.grid_view_rounded, label: 'Dashboard', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 1, icon: Icons.fingerprint_rounded, label: 'Attendance', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 2, icon: Icons.event_available_rounded, label: 'Leave', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 3, icon: Icons.flight_takeoff_rounded, label: 'Travel', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 4, icon: Icons.schedule_rounded, label: 'Timesheet', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 5, icon: Icons.inbox_rounded, label: 'Approvals', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 6, icon: Icons.person_outline_rounded, label: 'My Profile', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 7, icon: Icons.radar_rounded, label: 'Performance', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 8, icon: Icons.settings_outlined, label: 'Settings', isCollapsed: isCollapsed),
+                ] else ...[
                   PermissionGate(
-                    module: 'Leave',
+                    module: TabAccess.moduleFor(0),
+                    child: _SidebarItem(index: 0, icon: Icons.grid_view_rounded, label: 'Dashboard', isCollapsed: isCollapsed),
+                  ),
+                  PermissionGate(
+                    module: TabAccess.moduleFor(1),
                     child: _SidebarItem(
                       index: 1,
-                      icon: Icons.event_available_rounded,
-                      label: 'Leave & Attendance',
+                      icon: Icons.groups_rounded,
+                      label: 'Workforce Hub',
                       isCollapsed: isCollapsed,
+                      badge: '${appState.totalWorkforceCount}',
                     ),
                   ),
                   PermissionGate(
-                    module: 'Performance',
+                    module: TabAccess.moduleFor(2),
+                    child: _SidebarItem(index: 2, icon: Icons.radar_rounded, label: '360° Performance', isCollapsed: isCollapsed),
+                  ),
+                  PermissionGate(
+                    module: TabAccess.moduleFor(3),
+                    child: _SidebarItem(index: 3, icon: Icons.event_available_rounded, label: 'Leave', isCollapsed: isCollapsed),
+                  ),
+                  PermissionGate(
+                    module: TabAccess.moduleFor(4),
                     child: _SidebarItem(
-                      index: 2,
-                      icon: Icons.radar_rounded,
-                      label: '360° Performance',
+                      index: 4,
+                      icon: Icons.view_kanban_rounded,
+                      label: 'Talent Pipeline',
                       isCollapsed: isCollapsed,
+                      badge: '${appState.openRequisitionsCount}',
+                      badgeColor: brand,
                     ),
                   ),
-                ] else ...[
-                PermissionGate(
-                  module: TabAccess.moduleFor(1),
-                  child: _SidebarItem(
-                    index: 1,
-                    icon: Icons.groups_rounded,
-                    label: 'Workforce Hub',
-                    isCollapsed: isCollapsed,
-                    badge: '${appState.totalWorkforceCount}',
+                  PermissionGate(
+                    module: TabAccess.moduleFor(5),
+                    child: _SidebarItem(index: 5, icon: Icons.account_balance_wallet_rounded, label: 'Payroll', isCollapsed: isCollapsed),
                   ),
-                ),
-                PermissionGate(
-                  module: TabAccess.moduleFor(2),
-                  child: _SidebarItem(
-                    index: 2,
-                    icon: Icons.radar_rounded,
-                    label: '360° Performance',
-                    isCollapsed: isCollapsed,
-                  ),
-                ),
-                PermissionGate(
-                  module: TabAccess.moduleFor(3),
-                  child: _SidebarItem(
-                    index: 3,
-                    icon: Icons.event_available_rounded,
-                    label: 'Leave & Attendance',
-                    isCollapsed: isCollapsed,
-                    badge:
-                        '${appState.leaveRequests.where((r) => r.status == "Pending").length}',
-                    badgeColor: AppTheme.warning,
-                  ),
-                ),
-                if (!isCollapsed) ...[
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.only(left: 12, bottom: 8),
-                    child: Text(
-                      'RECRUIT & FINANCE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: textSecondary.withOpacity(0.7),
-                        letterSpacing: 1.0,
+                  if (!isCollapsed)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12, bottom: 8, top: 16),
+                      child: Text(
+                        'SELF SERVICE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: textSecondary.withOpacity(0.7),
+                          letterSpacing: 1.0,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-                PermissionGate(
-                  module: TabAccess.moduleFor(4),
-                  child: _SidebarItem(
-                    index: 4,
-                    icon: Icons.view_kanban_rounded,
-                    label: 'Talent Pipeline',
-                    isCollapsed: isCollapsed,
-                    badge: '${appState.openRequisitionsCount}',
-                    badgeColor: AppTheme.accent,
-                  ),
-                ),
-                PermissionGate(
-                  module: TabAccess.moduleFor(5),
-                  child: _SidebarItem(
-                    index: 5,
-                    icon: Icons.account_balance_wallet_rounded,
-                    label: 'Payroll & Analytics',
-                    isCollapsed: isCollapsed,
-                  ),
-                ),
+                  _SidebarItem(index: 6, icon: Icons.fingerprint_rounded, label: 'Attendance', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 7, icon: Icons.flight_takeoff_rounded, label: 'Travel', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 8, icon: Icons.schedule_rounded, label: 'Timesheet', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 9, icon: Icons.inbox_rounded, label: 'Approvals', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 10, icon: Icons.person_outline_rounded, label: 'My Profile', isCollapsed: isCollapsed),
+                  _SidebarItem(index: 11, icon: Icons.settings_outlined, label: 'Settings', isCollapsed: isCollapsed),
                 ],
               ],
             ),
@@ -281,11 +256,11 @@ class AppSidebar extends StatelessWidget {
                 ? Center(
                     child: CircleAvatar(
                       radius: 18,
-                      backgroundColor: AppTheme.primary,
+                      backgroundColor: brand,
                       child: Text(
                         userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: onBrand,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -295,11 +270,11 @@ class AppSidebar extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundColor: AppTheme.primary,
+                        backgroundColor: brand,
                         child: Text(
                           userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: onBrand,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -389,8 +364,7 @@ class _SidebarItem extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     final isSelected = appState.currentTab == index;
     final isDark = appState.isDarkMode;
-
-    const activeColor = AppTheme.primary;
+    final activeColor = appState.brandColor;
     final inactiveText =
         isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary;
 
@@ -411,12 +385,12 @@ class _SidebarItem extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? (isDark
-                      ? AppTheme.primary.withOpacity(0.18)
-                      : AppTheme.primary.withOpacity(0.1))
+                      ? activeColor.withOpacity(0.18)
+                      : activeColor.withOpacity(0.1))
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
               border: isSelected
-                  ? Border.all(color: AppTheme.primary.withOpacity(0.3), width: 1)
+                  ? Border.all(color: activeColor.withOpacity(0.3), width: 1)
                   : null,
             ),
             child: Row(
@@ -437,7 +411,7 @@ class _SidebarItem extends StatelessWidget {
                         fontSize: 13.5,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                         color: isSelected
-                            ? (isDark ? Colors.white : AppTheme.primary)
+                            ? (isDark ? Colors.white : activeColor)
                             : inactiveText,
                       ),
                     ),
@@ -446,10 +420,10 @@ class _SidebarItem extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
-                        color: (badgeColor ?? AppTheme.primary).withOpacity(0.15),
+                        color: (badgeColor ?? activeColor).withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: (badgeColor ?? AppTheme.primary).withOpacity(0.4),
+                          color: (badgeColor ?? activeColor).withOpacity(0.4),
                           width: 1,
                         ),
                       ),
@@ -458,7 +432,7 @@ class _SidebarItem extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
-                          color: badgeColor ?? AppTheme.primaryLight,
+                          color: badgeColor ?? activeColor,
                         ),
                       ),
                     ),

@@ -110,4 +110,77 @@ class LeaveState extends ChangeNotifier {
       return e.toString();
     }
   }
+
+  List<LeaveTypeDto> managedTypes = [];
+  Map<String, dynamic> moduleOptions = {};
+
+  Future<void> loadManagedTypes() async {
+    if (_auth.isDemo) {
+      managedTypes = List.from(_types);
+      notifyListeners();
+      return;
+    }
+    try {
+      managedTypes = await _repo.manageTypes();
+      _error = null;
+    } catch (e) {
+      _error = e.toString();
+    }
+    notifyListeners();
+  }
+
+  Future<String?> saveLeaveType(Map<String, dynamic> body, {int? id}) async {
+    if (_auth.isDemo) return 'Not available in demo mode.';
+    try {
+      if (id == null) {
+        await _repo.createType(body);
+      } else {
+        await _repo.updateType(id, body);
+      }
+      await loadManagedTypes();
+      await load();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<String?> deleteLeaveType(int id) async {
+    if (_auth.isDemo) return 'Not available in demo mode.';
+    try {
+      await _repo.deleteType(id);
+      await loadManagedTypes();
+      await load();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future<void> loadModuleOptions() async {
+    if (_auth.isDemo) {
+      moduleOptions = {};
+      notifyListeners();
+      return;
+    }
+    try {
+      moduleOptions = await _repo.moduleOptions();
+    } catch (_) {}
+    notifyListeners();
+  }
+
+  Future<String?> saveModuleOptions() async {
+    if (_auth.isDemo) return 'Not available in demo mode.';
+    try {
+      await _repo.saveModuleOptions(moduleOptions);
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  void patchModuleOption(String key, bool value) {
+    moduleOptions = {...moduleOptions, key: value};
+    notifyListeners();
+  }
 }

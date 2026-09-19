@@ -7,6 +7,7 @@ import '../models/leave_request.dart';
 import '../models/review_item.dart';
 import '../models/candidate.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 
 class ActionDialogs {
   // -------------------------------------------------------------
@@ -54,7 +55,7 @@ class ActionDialogs {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  gradient: AppTheme.primaryGradient,
+                                  gradient: HrTheme.gradient(context),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(
@@ -93,16 +94,16 @@ class ActionDialogs {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      _buildTextField('Full Name', nameController, isDark, hint: 'e.g. Liam Vance'),
+                      _buildTextField(context, 'Full Name', nameController, isDark, hint: 'e.g. Liam Vance'),
                       const SizedBox(height: 14),
                       Row(
                         children: [
                           Expanded(
-                            child: _buildTextField('Work Email', emailController, isDark, hint: 'name@hr360techx.io'),
+                            child: _buildTextField(context, 'Work Email', emailController, isDark, hint: 'name@hr360techx.io'),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
-                            child: _buildTextField('Job Title', roleController, isDark, hint: 'e.g. Senior Backend Dev'),
+                            child: _buildTextField(context, 'Job Title', roleController, isDark, hint: 'e.g. Senior Backend Dev'),
                           ),
                         ],
                       ),
@@ -190,11 +191,11 @@ class ActionDialogs {
                       Row(
                         children: [
                           Expanded(
-                            child: _buildTextField('Annual Base Salary (\$)', salaryController, isDark, hint: '135000'),
+                            child: _buildTextField(context, 'Annual Base Salary (\$)', salaryController, isDark, hint: '135000'),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
-                            child: _buildTextField('Location', locationController, isDark, hint: 'San Francisco, CA'),
+                            child: _buildTextField(context, 'Location', locationController, isDark, hint: 'San Francisco, CA'),
                           ),
                         ],
                       ),
@@ -209,7 +210,7 @@ class ActionDialogs {
                           const SizedBox(width: 12),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primary,
+                              backgroundColor: HrTheme.brand(context),
                               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
@@ -400,7 +401,7 @@ class ActionDialogs {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    _buildTextField('Reason / Notes', reasonController, isDark, maxLines: 3, hint: 'Brief context for HR and manager approval'),
+                    _buildTextField(context, 'Reason / Notes', reasonController, isDark, maxLines: 3, hint: 'Brief context for HR and manager approval'),
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -616,7 +617,7 @@ class ActionDialogs {
                         ],
                       ),
                       const SizedBox(height: 14),
-                      _buildTextField('Detailed Feedback & Synthesis', feedbackController, isDark, maxLines: 4, hint: 'Highlight accomplishments, collaboration strengths, and growth recommendations.'),
+                      _buildTextField(context, 'Detailed Feedback & Synthesis', feedbackController, isDark, maxLines: 4, hint: 'Highlight accomplishments, collaboration strengths, and growth recommendations.'),
                       const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -628,7 +629,7 @@ class ActionDialogs {
                           const SizedBox(width: 12),
                           ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primary,
+                              backgroundColor: HrTheme.brand(context),
                               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
@@ -744,21 +745,21 @@ class ActionDialogs {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _buildTextField('Candidate Name', nameController, isDark, hint: 'e.g. Jordan Hayes'),
+                    _buildTextField(context, 'Candidate Name', nameController, isDark, hint: 'e.g. Jordan Hayes'),
                     const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
-                          child: _buildTextField('Role Position', roleController, isDark, hint: 'e.g. Senior Security Architect'),
+                          child: _buildTextField(context, 'Role Position', roleController, isDark, hint: 'e.g. Senior Security Architect'),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
-                          child: _buildTextField('Experience', expController, isDark, hint: '5+ Years'),
+                          child: _buildTextField(context, 'Experience', expController, isDark, hint: '5+ Years'),
                         ),
                       ],
                     ),
                     const SizedBox(height: 14),
-                    _buildTextField('Key Skills (comma separated)', skillsController, isDark, hint: 'Flutter, Go, AWS, Docker'),
+                    _buildTextField(context, 'Key Skills (comma separated)', skillsController, isDark, hint: 'Flutter, Go, AWS, Docker'),
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -770,7 +771,7 @@ class ActionDialogs {
                         const SizedBox(width: 12),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primary,
+                            backgroundColor: HrTheme.brand(context),
                             padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
@@ -856,7 +857,7 @@ class ActionDialogs {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
+                            gradient: HrTheme.gradient(context),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 22),
@@ -955,27 +956,26 @@ class ActionDialogs {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.12),
+                    color: HrTheme.brand(context).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppTheme.primary.withOpacity(0.3)),
+                    border: Border.all(color: HrTheme.brand(context).withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Net Disbursed Take-Home',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.primaryLight,
+                          color: HrTheme.brandLight(context),
                         ),
                       ),
                       Text(
                         currency.format(netPay),
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(fontSize: 18,
                           fontWeight: FontWeight.w900,
-                          color: AppTheme.primaryLight,
+                          color: HrTheme.brandLight(context),
                         ),
                       ),
                     ],
@@ -998,7 +998,7 @@ class ActionDialogs {
                     const SizedBox(width: 12),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
+                        backgroundColor: HrTheme.brand(context),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       icon: const Icon(Icons.download_rounded, size: 18, color: Colors.white),
@@ -1024,7 +1024,7 @@ class ActionDialogs {
   }
 
   // Helpers
-  static Widget _buildTextField(String label, TextEditingController controller, bool isDark, {int maxLines = 1, String? hint}) {
+  static Widget _buildTextField(BuildContext context, String label, TextEditingController controller, bool isDark, {int maxLines = 1, String? hint}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1063,7 +1063,7 @@ class ActionDialogs {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+              borderSide: BorderSide(color: HrTheme.brand(context), width: 1.5),
             ),
           ),
         ),

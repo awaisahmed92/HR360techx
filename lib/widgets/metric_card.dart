@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 
 class MetricCard extends StatefulWidget {
   final String title;
@@ -51,13 +52,13 @@ class _MetricCardState extends State<MetricCard> {
           color: cardBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _isHovered ? AppTheme.primary.withOpacity(0.5) : borderColor,
+            color: _isHovered ? HrTheme.brand(context).withOpacity(0.5) : borderColor,
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
               color: _isHovered
-                  ? AppTheme.primary.withOpacity(0.15)
+                  ? HrTheme.brand(context).withOpacity(0.15)
                   : (isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04)),
               blurRadius: _isHovered ? 20 : 10,
               offset: const Offset(0, 4),

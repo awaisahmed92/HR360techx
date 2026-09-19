@@ -1,28 +1,29 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 
 class RadarChartWidget extends StatelessWidget {
   final Map<String, double> data; // Key: Metric name, Value: 0.0 to 1.0
-  final Color polygonColor;
+  final Color? polygonColor;
   final bool isDark;
 
   const RadarChartWidget({
     super.key,
     required this.data,
-    this.polygonColor = AppTheme.primary,
+    this.polygonColor,
     this.isDark = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = polygonColor ?? HrTheme.brand(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         return CustomPaint(
           size: Size(constraints.maxWidth, constraints.maxHeight),
           painter: _RadarChartPainter(
             data: data,
-            polygonColor: polygonColor,
+            polygonColor: color,
             isDark: isDark,
           ),
         );
@@ -44,143 +45,98 @@ class _RadarChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (data.isEmpty) return;
-
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) / 2 - 36;
+    final radius = math.min(size.width, size.height) / 2 * 0.75;
     final keys = data.keys.toList();
-    final count = keys.length;
-    final angleStep = (math.pi * 2) / count;
+    final n = keys.length;
+    if (n < 3) return;
 
-    // Grid web paint
-    final webPaint = Paint()
-      ..color = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)
+    final angleStep = (2 * math.pi) / n;
+
+    // Grid rings
+    final gridPaint = Paint()
+      ..color = (isDark ? Colors.white : Colors.black).withOpacity(0.08)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1;
 
-    final axisPaint = Paint()
-      ..color = isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    // Draw concentric polygons (levels: 0.25, 0.5, 0.75, 1.0)
-    for (int level = 1; level <= 4; level++) {
-      final levelRadius = radius * (level / 4);
+    for (var ring = 1; ring <= 4; ring++) {
+      final r = radius * (ring / 4);
       final path = Path();
-      for (int i = 0; i < count; i++) {
-        final angle = -math.pi / 2 + (i * angleStep);
-        final x = center.dx + levelRadius * math.cos(angle);
-        final y = center.dy + levelRadius * math.sin(angle);
+      for (var i = 0; i < n; i++) {
+        final a = -math.pi / 2 + i * angleStep;
+        final p = Offset(center.dx + r * math.cos(a), center.dy + r * math.sin(a));
         if (i == 0) {
-          path.moveTo(x, y);
+          path.moveTo(p.dx, p.dy);
         } else {
-          path.lineTo(x, y);
+          path.lineTo(p.dx, p.dy);
         }
       }
       path.close();
-      canvas.drawPath(path, webPaint);
+      canvas.drawPath(path, gridPaint);
     }
 
-    // Draw axis lines and labels
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-    );
-
-    for (int i = 0; i < count; i++) {
-      final angle = -math.pi / 2 + (i * angleStep);
-      final x = center.dx + radius * math.cos(angle);
-      final y = center.dy + radius * math.sin(angle);
-      canvas.drawLine(center, Offset(x, y), axisPaint);
-
-      // Label
-      final labelRadius = radius + 22;
-      final lx = center.dx + labelRadius * math.cos(angle);
-      final ly = center.dy + labelRadius * math.sin(angle);
-
-      final val = ((data[keys[i]] ?? 0) * 100).toInt();
-      final textSpan = TextSpan(
-        children: [
-          TextSpan(
-            text: '${keys[i]}\n',
-            style: TextStyle(
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          TextSpan(
-            text: '$val%',
-            style: TextStyle(
-              color: polygonColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
+    // Axes
+    for (var i = 0; i < n; i++) {
+      final a = -math.pi / 2 + i * angleStep;
+      final end = Offset(
+        center.dx + radius * math.cos(a),
+        center.dy + radius * math.sin(a),
       );
-
-      textPainter.text = textSpan;
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(lx - (textPainter.width / 2), ly - (textPainter.height / 2)),
-      );
+      canvas.drawLine(center, end, gridPaint);
     }
 
-    // Draw Data Polygon Fill & Stroke
-    final dataPath = Path();
-    final fillPaint = Paint()
-      ..color = polygonColor.withOpacity(0.28)
-      ..style = PaintingStyle.fill;
-
-    final strokePaint = Paint()
-      ..color = polygonColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round;
-
-    final pointPaint = Paint()
-      ..color = polygonColor
-      ..style = PaintingStyle.fill;
-
-    final pointInnerPaint = Paint()
-      ..color = isDark ? AppTheme.darkSurface : Colors.white
-      ..style = PaintingStyle.fill;
-
-    final points = <Offset>[];
-
-    for (int i = 0; i < count; i++) {
-      final value = (data[keys[i]] ?? 0.0).clamp(0.0, 1.0);
-      final pointRadius = radius * value;
-      final angle = -math.pi / 2 + (i * angleStep);
-      final x = center.dx + pointRadius * math.cos(angle);
-      final y = center.dy + pointRadius * math.sin(angle);
-      final point = Offset(x, y);
-      points.add(point);
-
+    // Data polygon
+    final poly = Path();
+    for (var i = 0; i < n; i++) {
+      final value = (data[keys[i]] ?? 0).clamp(0.0, 1.0);
+      final a = -math.pi / 2 + i * angleStep;
+      final r = radius * value;
+      final p = Offset(center.dx + r * math.cos(a), center.dy + r * math.sin(a));
       if (i == 0) {
-        dataPath.moveTo(x, y);
+        poly.moveTo(p.dx, p.dy);
       } else {
-        dataPath.lineTo(x, y);
+        poly.lineTo(p.dx, p.dy);
       }
     }
-    dataPath.close();
+    poly.close();
 
-    canvas.drawPath(dataPath, fillPaint);
-    canvas.drawPath(dataPath, strokePaint);
+    canvas.drawPath(
+      poly,
+      Paint()
+        ..color = polygonColor.withOpacity(0.25)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawPath(
+      poly,
+      Paint()
+        ..color = polygonColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
 
-    // Draw vertex dots
-    for (final pt in points) {
-      canvas.drawCircle(pt, 5, pointPaint);
-      canvas.drawCircle(pt, 2.5, pointInnerPaint);
+    // Labels
+    final labelColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    for (var i = 0; i < n; i++) {
+      final a = -math.pi / 2 + i * angleStep;
+      final labelR = radius * 1.18;
+      final p = Offset(
+        center.dx + labelR * math.cos(a),
+        center.dy + labelR * math.sin(a),
+      );
+      final tp = TextPainter(
+        text: TextSpan(
+          text: keys[i],
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: labelColor),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, Offset(p.dx - tp.width / 2, p.dy - tp.height / 2));
     }
   }
 
   @override
-  bool shouldRepaint(covariant _RadarChartPainter oldDelegate) {
-    return oldDelegate.data != data ||
-        oldDelegate.polygonColor != polygonColor ||
-        oldDelegate.isDark != isDark;
-  }
+  bool shouldRepaint(covariant _RadarChartPainter oldDelegate) =>
+      oldDelegate.data != data ||
+      oldDelegate.polygonColor != polygonColor ||
+      oldDelegate.isDark != isDark;
 }

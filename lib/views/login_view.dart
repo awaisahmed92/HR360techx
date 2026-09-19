@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/auth/auth_state.dart';
-import '../core/config/app_config.dart';
-import '../theme/app_theme.dart';
 
+/// WebHR-style employee login (centered white card on dark backdrop).
+/// No demo toggle — authenticates against tenant DB via API.
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
 
@@ -14,302 +15,388 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _subdomainCtrl = TextEditingController(text: 'scfnew');
-  final _usernameCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
+  final _orgCtrl = TextEditingController(text: 'demo');
+  final _userCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
   bool _obscure = true;
-  bool _useDemo = false;
+  bool _remember = true;
+  static const _prefOrg = 'hr360_login_org';
+  static const _prefUser = 'hr360_login_user';
+  static const _prefRemember = 'hr360_login_remember';
+
+  // WebHR blue button + orange company tile
+  static const _blue = Color(0xFF2B7DE9);
+  static const _orange = Color(0xFFE85D04);
+  static const _labelW = 110.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreRemembered();
+  }
+
+  Future<void> _restoreRemembered() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_prefRemember) != true) return;
+    setState(() {
+      _remember = true;
+      _orgCtrl.text = prefs.getString(_prefOrg) ?? 'demo';
+      _userCtrl.text = prefs.getString(_prefUser) ?? '';
+    });
+  }
 
   @override
   void dispose() {
-    _subdomainCtrl.dispose();
-    _usernameCtrl.dispose();
-    _passwordCtrl.dispose();
+    _orgCtrl.dispose();
+    _userCtrl.dispose();
+    _passCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthState>();
+    final org = _orgCtrl.text.trim().toLowerCase();
+    final user = _userCtrl.text.trim();
     final ok = await auth.login(
-      subdomain: _useDemo ? 'demo' : _subdomainCtrl.text,
-      username: _useDemo ? 'admin' : _usernameCtrl.text,
-      password: _useDemo ? 'admin123' : _passwordCtrl.text,
-      preferDemo: _useDemo,
+      subdomain: org,
+      username: user,
+      password: _passCtrl.text,
+      preferDemo: false,
     );
-    if (!ok && mounted) {
-      final msg = auth.error ?? 'Login failed';
+    if (!mounted) return;
+    if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.red.shade700),
+        SnackBar(
+          content: Text(auth.error ?? 'Invalid organization or credentials.'),
+          backgroundColor: Colors.red.shade700,
+        ),
       );
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefRemember, _remember);
+    if (_remember) {
+      await prefs.setString(_prefOrg, org);
+      await prefs.setString(_prefUser, user);
+    } else {
+      await prefs.remove(_prefOrg);
+      await prefs.remove(_prefUser);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
-    final size = MediaQuery.of(context).size;
-    final wide = size.width >= 960;
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E1B4B),
-              Color(0xFF312E81),
-            ],
-          ),
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: wide ? 980 : 440),
-            child: Card(
-              elevation: 12,
-              color: const Color(0xFF111827),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(color: Colors.white.withOpacity(0.08)),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Dark photo-like backdrop (WebHR style)
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF0B0B0F),
+                  Color(0xFF1A1218),
+                  Color(0xFF2A0E14),
+                  Color(0xFF0A0A0C),
+                ],
               ),
-              child: IntrinsicHeight(
-                child: Row(
-                  children: [
-                    if (wide)
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(40),
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
-                            borderRadius: const BorderRadius.horizontal(
-                              left: Radius.circular(20),
-                            ),
-                          ),
-                          child: const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'HR360 TechX',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -1,
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              Text(
-                                'Multi-tenant workforce cloud.\nSign in with your organization subdomain.',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 15,
-                                  height: 1.5,
-                                ),
-                              ),
-                              SizedBox(height: 28),
-                              Text(
-                                'Tenant → gt_hr_master.tenants\nUsers → employee (CNIC / email)',
-                                style: TextStyle(
-                                  color: Colors.white60,
-                                  fontSize: 12,
-                                  height: 1.6,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 28,
-                          vertical: 36,
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (!wide) ...[
-                                const Text(
-                                  'HR360 TechX',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                              ],
-                              Text(
-                                'Sign in',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.95),
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'API: ${AppConfig.apiBaseUrl}',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.45),
-                                  fontSize: 11,
-                                ),
-                              ),
-                              const SizedBox(height: 22),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                title: const Text(
-                                  'Demo mode (offline mock)',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                value: _useDemo,
-                                activeColor: AppTheme.primary,
-                                onChanged: auth.busy
-                                    ? null
-                                    : (v) => setState(() => _useDemo = v),
-                              ),
-                              if (!_useDemo) ...[
-                                _field(
-                                  controller: _subdomainCtrl,
-                                  label: 'Organization subdomain',
-                                  hint: 'e.g. scfnew',
-                                  icon: Icons.apartment_rounded,
-                                ),
-                                const SizedBox(height: 12),
-                                _field(
-                                  controller: _usernameCtrl,
-                                  label: 'Username or email',
-                                  hint: 'CNIC / email',
-                                  icon: Icons.person_outline_rounded,
-                                ),
-                                const SizedBox(height: 12),
-                                _field(
-                                  controller: _passwordCtrl,
-                                  label: 'Password',
-                                  hint: '••••••••',
-                                  icon: Icons.lock_outline_rounded,
-                                  obscure: _obscure,
-                                  suffix: IconButton(
-                                    icon: Icon(
-                                      _obscure
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
-                                      color: Colors.white54,
-                                      size: 20,
-                                    ),
-                                    onPressed: () =>
-                                        setState(() => _obscure = !_obscure),
-                                  ),
-                                ),
-                              ] else
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  child: Text(
-                                    'Uses org: demo · user: admin · pass: admin123\n'
-                                    'Existing SPA screens stay on mock data.',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.55),
-                                      fontSize: 12,
-                                      height: 1.45,
-                                    ),
-                                  ),
-                                ),
-                              const SizedBox(height: 20),
-                              SizedBox(
-                                height: 48,
-                                child: ElevatedButton(
-                                  onPressed: auth.busy ? null : _submit,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.primary,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: auth.busy
-                                      ? const SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                            color: Colors.white,
-                                          ),
-                                        )
-                                      : Text(
-                                          _useDemo ? 'Enter demo' : 'Sign in',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+            ),
+          ),
+          // Soft neon wash (lower-left, like SS)
+          Positioned(
+            left: -20,
+            bottom: 60,
+            child: IgnorePointer(
+              child: Text(
+                'HR',
+                style: TextStyle(
+                  fontSize: 120,
+                  fontWeight: FontWeight.w900,
+                  color: const Color(0xFFFF1744).withOpacity(0.22),
+                  letterSpacing: -4,
+                  height: 1,
                 ),
               ),
             ),
           ),
-        ),
+          // Product mark — top left (like WebHR)
+          Positioned(
+            top: 24,
+            left: 28,
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white70, width: 1.5),
+                  ),
+                  child: const Icon(Icons.groups, color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'HR360',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 28),
+              child: Material(
+                color: Colors.white,
+                elevation: 12,
+                shadowColor: Colors.black54,
+                borderRadius: BorderRadius.circular(2),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(40, 40, 40, 32),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Company logo tile (orange square — like SS horse logo)
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: _orange,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '360',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Employee Login',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF444444),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          // Org = subdomain (WebHR gets this from URL; we need a field locally)
+                          _rowField(
+                            label: 'Organization:',
+                            child: TextFormField(
+                              controller: _orgCtrl,
+                              textInputAction: TextInputAction.next,
+                              validator: (v) =>
+                                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+                              decoration: _deco('demo'),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _rowField(
+                            label: 'Employee ID:',
+                            child: TextFormField(
+                              controller: _userCtrl,
+                              textInputAction: TextInputAction.next,
+                              validator: (v) =>
+                                  (v == null || v.trim().isEmpty) ? 'Required' : null,
+                              decoration: _deco('Employee ID'),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _rowField(
+                            label: 'Password:',
+                            child: TextFormField(
+                              controller: _passCtrl,
+                              obscureText: _obscure,
+                              textInputAction: TextInputAction.done,
+                              onFieldSubmitted: (_) => _submit(),
+                              validator: (v) =>
+                                  (v == null || v.isEmpty) ? 'Required' : null,
+                              decoration: _deco('Password').copyWith(
+                                suffixIcon: IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  icon: Icon(
+                                    _obscure
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                    size: 18,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  onPressed: () =>
+                                      setState(() => _obscure = !_obscure),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          // Remember Me — left aligned under fields
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: Checkbox(
+                                    value: _remember,
+                                    activeColor: _blue,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    onChanged: (v) =>
+                                        setState(() => _remember = v ?? true),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () =>
+                                      setState(() => _remember = !_remember),
+                                  child: const Text(
+                                    'Remember Me',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF555555),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 22),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 42,
+                            child: ElevatedButton(
+                              onPressed: auth.busy ? null : _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _blue,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: _blue.withOpacity(0.7),
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              child: auth.busy
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.vpn_key, size: 18),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Login',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          TextButton(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Ask your HR admin to reset your password.',
+                                  ),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF666666),
+                              textStyle: const TextStyle(fontSize: 13),
+                            ),
+                            child: const Text('Forgot your password?'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool obscure = false,
-    Widget? suffix,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      style: const TextStyle(color: Colors.white),
-      validator: (v) {
-        if (_useDemo) return null;
-        if (v == null || v.trim().isEmpty) return 'Required';
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.55)),
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.06),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.12)),
+  /// Label left + field right (matches WebHR SS).
+  Widget _rowField({required String label, required Widget child}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: _labelW,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF444444),
+            ),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.12)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
-        ),
+        Expanded(child: child),
+      ],
+    );
+  }
+
+  InputDecoration _deco(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+      isDense: true,
+      filled: true,
+      fillColor: const Color(0xFFEEEEEE),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(3),
+        borderSide: BorderSide.none,
       ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(3),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(3),
+        borderSide: const BorderSide(color: _blue, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(3),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      errorStyle: const TextStyle(fontSize: 11, height: 0.9),
     );
   }
 }

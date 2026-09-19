@@ -10,6 +10,10 @@ echo Creating hr360_demo tenant...
 "%MYSQL%" -u root < "%~dp002_tenant_demo.sql"
 if errorlevel 1 goto fail
 
+echo Phase 1 self-service tables...
+"%MYSQL%" -u root < "%~dp003_phase1_self_service.sql"
+if errorlevel 1 goto fail
+
 echo Done.
 echo.
 echo Login in Flutter (Demo mode OFF):

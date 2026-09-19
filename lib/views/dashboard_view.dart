@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../controllers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/hr_theme.dart';
 import '../widgets/metric_card.dart';
 import '../widgets/radar_chart_widget.dart';
 import '../widgets/stat_charts.dart';
@@ -42,7 +43,7 @@ class DashboardView extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppTheme.primary.withOpacity(0.3),
+                color: HrTheme.brand(context).withOpacity(0.3),
               ),
             ),
             child: Row(
@@ -50,7 +51,7 @@ class DashboardView extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
+                    gradient: HrTheme.gradient(context),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 28),
@@ -82,7 +83,7 @@ class DashboardView extends StatelessWidget {
                 if (isDesktop)
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
+                      backgroundColor: HrTheme.brand(context),
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
@@ -119,7 +120,7 @@ class DashboardView extends StatelessWidget {
                       value: '${appState.totalWorkforceCount}',
                       subtitle: '${appState.activeWorkforceCount} Active • ${appState.remoteCount} Remote',
                       icon: Icons.groups_rounded,
-                      gradient: AppTheme.primaryGradient,
+                      gradient: HrTheme.gradient(context),
                       trend: '+14.2%',
                       isPositiveTrend: true,
                     ),
@@ -175,7 +176,8 @@ class DashboardView extends StatelessWidget {
                 Expanded(
                   flex: 5,
                   child: _buildCard(
-                    isDark: isDark,
+                context: context,
+                isDark: isDark,
                     cardBg: cardBg,
                     borderColor: borderColor,
                     textPrimary: textPrimary,
@@ -194,7 +196,8 @@ class DashboardView extends StatelessWidget {
                 Expanded(
                   flex: 4,
                   child: _buildCard(
-                    isDark: isDark,
+                context: context,
+                isDark: isDark,
                     cardBg: cardBg,
                     borderColor: borderColor,
                     textPrimary: textPrimary,
@@ -209,7 +212,7 @@ class DashboardView extends StatelessWidget {
                       height: 240,
                       child: RadarChartWidget(
                         isDark: isDark,
-                        polygonColor: AppTheme.primaryLight,
+                        polygonColor: HrTheme.brandLight(context),
                         data: appState.allEmployeesRaw[1].competencies,
                       ),
                     ),
@@ -219,7 +222,8 @@ class DashboardView extends StatelessWidget {
             )
           else ...[
             _buildCard(
-              isDark: isDark,
+                context: context,
+                isDark: isDark,
               cardBg: cardBg,
               borderColor: borderColor,
               textPrimary: textPrimary,
@@ -230,7 +234,8 @@ class DashboardView extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             _buildCard(
-              isDark: isDark,
+                context: context,
+                isDark: isDark,
               cardBg: cardBg,
               borderColor: borderColor,
               textPrimary: textPrimary,
@@ -241,7 +246,7 @@ class DashboardView extends StatelessWidget {
                 height: 240,
                 child: RadarChartWidget(
                   isDark: isDark,
-                  polygonColor: AppTheme.primaryLight,
+                  polygonColor: HrTheme.brandLight(context),
                   data: appState.allEmployeesRaw[1].competencies,
                 ),
               ),
@@ -258,7 +263,8 @@ class DashboardView extends StatelessWidget {
                 Expanded(
                   flex: 5,
                   child: _buildCard(
-                    isDark: isDark,
+                context: context,
+                isDark: isDark,
                     cardBg: cardBg,
                     borderColor: borderColor,
                     textPrimary: textPrimary,
@@ -273,7 +279,8 @@ class DashboardView extends StatelessWidget {
                 Expanded(
                   flex: 4,
                   child: _buildCard(
-                    isDark: isDark,
+                context: context,
+                isDark: isDark,
                     cardBg: cardBg,
                     borderColor: borderColor,
                     textPrimary: textPrimary,
@@ -361,7 +368,8 @@ class DashboardView extends StatelessWidget {
             )
           else ...[
             _buildCard(
-              isDark: isDark,
+                context: context,
+                isDark: isDark,
               cardBg: cardBg,
               borderColor: borderColor,
               textPrimary: textPrimary,
@@ -377,6 +385,7 @@ class DashboardView extends StatelessWidget {
   }
 
   Widget _buildCard({
+    required BuildContext context,
     required bool isDark,
     required Color cardBg,
     required Color borderColor,
@@ -409,7 +418,7 @@ class DashboardView extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(icon, color: AppTheme.primaryLight, size: 20),
+                  Icon(icon, color: HrTheme.brandLight(context), size: 20),
                   const SizedBox(width: 10),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

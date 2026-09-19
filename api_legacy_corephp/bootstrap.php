@@ -99,6 +99,15 @@ function hr360_parse_bearer(): ?array
     $header = $_SERVER['HTTP_AUTHORIZATION']
         ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
         ?? '';
+    if ($header === '' && function_exists('apache_request_headers')) {
+        $headers = apache_request_headers();
+        foreach ($headers as $k => $v) {
+            if (strtolower($k) === 'authorization') {
+                $header = $v;
+                break;
+            }
+        }
+    }
     if (!preg_match('/Bearer\s+(\S+)/i', $header, $m)) {
         return null;
     }

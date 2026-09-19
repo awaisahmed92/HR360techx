@@ -1,36 +1,28 @@
 # HR360 Flutter — Runbook
 
-## Scope (important)
+## Scope
 
-**Only change files under** `D:\xampp\htdocs\HR360techx`  
-Do not modify `D:\xampp\htdocs\hr` (reference / source of ideas only).
+Only `D:\xampp\htdocs\HR360techx`
 
-## Databases (ours)
+## Backend = Laravel (not Core PHP)
 
-Created by this project:
+- Path: `backend/` (Laravel 12)
+- API: `http://localhost/HR360techx/backend/public/api`
+- Old Core PHP API archived as `api_legacy_corephp/`
 
-- `hr360_master` — tenants (subdomain → tenant DB)
-- `hr360_demo` — sample org data
+## Login
 
-See `database/README.md`. Run `database\setup.bat` if missing.
+Demo mode OFF → org `demo` / `admin` / `admin123`
 
-## Run Flutter
+## Travel form
+
+Full-page form (not a small modal) with:
+
+Project, contact, start/end dates, from/to, mode of travel, accommodation, purpose, advance, other passenger(s), attachment note.
+
+## Run
 
 ```bash
 cd d:\xampp\htdocs\HR360techx
 flutter run -d chrome
 ```
-
-API: `http://localhost/HR360techx/api`
-
-## Login (live API)
-
-Turn **Demo mode OFF**, then:
-
-| Field | Value |
-|-------|--------|
-| Organization | `demo` |
-| Username | `admin` |
-| Password | `admin123` |
-
-Staff: `staff` / `staff123`

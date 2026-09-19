@@ -77,6 +77,23 @@ class AuthState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _service.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return null;
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   bool canViewModule(String module) => permissions.canViewModule(module);
 
   bool canView(String module, String screen) =>

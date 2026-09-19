@@ -7,14 +7,45 @@ class LeaveTypeDto {
   final int id;
   final String name;
   final int days;
+  final String calendarTitle;
+  final String referenceNumber;
+  final String category;
+  final String durationType;
+  final bool quotaReset;
+  final bool isActive;
 
-  const LeaveTypeDto({required this.id, required this.name, required this.days});
+  const LeaveTypeDto({
+    required this.id,
+    required this.name,
+    required this.days,
+    this.calendarTitle = '',
+    this.referenceNumber = '',
+    this.category = 'Paid Leave',
+    this.durationType = 'Days',
+    this.quotaReset = false,
+    this.isActive = true,
+  });
 
   factory LeaveTypeDto.fromJson(Map<String, dynamic> json) => LeaveTypeDto(
         id: (json['id'] as num?)?.toInt() ?? 0,
-        name: (json['name'] ?? '').toString(),
-        days: (json['days'] as num?)?.toInt() ?? 0,
+        name: (json['name'] ?? json['title'] ?? '').toString(),
+        days: (json['days'] as num?)?.toInt() ??
+            (json['leaves_allowed_per_year'] as num?)?.toInt() ??
+            0,
+        calendarTitle: (json['calendar_title'] ?? '').toString(),
+        referenceNumber: (json['reference_number'] ?? '').toString(),
+        category: (json['category'] ?? 'Paid Leave').toString(),
+        durationType: (json['duration_type'] ?? 'Days').toString(),
+        quotaReset: json['quota_reset'] == true,
+        isActive: json['is_active'] != false,
       );
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is LeaveTypeDto && other.id == id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class LeaveBalanceDto {
@@ -193,6 +224,92 @@ class LeaveRepository {
 
   Future<void> reject(int id, {String remarks = ''}) async {
     await _act('/leave/reject', id, remarks);
+  }
+
+  Future<List<LeaveTypeDto>> manageTypes() async {
+    try {
+      final res = await _client().dio.get('/leave-types');
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException('Failed to load leave types');
+      }
+      return (data['types'] as List? ?? [])
+          .whereType<Map>()
+          .map((e) => LeaveTypeDto.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
+  Future<LeaveTypeDto> createType(Map<String, dynamic> body) async {
+    try {
+      final res = await _client().dio.post('/leave-types', data: body);
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException(
+          (data is Map ? data['message'] : null)?.toString() ?? 'Create failed',
+        );
+      }
+      return LeaveTypeDto.fromJson(Map<String, dynamic>.from(data['type'] as Map));
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
+  Future<void> updateType(int id, Map<String, dynamic> body) async {
+    try {
+      final res = await _client().dio.post('/leave-types/$id', data: body);
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException(
+          (data is Map ? data['message'] : null)?.toString() ?? 'Update failed',
+        );
+      }
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
+  Future<void> deleteType(int id) async {
+    try {
+      final res = await _client().dio.post('/leave-types/$id/delete');
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException(
+          (data is Map ? data['message'] : null)?.toString() ?? 'Delete failed',
+        );
+      }
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
+  Future<Map<String, dynamic>> moduleOptions() async {
+    try {
+      final res = await _client().dio.get('/leave/module-options');
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        return {};
+      }
+      return Map<String, dynamic>.from(data['options'] as Map? ?? {});
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
+  }
+
+  Future<void> saveModuleOptions(Map<String, dynamic> body) async {
+    try {
+      final res = await _client().dio.post('/leave/module-options', data: body);
+      final data = res.data;
+      if (data is! Map || data['success'] != true) {
+        throw LeaveApiException(
+          (data is Map ? data['message'] : null)?.toString() ?? 'Save failed',
+        );
+      }
+    } on DioException catch (e) {
+      throw LeaveApiException(_dioMessage(e));
+    }
   }
 
   Future<void> _act(String path, int id, String remarks) async {

@@ -9,15 +9,28 @@ class AppConfig {
   /// Override via `--dart-define=API_BASE_URL=https://scfnew.example.com`
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost/HR360techx/api',
+    defaultValue: 'http://localhost/HR360techx/backend/public/api',
   );
 
-  /// When true, login accepts demo credentials without calling the API.
-  /// Demo: subdomain `demo`, user `admin` / `admin123`
+  /// Offline mock login is disabled. Always authenticate against tenant DB via API.
   static const bool allowDemoLogin = bool.fromEnvironment(
     'ALLOW_DEMO_LOGIN',
-    defaultValue: true,
+    defaultValue: false,
   );
+
+  /// Public asset base (uploads) — strips trailing `/api` from [apiBaseUrl].
+  static String get publicBaseUrl {
+    final base = apiBaseUrl;
+    if (base.endsWith('/api')) return base.substring(0, base.length - 4);
+    if (base.endsWith('/api/')) return base.substring(0, base.length - 5);
+    return base;
+  }
+
+  static String resolveMediaUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return '${publicBaseUrl.replaceAll(RegExp(r'/$'), '')}/${path.replaceFirst(RegExp(r'^/'), '')}';
+  }
 
   static const String prefsTokenKey = 'hr360_auth_token';
   static const String prefsSessionKey = 'hr360_session_json';
