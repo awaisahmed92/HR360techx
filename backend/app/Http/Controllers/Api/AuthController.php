@@ -13,6 +13,20 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
+        try {
+            return $this->attemptLogin($request);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Login failed: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    protected function attemptLogin(Request $request)
+    {
         $data = $request->validate([
             'subdomain' => 'required|string',
             'username' => 'required|string',
@@ -29,10 +43,9 @@ class AuthController extends Controller
 
         TenantManager::connect($tenant);
 
-        // Company superuser (plan Phase 0) — before employee lookup
-        $company = DB::table('company')->first();
-        $suUser = trim((string) ($company->superuser_username ?? ''));
-        $suPass = (string) ($company->superuser_password ?? '');
+        $company = Schema::hasTable('company') ? DB::table('company')->first() : null;
+        $suUser = trim((string) ($company?->superuser_username ?? ''));
+        $suPass = (string) ($company?->superuser_password ?? '');
         if ($suUser !== '' && strcasecmp($suUser, $data['username']) === 0 && $this->passwordOk($data['password'], $suPass)) {
             $token = TenantManager::issueToken([
                 'subdomain' => trim($data['subdomain']),
@@ -58,11 +71,11 @@ class AuthController extends Controller
                     'is_superuser' => true,
                 ],
                 'company' => [
-                    'name' => (string) ($company->hr_company_name ?? $company->name ?? $data['subdomain']),
-                    'code' => (string) ($company->code ?? ''),
-                    'logo' => $company->hr_logo ?? $company->logo ?? null,
-                    'currency' => (string) ($company->currency ?? 'PKR'),
-                    'date_format' => (string) ($company->hr_date_format ?? 'd-m-Y'),
+                    'name' => (string) ($company?->hr_company_name ?? $company?->name ?? $data['subdomain']),
+                    'code' => (string) ($company?->code ?? ''),
+                    'logo' => $company?->hr_logo ?? $company?->logo ?? null,
+                    'currency' => (string) ($company?->currency ?? 'PKR'),
+                    'date_format' => (string) ($company?->hr_date_format ?? 'd-m-Y'),
                     'subdomain' => trim($data['subdomain']),
                 ],
                 'permissions' => TenantManager::normalizePermissions([], true),
@@ -116,11 +129,11 @@ class AuthController extends Controller
                 'is_superuser' => false,
             ],
             'company' => [
-                'name' => (string) ($company->hr_company_name ?? $company->name ?? $data['subdomain']),
-                'code' => (string) ($company->code ?? ''),
-                'logo' => $company->hr_logo ?? $company->logo ?? null,
-                'currency' => (string) ($company->currency ?? 'PKR'),
-                'date_format' => (string) ($company->hr_date_format ?? 'd-m-Y'),
+                'name' => (string) ($company?->hr_company_name ?? $company?->name ?? $data['subdomain']),
+                'code' => (string) ($company?->code ?? ''),
+                'logo' => $company?->hr_logo ?? $company?->logo ?? null,
+                'currency' => (string) ($company?->currency ?? 'PKR'),
+                'date_format' => (string) ($company?->hr_date_format ?? 'd-m-Y'),
                 'subdomain' => trim($data['subdomain']),
             ],
             'permissions' => TenantManager::normalizePermissions($rolls, $allAccess),

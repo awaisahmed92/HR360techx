@@ -39,6 +39,7 @@ services:
       DB_MASTER_DATABASE: ${DB_MASTER_DATABASE}
       DB_MASTER_USERNAME: ${DB_MASTER_USERNAME}
       DB_MASTER_PASSWORD: ${DB_MASTER_PASSWORD}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       # Set in Coolify secrets:
       # APP_KEY=base64:...
       # HR360_TOKEN_SECRET=...
