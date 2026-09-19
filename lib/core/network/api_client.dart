@@ -17,6 +17,11 @@ class ApiClient {
             },
           ),
         ) {
+    assert(() {
+      // ignore: avoid_print
+      print('[HR360] API base → ${AppConfig.apiBaseUrl}');
+      return true;
+    }());
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {

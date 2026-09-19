@@ -1,0 +1,33 @@
+# Coolify / local: Flutter web (Caddy) + Laravel API
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        API_BASE_URL: https://hr360techx.com/api
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      API_UPSTREAM: api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: https://hr360techx.com
+      CORS_ALLOWED_ORIGINS: https://hr360techx.com,https://www.hr360techx.com
+      # Set these in Coolify secrets / .env:
+      # APP_KEY, DB_CONNECTION, DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD
+    env_file:
+      - ./backend/.env
+    expose:
+      - "8000"
+    restart: unless-stopped

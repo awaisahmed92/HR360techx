@@ -100,7 +100,8 @@ class AuthService {
           e.type == DioExceptionType.connectionTimeout) {
         throw AuthException(
           'Cannot reach API at ${AppConfig.apiBaseUrl}. '
-          'Start Apache + MySQL in XAMPP, then try again.',
+          'On local: start Apache + MySQL in XAMPP. '
+          'On production: ensure Laravel is deployed and Caddy proxies /api.',
         );
       }
       throw AuthException('Network error: ${e.message}');

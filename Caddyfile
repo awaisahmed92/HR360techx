@@ -1,6 +1,34 @@
-:3000 {
-    root * /srv
-    encode gzip zstd
-    try_files {path} /index.html
-    file_server
+# Flutter web + SPA fallback. /api is reverse-proxied to Laravel.
+# Set API_UPSTREAM in Coolify (e.g. api:8000 or https://api.hr360techx.com).
+{
+	auto_https off
+}
+
+:{$PORT:3000} {
+	encode gzip zstd
+
+	# Laravel API — must not fall through to Flutter index.html
+	handle /api* {
+		reverse_proxy {$API_UPSTREAM:api:8000} {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	# Health for Coolify (optional Laravel /up via proxy if preferred)
+	handle /up {
+		reverse_proxy {$API_UPSTREAM:api:8000}
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+		}
+	}
 }
