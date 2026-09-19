@@ -15,18 +15,19 @@ DB_PASSWORD=<strong-password>
 DB_ROOT_PASSWORD=<different-strong-password>
 DB_HOST=db
 DB_PORT=3306
+DB_MASTER_HOST=db
+DB_MASTER_PORT=3306
+DB_MASTER_DATABASE=hr360_master
+DB_MASTER_USERNAME=hr360_user
+DB_MASTER_PASSWORD=<same-or-strong-password>
 APP_KEY=<from: php artisan key:generate --show>
 APP_URL=https://hr360techx.com
 ```
 
-Optional master DB (defaults to same `db` service):
-```
-DB_MASTER_HOST=db
-DB_MASTER_DATABASE=hr360_master
-DB_MASTER_USERNAME=hr360_user
-DB_MASTER_PASSWORD=<same-or-other>
-HR360_TOKEN_SECRET=<long-random-string>
-```
+Coolify settings:
+- Branch: `main`
+- Compose location: `/docker-compose.yml` (only this file — no `.yaml`)
+- Build strategy: Compose
 
 `API_UPSTREAM=api:8000` is already set on **web** only.
 

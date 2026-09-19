@@ -1,5 +1,6 @@
 # Coolify: deploy as Docker Compose (services: db + api + web).
-# Enable variable Interpolation in Coolify for ${DB_*} values.
+# Enable Interpolation for ${DB_*} / ${DB_MASTER_*} values.
+# Compose location in Coolify MUST be: /docker-compose.yml
 services:
   db:
     image: mysql:8.0
@@ -33,12 +34,11 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      # Multi-tenant master (same MySQL instance by default; override in Coolify if split)
-      DB_MASTER_HOST: ${DB_MASTER_HOST:-db}
-      DB_MASTER_PORT: ${DB_MASTER_PORT:-3306}
-      DB_MASTER_DATABASE: ${DB_MASTER_DATABASE:-hr360_master}
-      DB_MASTER_USERNAME: ${DB_MASTER_USERNAME:-${DB_USERNAME}}
-      DB_MASTER_PASSWORD: ${DB_MASTER_PASSWORD:-${DB_PASSWORD}}
+      DB_MASTER_HOST: ${DB_MASTER_HOST}
+      DB_MASTER_PORT: ${DB_MASTER_PORT}
+      DB_MASTER_DATABASE: ${DB_MASTER_DATABASE}
+      DB_MASTER_USERNAME: ${DB_MASTER_USERNAME}
+      DB_MASTER_PASSWORD: ${DB_MASTER_PASSWORD}
       # Set in Coolify secrets:
       # APP_KEY=base64:...
       # HR360_TOKEN_SECRET=...
