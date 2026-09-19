@@ -1,5 +1,5 @@
-# Flutter web + SPA fallback. /api is reverse-proxied to Laravel.
-# Set API_UPSTREAM in Coolify (e.g. api:8000 or https://api.hr360techx.com).
+# Flutter SPA. Proxies /api → Laravel (API_UPSTREAM must be host:port, e.g. api:8000).
+# Do NOT put a default with ":" inside {$VAR:default} — Caddy truncates at the first colon.
 {
 	auto_https off
 }
@@ -7,19 +7,22 @@
 :{$PORT:3000} {
 	encode gzip zstd
 
-	# Laravel API — must not fall through to Flutter index.html
 	handle /api* {
-		reverse_proxy {$API_UPSTREAM:api:8000} {
+		reverse_proxy {$API_UPSTREAM} {
 			header_up Host {host}
 			header_up X-Real-IP {remote_host}
 			header_up X-Forwarded-For {remote_host}
 			header_up X-Forwarded-Proto {scheme}
+			header_up X-Forwarded-Host {host}
+			transport http {
+				dial_timeout 10s
+				response_header_timeout 120s
+			}
 		}
 	}
 
-	# Health for Coolify (optional Laravel /up via proxy if preferred)
 	handle /up {
-		reverse_proxy {$API_UPSTREAM:api:8000}
+		reverse_proxy {$API_UPSTREAM}
 	}
 
 	handle {

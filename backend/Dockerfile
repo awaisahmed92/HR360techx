@@ -1,21 +1,26 @@
 FROM php:8.3-cli-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-		git unzip libzip-dev libpng-dev libonig-dev libxml2-dev \
+		git unzip curl libzip-dev libpng-dev libonig-dev libxml2-dev \
 	&& docker-php-ext-install pdo_mysql mbstring zip bcmath \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 COPY . .
-
-RUN composer install --no-dev --optimize-autoloader --no-interaction \
+RUN composer dump-autoload --optimize \
 	&& chown -R www-data:www-data storage bootstrap/cache \
-	&& chmod -R 775 storage bootstrap/cache
+	&& chmod -R 775 storage bootstrap/cache \
+	&& chmod +x docker-entrypoint.sh
 
 ENV APP_ENV=production
 ENV APP_DEBUG=false
 EXPOSE 8000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+	CMD curl -fsS http://127.0.0.1:8000/up || exit 1
+
+ENTRYPOINT ["./docker-entrypoint.sh"]
