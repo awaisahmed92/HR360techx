@@ -1,13 +1,11 @@
-# Serve the Flutter web build (SPA).
-# Coolify / Caddy picks this up from the repo root on deploy.
-:80 {
-	root * /srv
-	encode gzip zstd
-	# Real assets first; fall back to index.html for client routes
-	try_files {path} /index.html
-	file_server
-	header {
-		X-Content-Type-Options nosniff
-		Referrer-Policy strict-origin-when-cross-origin
-	}
+# Serve the Flutter web build as a single-page application.
+:3000 {
+    root * /app/build/web
+    encode gzip zstd
+    try_files {path} /index.html
+    file_server
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+    }
 }
