@@ -1,9 +1,34 @@
+import 'dart:math';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/auth/auth_state.dart';
+
+/// Curated HR / workplace photos (Unsplash). One is picked at random each login load.
+const _loginBackgrounds = <String>[
+  // Office teamwork / meeting
+  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1542744173-8e2bd1f53eef?auto=format&fit=crop&w=1920&q=80',
+  // Desk / laptop / professional work
+  'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80',
+  // HR / people / handshake / interview vibe
+  'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1920&q=80',
+  'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1920&q=80',
+];
 
 /// WebHR-style employee login — wide white card, label-left gray fields.
 class LoginView extends StatefulWidget {
@@ -20,6 +45,7 @@ class _LoginViewState extends State<LoginView> {
   final _passCtrl = TextEditingController();
   bool _obscure = true;
   bool _remember = true;
+  late final String _bgUrl;
   static const _prefOrg = 'hr360_login_org';
   static const _prefUser = 'hr360_login_user';
   static const _prefRemember = 'hr360_login_remember';
@@ -33,7 +59,12 @@ class _LoginViewState extends State<LoginView> {
   @override
   void initState() {
     super.initState();
+    _bgUrl = _loginBackgrounds[Random().nextInt(_loginBackgrounds.length)];
     _restoreRemembered();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      precacheImage(NetworkImage(_bgUrl), context);
+    });
   }
 
   Future<void> _restoreRemembered() async {
@@ -95,30 +126,48 @@ class _LoginViewState extends State<LoginView> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1A1A1E),
-                  Color(0xFF2C2428),
-                  Color(0xFF3A2A2E),
-                  Color(0xFF151518),
-                ],
+          // Random HR/office photo each refresh (soft blur like WebHR)
+          Positioned.fill(
+            child: ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
+              child: Image.network(
+                _bgUrl,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                filterQuality: FilterQuality.medium,
+                errorBuilder: (_, __, ___) => const ColoredBox(
+                  color: Color(0xFF1A1A1E),
+                ),
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const ColoredBox(
+                    color: Color(0xFF1A1A1E),
+                    child: Center(
+                      child: SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white54,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ),
-          // Soft desk wash (photo-like without asset)
+          // Soft blur + dark scrim so card / logo stay readable
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  center: const Alignment(0.35, -0.1),
-                  radius: 1.15,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                   colors: [
-                    Colors.white.withValues(alpha: 0.08),
-                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.45),
+                    Colors.black.withValues(alpha: 0.55),
+                    Colors.black.withValues(alpha: 0.65),
                   ],
                 ),
               ),
