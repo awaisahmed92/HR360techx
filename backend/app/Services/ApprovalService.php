@@ -262,7 +262,7 @@ class ApprovalService
         if ($l1 > 0) {
             $this->notify(
                 $l1,
-                'Your acknowledgement is required for: ('.ucfirst($module).')',
+                $this->acknowledgementTitle($module),
                 $title,
                 'approval',
                 $refType,
@@ -330,7 +330,7 @@ class ApprovalService
         foreach ($approvers as $aid) {
             $this->notify(
                 $aid,
-                'Your acknowledgement is required for: ('.ucfirst($module).')',
+                $this->acknowledgementTitle($module),
                 $title,
                 'approval',
                 $refType,
@@ -442,7 +442,7 @@ class ApprovalService
         if ($nextApprover > 0) {
             $this->notify(
                 $nextApprover,
-                'Your acknowledgement is required for: ('.ucfirst($module).')',
+                $this->acknowledgementTitle($module),
                 $title.' — Level '.$next.' approval pending',
                 'approval',
                 $refType,
@@ -519,7 +519,7 @@ class ApprovalService
         foreach ($this->resolver->pendingApproverIds($nextRow, $levelMap) as $aid) {
             $this->notify(
                 $aid,
-                'Your acknowledgement is required for: ('.ucfirst($module).')',
+                $this->acknowledgementTitle($module),
                 $title.' — next approval pending',
                 'approval',
                 $refType,
@@ -717,6 +717,29 @@ class ApprovalService
             'is_read' => 0,
             'created_at' => now(),
         ]);
+    }
+
+    /** Human label for bell / acknowledgement lines (Leave → Leaves, etc.). */
+    public static function moduleLabel(string $module): string
+    {
+        return match (strtolower(trim($module))) {
+            'leave', 'leaves' => 'Leaves',
+            'travel' => 'Travel',
+            'timesheet' => 'Timesheet',
+            'resignation', 'resignations' => 'Resignations',
+            'termination', 'terminations' => 'Termination',
+            'loan', 'loan_application' => 'Loan Applications',
+            'employment_change' => 'Employment Change',
+            'contract', 'contracts' => 'Contracts',
+            'assignment', 'assignments' => 'Assignments',
+            'transfer', 'transfers' => 'Transfers',
+            default => ucfirst(str_replace('_', ' ', $module)),
+        };
+    }
+
+    public function acknowledgementTitle(string $module): string
+    {
+        return 'Your acknowledgement is required for: ('.$this->moduleLabel($module).')';
     }
 
     public function notifyList(array $ids, string $title, string $body, string $kind, ?string $refType, ?int $refId, ?int $level): void

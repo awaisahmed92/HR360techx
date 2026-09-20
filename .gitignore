@@ -1,0 +1,41 @@
+# Local machine / OS
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*~
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.fleet/
+.zed/
+
+# Flutter / Dart tooling — never commit or deploy
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Chrome debug profile created by `flutter run -d chrome`
+# (cookies, history, login data)
+**/.dart_tool/chrome-device/
+
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# Coverage / test leftovers
+coverage/
+*.lcov

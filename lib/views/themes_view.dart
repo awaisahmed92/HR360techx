@@ -74,24 +74,26 @@ class ThemesView extends StatelessWidget {
                     }
                   },
                 );
-                final themes = ThemesPanel(
-                  brandId: app.brandThemeId,
-                  onPick: app.setBrandTheme,
+                final themes = Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+                  child: ThemesPanel(
+                    brandId: app.brandThemeId,
+                    onPick: app.setBrandTheme,
+                  ),
                 );
                 if (wide) {
-                  return IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(width: 240, child: menu),
-                        VerticalDivider(width: 1, color: border),
-                        Expanded(child: themes),
-                      ],
-                    ),
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(width: 240, child: menu),
+                      Container(width: 1, color: border),
+                      Expanded(child: themes),
+                    ],
                   );
                 }
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     menu,
                     Divider(height: 1, color: border),

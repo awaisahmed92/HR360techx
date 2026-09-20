@@ -343,107 +343,132 @@ class HrSettingsShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final brand = HrTheme.brand(context);
     final onBrand = HrTheme.onBrand(context);
+    final border = HrUi.border(context);
+
+    final menu = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final item in navItems)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Material(
+                color: item == selectedNav ? brand : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                child: InkWell(
+                  onTap: () => onNav(item),
+                  borderRadius: BorderRadius.circular(6),
+                  splashColor: item == selectedNav
+                      ? onBrand.withValues(alpha: 0.12)
+                      : brand.withValues(alpha: 0.12),
+                  highlightColor: item == selectedNav
+                      ? onBrand.withValues(alpha: 0.08)
+                      : brand.withValues(alpha: 0.06),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    child: Text(
+                      item,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: item == selectedNav ? onBrand : HrUi.label(context),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
+    final body = Padding(
+      padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            selectedNav,
+            style: GoogleFonts.inter(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: HrUi.label(context),
+            ),
+          ),
+          const SizedBox(height: 22),
+          child,
+          if (onSave != null) ...[
+            const SizedBox(height: 24),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton(
+                style: HrTheme.filledButton(context),
+                onPressed: onSave,
+                child: Text(saveLabel),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
 
     return ColoredBox(
       color: HrUi.pageBg(context),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(28, 20, 28, 40),
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.libreBaskerville(
-              fontSize: 28,
-              fontWeight: FontWeight.w600,
-              color: HrTheme.heading(context),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              color: HrUi.card(context),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: HrUi.border(context)),
-            ),
-            child: LayoutBuilder(
-              builder: (context, c) {
-                final wide = c.maxWidth > 720;
-                final menu = Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final item in navItems)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Material(
-                            color: item == selectedNav ? brand : Colors.transparent,
-                            borderRadius: BorderRadius.circular(6),
-                            child: InkWell(
-                              onTap: () => onNav(item),
-                              borderRadius: BorderRadius.circular(6),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 11),
-                                child: Text(
-                                  item,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: item == selectedNav
-                                        ? onBrand
-                                        : HrUi.label(context),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+      child: LayoutBuilder(
+        builder: (context, pageConstraints) {
+          final wide = pageConstraints.maxWidth > 720;
+
+          // Never use IntrinsicHeight + Expanded inside a scroll view — that
+          // collapses the form to zero height on wide viewports (fields only
+          // appear when DevTools shrinks width into the narrow Column layout).
+          final cardChild = wide
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 220, child: menu),
+                    Container(width: 1, color: border),
+                    Expanded(child: body),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    menu,
+                    Divider(height: 1, color: border),
+                    body,
+                  ],
                 );
-                final body = Padding(
-                  padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        selectedNav,
-                        style: GoogleFonts.inter(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: HrUi.label(context),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      child,
-                      if (onSave != null) ...[
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          style: HrTheme.filledButton(context),
-                          onPressed: onSave,
-                          child: Text(saveLabel),
-                        ),
-                      ],
-                    ],
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(28, 20, 28, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.libreBaskerville(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    color: HrTheme.heading(context),
                   ),
-                );
-                if (wide) {
-                  return IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SizedBox(width: 220, child: menu),
-                        VerticalDivider(width: 1, color: HrUi.border(context)),
-                        Expanded(child: body),
-                      ],
-                    ),
-                  );
-                }
-                return Column(children: [menu, Divider(height: 1, color: HrUi.border(context)), body]);
-              },
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: HrUi.card(context),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: border),
+                  ),
+                  child: cardChild,
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../controllers/app_state.dart';
 import '../core/auth/auth_state.dart';
-import '../core/self_service/self_service_state.dart';
 import '../core/util/person_name.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
 import 'action_dialogs.dart';
+import 'notifications_panel.dart';
 
 class AppHeader extends StatelessWidget {
   final VoidCallback? onMenuPressed;
@@ -300,180 +300,7 @@ class AppHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
-          // Notification Bell (API-backed approvals cascade)
-          Builder(
-            builder: (context) {
-              final ss = context.watch<SelfServiceState>();
-              final live = ss.inboxNotifications;
-              final unread = ss.unreadNotifications;
-              final useLive = !context.watch<AuthState>().isDemo;
-              final items = useLive
-                  ? live
-                  : appState.notifications
-                      .map((n) => {
-                            'title': n['title'],
-                            'body': n['desc'],
-                            'created_at': n['time'],
-                            'is_read': n['read'] == true,
-                          })
-                      .toList();
-              final unreadShow = useLive ? unread : appState.unreadNotificationsCount;
-
-              return PopupMenuButton<void>(
-                offset: const Offset(0, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: borderColor),
-                ),
-                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-                onOpened: () {
-                  if (useLive) ss.loadNotifications();
-                },
-                itemBuilder: (context) {
-                  return [
-                    PopupMenuItem<void>(
-                      enabled: false,
-                      child: SizedBox(
-                        width: 340,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Notifications',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                    color: textPrimary,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    if (useLive) {
-                                      ss.markNotificationsRead();
-                                    } else {
-                                      appState.markAllNotificationsRead();
-                                    }
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Mark all read',
-                                      style: TextStyle(fontSize: 12)),
-                                ),
-                              ],
-                            ),
-                            const Divider(),
-                            if (items.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                child: Text('No notifications',
-                                    style: TextStyle(color: textSecondary)),
-                              )
-                            else
-                              ...items.take(8).map((n) {
-                                final title = (n['title'] ?? '').toString();
-                                final body =
-                                    (n['body'] ?? n['desc'] ?? '').toString();
-                                final time =
-                                    (n['created_at'] ?? n['time'] ?? '').toString();
-                                final unreadItem = n['is_read'] != true && n['read'] != true;
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 6),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: HrTheme.brandSoft(context),
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Icon(Icons.notifications_active_outlined,
-                                            color: HrTheme.brand(context), size: 18),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              title,
-                                              style: TextStyle(
-                                                fontWeight: unreadItem
-                                                    ? FontWeight.w800
-                                                    : FontWeight.w600,
-                                                fontSize: 13,
-                                                color: textPrimary,
-                                              ),
-                                            ),
-                                            Text(
-                                              body,
-                                              style: TextStyle(
-                                                fontSize: 11.5,
-                                                color: textSecondary,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              time,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                color: textSecondary.withOpacity(0.7),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ];
-                },
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppTheme.darkCard : AppTheme.lightCardHover,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: borderColor),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Icon(Icons.notifications_none_rounded,
-                          size: 20, color: textPrimary),
-                      if (unreadShow > 0)
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: AppTheme.danger,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              unreadShow > 9 ? '9+' : '$unreadShow',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
+          const NotificationsBellButton(),
           const SizedBox(width: 8),
 
           // Dark/Light Theme Toggle

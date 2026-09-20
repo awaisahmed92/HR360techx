@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/employee.dart';
@@ -6,6 +8,11 @@ import '../models/review_item.dart';
 import '../models/candidate.dart';
 import '../navigation/module_catalog.dart';
 import '../theme/brand_themes.dart';
+import '../core/config/clock_faces.dart';
+import '../core/config/countries.dart';
+import '../core/settings/org_settings_repository.dart';
+import '../core/feed/status_feed_repository.dart';
+import '../core/auth/auth_state.dart';
 
 class AppState extends ChangeNotifier {
   AppState() {
@@ -14,6 +21,75 @@ class AppState extends ChangeNotifier {
 
   static const _prefDark = 'hr360_dark_mode';
   static const _prefBrand = 'hr360_brand_theme';
+
+  // Organization / System settings
+  OrgSettingsState orgSettings = OrgSettingsState();
+  OrgSettingsRepository? _orgRepo;
+  StatusFeedRepository? _feedRepo;
+
+  void bindAuth(AuthState auth) {
+    _orgRepo = OrgSettingsRepository(getSession: () => auth.session);
+    _feedRepo = StatusFeedRepository(getSession: () => auth.session);
+    loadOrgSettings();
+    loadStatusFeed();
+  }
+
+  Future<void> loadOrgSettings() async {
+    final repo = _orgRepo ?? OrgSettingsRepository(getSession: () => null);
+    orgSettings = await repo.load();
+    notifyListeners();
+  }
+
+  Future<String?> saveOrgSettings() async {
+    try {
+      final repo = _orgRepo ?? OrgSettingsRepository(getSession: () => null);
+      await repo.save(orgSettings);
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  void patchOrgSettings(void Function(OrgSettingsState s) fn) {
+    fn(orgSettings);
+    notifyListeners();
+  }
+
+  Future<void> setClockFace(String id) async {
+    orgSettings.clockFaceId = id;
+    notifyListeners();
+    await saveOrgSettings();
+  }
+
+  Future<String?> uploadOrgLogo(List<int> bytes, String filename) async {
+    final repo = _orgRepo;
+    if (repo == null) return 'Not signed in';
+    final url = await repo.uploadLogo(bytes, filename);
+    if (url == null) return 'Upload failed';
+    orgSettings.logoUrl = url;
+    await saveOrgSettings();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('hr360_login_logo', url);
+    notifyListeners();
+    return null;
+  }
+
+  ClockFaceOption get selectedClockFace =>
+      ClockFaces.byId(orgSettings.clockFaceId);
+
+  CountryOption get selectedClockCountry =>
+      Countries.byCode(orgSettings.clockCountry.isNotEmpty
+          ? orgSettings.clockCountry
+          : orgSettings.contactCountry);
+
+  Future<void> setClockCountry(String code) async {
+    final country = Countries.byCode(code);
+    orgSettings.clockCountry = country.code;
+    orgSettings.timeZone = country.timeZoneLabel;
+    notifyListeners();
+    await saveOrgSettings();
+  }
 
   // ── WebHR module navigation ──
   String _moduleId = 'dashboard';
@@ -183,6 +259,8 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _isDarkMode = prefs.getBool(_prefDark) ?? false;
     _brandThemeId = prefs.getString(_prefBrand) ?? BrandThemes.defaultId;
+    await _loadStatusFeed(prefs);
+    await loadOrgSettings();
     notifyListeners();
   }
 
@@ -211,6 +289,191 @@ class AppState extends ChangeNotifier {
       _clockInTime = DateTime.now();
     }
     notifyListeners();
+  }
+
+  // Dashboard status / holiday posts (local + SharedPreferences)
+  static const _prefStatusFeed = 'hr360_status_feed';
+  final List<Map<String, dynamic>> _statusFeed = [];
+  List<Map<String, dynamic>> get statusFeed => List.unmodifiable(_statusFeed);
+
+  List<Map<String, dynamic>> _birthdaysToday = [];
+  List<Map<String, dynamic>> _anniversariesToday = [];
+  List<Map<String, dynamic>> _upcomingBirthdays = [];
+  List<Map<String, dynamic>> _upcomingAnniversaries = [];
+  List<Map<String, dynamic>> get birthdaysToday =>
+      List.unmodifiable(_birthdaysToday);
+  List<Map<String, dynamic>> get anniversariesToday =>
+      List.unmodifiable(_anniversariesToday);
+  List<Map<String, dynamic>> get upcomingBirthdays =>
+      List.unmodifiable(_upcomingBirthdays);
+  List<Map<String, dynamic>> get upcomingAnniversaries =>
+      List.unmodifiable(_upcomingAnniversaries);
+
+  Future<void> loadStatusFeed() async {
+    final repo = _feedRepo;
+    if (repo == null) return;
+    final snap = await repo.loadSnapshot();
+    if (snap == null) return;
+    _statusFeed
+      ..clear()
+      ..addAll(snap.posts);
+    _birthdaysToday = snap.birthdays;
+    _anniversariesToday = snap.anniversaries;
+    _upcomingBirthdays = snap.upcomingBirthdays;
+    _upcomingAnniversaries = snap.upcomingAnniversaries;
+    notifyListeners();
+    await _persistStatusFeed();
+  }
+
+  Future<void> postStatus({
+    required String author,
+    required String text,
+    String type = 'status', // status | holiday | announcement | recognition
+    String authorTitle = '',
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+
+    Map<String, dynamic>? remote;
+    try {
+      remote = await _feedRepo?.post(text: trimmed, type: type);
+    } catch (_) {}
+
+    final post = remote ?? {
+      'id': DateTime.now().millisecondsSinceEpoch.toString(),
+      'author': author,
+      'author_title': authorTitle,
+      'text': trimmed,
+      'type': type,
+      'created_at': DateTime.now().toIso8601String(),
+      'likes': <String>[],
+      'comments': <Map<String, dynamic>>[],
+    };
+    _statusFeed.removeWhere((p) => '${p['id']}' == '${post['id']}');
+    _statusFeed.insert(0, post);
+    if (_statusFeed.length > 50) {
+      _statusFeed.removeRange(50, _statusFeed.length);
+    }
+
+    if (type == 'holiday' || type == 'announcement') {
+      _notifications.insert(0, {
+        'id': '${post['id']}',
+        'title': type == 'holiday' ? 'Holiday' : 'Announcement',
+        'desc': trimmed,
+        'time': post['created_at'],
+        'icon': type == 'holiday'
+            ? Icons.celebration_outlined
+            : Icons.campaign_outlined,
+        'color': type == 'holiday'
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFF2A72B5),
+        'read': false,
+        'from': author,
+      });
+    }
+
+    notifyListeners();
+    await _persistStatusFeed();
+  }
+
+  Future<void> _persistStatusFeed() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefStatusFeed, jsonEncode(_statusFeed));
+  }
+
+  Future<void> _loadStatusFeed(SharedPreferences prefs) async {
+    final raw = prefs.getString(_prefStatusFeed);
+    if (raw == null || raw.isEmpty) return;
+    _statusFeed.clear();
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is List) {
+        for (final e in decoded) {
+          if (e is! Map) continue;
+          final m = Map<String, dynamic>.from(e);
+          m['likes'] = ((m['likes'] as List?) ?? []).map((x) => '$x').toList();
+          m['comments'] = ((m['comments'] as List?) ?? [])
+              .whereType<Map>()
+              .map((x) => Map<String, dynamic>.from(x))
+              .toList();
+          _statusFeed.add(m);
+        }
+        return;
+      }
+    } catch (_) {
+      // legacy pipe format
+    }
+    for (final line in raw.split('\n')) {
+      final p = line.split('|');
+      if (p.length < 5) continue;
+      _statusFeed.add({
+        'id': p[0],
+        'author': p[1],
+        'type': p[2],
+        'created_at': p[3],
+        'text': p.sublist(4).join('|'),
+        'likes': <String>[],
+        'comments': <Map<String, dynamic>>[],
+      });
+    }
+  }
+
+  Future<void> toggleFeedLike({required String postId, required String userName}) async {
+    final i = _statusFeed.indexWhere((p) => '${p['id']}' == postId);
+    if (i < 0) return;
+    final likes = List<String>.from((_statusFeed[i]['likes'] as List?) ?? []);
+    if (likes.contains(userName)) {
+      likes.remove(userName);
+    } else {
+      likes.add(userName);
+    }
+    _statusFeed[i]['likes'] = likes;
+    notifyListeners();
+    _persistStatusFeed();
+    try {
+      final remote = await _feedRepo?.like(postId);
+      if (remote != null) {
+        _replaceFeedPost(remote);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> addFeedComment({
+    required String postId,
+    required String author,
+    required String text,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+    final i = _statusFeed.indexWhere((p) => '${p['id']}' == postId);
+    if (i < 0) return;
+    final comments =
+        List<Map<String, dynamic>>.from((_statusFeed[i]['comments'] as List?) ?? []);
+    comments.add({
+      'author': author,
+      'text': trimmed,
+      'created_at': DateTime.now().toIso8601String(),
+    });
+    _statusFeed[i]['comments'] = comments;
+    notifyListeners();
+    _persistStatusFeed();
+    try {
+      final remote = await _feedRepo?.comment(postId: postId, text: trimmed);
+      if (remote != null) {
+        _replaceFeedPost(remote);
+      }
+    } catch (_) {}
+  }
+
+  void _replaceFeedPost(Map<String, dynamic> post) {
+    final i = _statusFeed.indexWhere((p) => '${p['id']}' == '${post['id']}');
+    if (i < 0) {
+      _statusFeed.insert(0, post);
+    } else {
+      _statusFeed[i] = post;
+    }
+    notifyListeners();
+    _persistStatusFeed();
   }
 
   // Sidebar Collapse
@@ -255,43 +518,47 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Notification Drawer
+  // Notification Drawer (demo / offline sample — live API replaces when logged in)
   final List<Map<String, dynamic>> _notifications = [
     {
       'id': '1',
-      'title': '360 Review Completed',
-      'desc': 'Sarah Jenkins submitted peer feedback for Alex Rivera',
-      'time': '10 mins ago',
-      'icon': Icons.star_rate_rounded,
-      'color': const Color(0xFFF59E0B),
+      'title': 'Your acknowledgement is required for: (Resignations)',
+      'desc': 'Demo Admin submitted a resignation request',
+      'time': DateTime.now().subtract(const Duration(days: 45)).toIso8601String(),
+      'icon': Icons.person_off_outlined,
+      'color': const Color(0xFFE11D48),
       'read': false,
+      'from': 'Demo Admin',
     },
     {
       'id': '2',
-      'title': 'New Leave Request',
-      'desc': 'David Kim requested 3 days of Annual Leave',
-      'time': '45 mins ago',
+      'title': 'Your acknowledgement is required for: (Leaves)',
+      'desc': 'Annual Leave · 3 days pending approval',
+      'time': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
       'icon': Icons.beach_access_rounded,
       'color': const Color(0xFF10B981),
       'read': false,
+      'from': 'Ali Staff',
     },
     {
       'id': '3',
-      'title': 'Candidate Advanced',
-      'desc': 'Elena Vance moved to Interview stage (Staff SRE)',
-      'time': '2 hours ago',
-      'icon': Icons.badge_rounded,
-      'color': const Color(0xFF6366F1),
+      'title': 'Approved: Leave request',
+      'desc': 'Your leave request has been approved.',
+      'time': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+      'icon': Icons.check_circle_outline,
+      'color': const Color(0xFF2A72B5),
       'read': true,
+      'from': 'HR Manager',
     },
     {
       'id': '4',
-      'title': 'Payroll Batch Processed',
-      'desc': 'September 2026 disbursement summary is ready',
-      'time': '5 hours ago',
-      'icon': Icons.account_balance_wallet_rounded,
+      'title': 'Submitted: Travel request',
+      'desc': 'A new travel request was submitted.',
+      'time': DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
+      'icon': Icons.flight_takeoff,
       'color': const Color(0xFF06B6D4),
       'read': true,
+      'from': 'Operations',
     },
   ];
 

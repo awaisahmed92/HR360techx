@@ -548,10 +548,12 @@ class SelfServiceController extends Controller
             if ($this->approvals->inboxEligible($r, $uid, $isAdmin, 'leave')) {
                 $items[] = [
                     'kind' => 'leave',
+                    'module' => 'Leaves',
                     'id' => (int) $r->id,
                     'title' => (string) ($r->type_name ?? 'Leave'),
                     'employee_name' => (string) ($r->employee_name ?? ''),
                     'summary' => $r->from.' → '.$r->to.' ('.(int) $r->days.'d)',
+                    'created_at' => (string) ($r->date ?? $r->created_at ?? ''),
                 ];
             }
         }
@@ -565,10 +567,12 @@ class SelfServiceController extends Controller
             if ($this->approvals->inboxEligible($r, $uid, $isAdmin, 'travel')) {
                 $items[] = [
                     'kind' => 'travel',
+                    'module' => 'Travel',
                     'id' => (int) ($r->{$travelPk} ?? $r->id ?? 0),
                     'title' => (string) ($r->request_no ?? 'Travel'),
                     'employee_name' => (string) ($r->employee_name ?? ''),
                     'summary' => ($r->from_location ?? '').' → '.($r->to_location ?? ''),
+                    'created_at' => (string) ($r->created_at ?? ''),
                 ];
             }
         }
@@ -586,11 +590,76 @@ class SelfServiceController extends Controller
                     : (string) ($r->date ?? '');
                 $items[] = [
                     'kind' => 'timesheet',
+                    'module' => 'Timesheet',
                     'id' => (int) ($r->{$tsPk} ?? $r->id ?? 0),
                     'title' => (string) ($r->project_name ?? 'Timesheet'),
                     'employee_name' => (string) ($r->employee_name ?? ''),
                     'summary' => $from.' · '.$r->hours.'h',
+                    'created_at' => (string) ($r->created_at ?? $r->date ?? ''),
                 ];
+            }
+        }
+
+        // Resignations pending acknowledgement
+        if (Schema::hasTable('hr_resignation')) {
+            foreach (DB::table('hr_resignation as r')
+                ->leftJoin('employee as e', 'e.employee_id', '=', 'r.employee_id')
+                ->where('r.status', 0)
+                ->select('r.*', 'e.name as employee_name', 'e.line_manager')
+                ->orderByDesc('r.id')->limit(50)->get() as $r) {
+                if ($isAdmin || $uid === (int) ($r->line_manager ?? 0) || $uid === (int) ($r->employee_id ?? 0)) {
+                    $items[] = [
+                        'kind' => 'resignation',
+                        'module' => 'Resignations',
+                        'id' => (int) $r->id,
+                        'title' => 'Resignation',
+                        'employee_name' => (string) ($r->employee_name ?? ''),
+                        'summary' => trim(($r->resign_date ?? '').' '.($r->reason ?? '')),
+                        'created_at' => (string) ($r->created_at ?? ''),
+                    ];
+                }
+            }
+        }
+
+        // Loan applications pending
+        if (Schema::hasTable('loan_application')) {
+            foreach (DB::table('loan_application as l')
+                ->leftJoin('employee as e', 'e.employee_id', '=', 'l.employee')
+                ->where('l.status', 'pending')
+                ->select('l.*', 'e.name as employee_name', 'e.line_manager')
+                ->orderByDesc('l.id')->limit(50)->get() as $r) {
+                if ($isAdmin || $uid === (int) ($r->line_manager ?? 0)) {
+                    $items[] = [
+                        'kind' => 'loan',
+                        'module' => 'Loan Applications',
+                        'id' => (int) $r->id,
+                        'title' => 'Loan Application',
+                        'employee_name' => (string) ($r->employee_name ?? ''),
+                        'summary' => number_format((float) ($r->loan_amount ?? 0), 2),
+                        'created_at' => (string) ($r->created_at ?? ''),
+                    ];
+                }
+            }
+        }
+
+        // Employment change pending
+        if (Schema::hasTable('hr_employment_change')) {
+            foreach (DB::table('hr_employment_change as c')
+                ->leftJoin('employee as e', 'e.employee_id', '=', 'c.employee_id')
+                ->where('c.status', 0)
+                ->select('c.*', 'e.name as employee_name', 'e.line_manager')
+                ->orderByDesc('c.id')->limit(50)->get() as $r) {
+                if ($isAdmin || $uid === (int) ($r->line_manager ?? 0)) {
+                    $items[] = [
+                        'kind' => 'employment_change',
+                        'module' => 'Employment Change',
+                        'id' => (int) $r->id,
+                        'title' => (string) ($r->change_type ?? 'Employment Change'),
+                        'employee_name' => (string) ($r->employee_name ?? ''),
+                        'summary' => trim(($r->old_value ?? '').' → '.($r->new_value ?? '')),
+                        'created_at' => (string) ($r->created_at ?? ''),
+                    ];
+                }
             }
         }
 

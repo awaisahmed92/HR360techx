@@ -6,7 +6,6 @@ import 'core/leave/leave_state.dart';
 import 'core/self_service/self_service_state.dart';
 import 'core/settings/ui_prefs_repository.dart';
 import 'theme/app_theme.dart';
-import 'theme/hr_theme.dart';
 import 'views/login_view.dart';
 import 'views/master_crud_view.dart';
 import 'views/my_dashboard_view.dart';
@@ -36,6 +35,7 @@ import 'views/timesheet_view.dart';
 import 'views/approvals_inbox_view.dart';
 import 'views/profile_view.dart';
 import 'views/account_settings_view.dart';
+import 'views/system_settings_view.dart';
 import 'widgets/webhr_nav.dart';
 
 void main() {
@@ -74,7 +74,7 @@ class HR360App extends StatelessWidget {
       darkTheme: AppTheme.darkThemeFor(appState.brandColor),
       themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: switch (auth.status) {
-        AuthStatus.unknown => const _SplashGate(),
+        AuthStatus.unknown => const _SessionRestoreHold(),
         AuthStatus.unauthenticated => const LoginView(),
         AuthStatus.authenticated => const MainShell(),
       },
@@ -82,14 +82,25 @@ class HR360App extends StatelessWidget {
   }
 }
 
-class _SplashGate extends StatelessWidget {
-  const _SplashGate();
+/// Hold while SharedPreferences restores the token. Never show Login here —
+/// that is what caused the refresh flash (login → dashboard).
+class _SessionRestoreHold extends StatelessWidget {
+  const _SessionRestoreHold();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      body: Center(child: CircularProgressIndicator(color: HrTheme.brand(context))),
+    return const Scaffold(
+      backgroundColor: Color(0xFF1A1A1E),
+      body: Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.4,
+            color: Color(0xFF2A72B5),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -135,6 +146,7 @@ class _MainShellState extends State<MainShell> {
       _themeBootstrapped = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        context.read<AppState>().bindAuth(auth);
         final prefs = auth.session?.uiPrefs;
         if (prefs != null) {
           app.applyUiPrefs(prefs);
@@ -163,6 +175,8 @@ class _MainShellState extends State<MainShell> {
         return const ProfileView();
       case 'settings':
         return const AccountSettingsView();
+      case 'system_settings':
+        return const SystemSettingsView();
       case 'approvals':
         return const ApprovalsInboxView();
       case 'employees':

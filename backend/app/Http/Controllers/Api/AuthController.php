@@ -216,6 +216,60 @@ class AuthController extends Controller
         ]);
     }
 
+    /** Public org name + logo for the Employee Login page (no secrets). */
+    public function branding(Request $request)
+    {
+        $sub = trim((string) ($request->query('subdomain') ?? $request->input('subdomain') ?? ''));
+        if ($sub === '') {
+            return response()->json(['success' => false, 'message' => 'Organization required.'], 422);
+        }
+
+        try {
+            $tenant = TenantManager::findBySubdomain($sub);
+            if (!$tenant) {
+                return response()->json(['success' => false, 'message' => 'Organization not found.'], 404);
+            }
+
+            TenantManager::connect($tenant);
+            $company = Schema::hasTable('company') ? DB::table('company')->first() : null;
+            $name = $sub;
+            $logo = null;
+
+            if ($company) {
+                $name = (string) ($company->hr_company_name ?? $company->name ?? $sub);
+                $logo = $company->hr_logo ?? $company->logo ?? null;
+                if (Schema::hasColumn('company', 'ui_prefs') && !empty($company->ui_prefs)) {
+                    $decoded = json_decode((string) $company->ui_prefs, true);
+                    if (is_array($decoded)) {
+                        $org = (isset($decoded['organization']) && is_array($decoded['organization']))
+                            ? $decoded['organization']
+                            : $decoded;
+                        if (!empty($org['logo_url'])) {
+                            $logo = $org['logo_url'];
+                        }
+                        if (!empty($org['org_name'])) {
+                            $name = (string) $org['org_name'];
+                        }
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'name' => $name,
+                'logo' => $logo,
+                'subdomain' => $sub,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to load branding.',
+            ], 500);
+        }
+    }
+
     protected function passwordOk(string $plain, string $stored): bool
     {
         if ($stored !== '' && Hash::check($plain, $stored)) {

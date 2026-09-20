@@ -2,17 +2,28 @@ import 'package:flutter/foundation.dart';
 
 import 'auth_models.dart';
 import 'auth_service.dart';
+import 'session_peek.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
 class AuthState extends ChangeNotifier {
-  AuthState({AuthService? service}) : _service = service ?? AuthService();
+  AuthState({AuthService? service}) : _service = service ?? AuthService() {
+    _hydrateSync();
+  }
 
   final AuthService _service;
   AuthStatus _status = AuthStatus.unknown;
   AuthSession? _session;
   String? _error;
   bool _busy = false;
+
+  void _hydrateSync() {
+    _service.hydrateFromRaw(peekStoredSessionJson());
+    _session = _service.session;
+    if (_session != null) {
+      _status = AuthStatus.authenticated;
+    }
+  }
 
   AuthStatus get status => _status;
   AuthSession? get session => _session;
@@ -32,6 +43,13 @@ class AuthState extends ChangeNotifier {
         ? AuthStatus.authenticated
         : AuthStatus.unauthenticated;
     notifyListeners();
+    if (_session != null && _session!.isDemo == false) {
+      final refreshed = await _service.refreshMe();
+      if (refreshed != null) {
+        _session = refreshed;
+        notifyListeners();
+      }
+    }
   }
 
   Future<bool> login({

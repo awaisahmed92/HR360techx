@@ -1,34 +1,15 @@
-import 'dart:math';
+import 'dart:async';
+import 'dart:convert';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/auth/auth_state.dart';
-
-/// Curated HR / workplace photos (Unsplash). One is picked at random each login load.
-const _loginBackgrounds = <String>[
-  // Office teamwork / meeting
-  'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1542744173-8e2bd1f53eef?auto=format&fit=crop&w=1920&q=80',
-  // Desk / laptop / professional work
-  'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1920&q=80',
-  // HR / people / handshake / interview vibe
-  'https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1920&q=80',
-  'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1920&q=80',
-];
+import '../core/config/app_config.dart';
+import '../core/config/login_backgrounds.dart';
+import '../core/network/api_client.dart';
 
 /// WebHR-style employee login — wide white card, label-left gray fields.
 class LoginView extends StatefulWidget {
@@ -45,13 +26,15 @@ class _LoginViewState extends State<LoginView> {
   final _passCtrl = TextEditingController();
   bool _obscure = true;
   bool _remember = true;
-  late final String _bgUrl;
+  late final ImageProvider _bgImage;
+  String? _logoUrl;
+  Timer? _brandDebounce;
   static const _prefOrg = 'hr360_login_org';
   static const _prefUser = 'hr360_login_user';
   static const _prefRemember = 'hr360_login_remember';
+  static const _prefLoginLogo = 'hr360_login_logo';
 
   static const _blue = Color(0xFF2A72B5);
-  static const _orange = Color(0xFFF15A24);
   static const _fieldBg = Color(0xFFE8E8E8);
   static const _labelColor = Color(0xFF3A3A3A);
   static const _labelW = 128.0;
@@ -59,26 +42,79 @@ class _LoginViewState extends State<LoginView> {
   @override
   void initState() {
     super.initState();
-    _bgUrl = _loginBackgrounds[Random().nextInt(_loginBackgrounds.length)];
+    _bgImage = LoginBackgrounds.randomImage();
+    _orgCtrl.addListener(_onOrgChanged);
     _restoreRemembered();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      precacheImage(NetworkImage(_bgUrl), context);
+      precacheImage(_bgImage, context);
     });
   }
 
   Future<void> _restoreRemembered() async {
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_prefRemember) != true) return;
+    final cachedLogo = prefs.getString(_prefLoginLogo);
+    String? settingsLogo;
+    try {
+      final raw = prefs.getString('hr360_org_settings');
+      if (raw != null && raw.isNotEmpty) {
+        final map = jsonDecode(raw);
+        if (map is Map && map['logo_url'] != null) {
+          settingsLogo = map['logo_url'].toString();
+        }
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
     setState(() {
-      _remember = true;
-      _orgCtrl.text = prefs.getString(_prefOrg) ?? 'demo';
-      _userCtrl.text = prefs.getString(_prefUser) ?? '';
+      if (prefs.getBool(_prefRemember) == true) {
+        _remember = true;
+        _orgCtrl.text = prefs.getString(_prefOrg) ?? 'demo';
+        _userCtrl.text = prefs.getString(_prefUser) ?? '';
+      }
+      final resolved = AppConfig.resolveMediaUrl(
+        (cachedLogo != null && cachedLogo.isNotEmpty) ? cachedLogo : settingsLogo,
+      );
+      if (resolved.isNotEmpty) _logoUrl = resolved;
     });
+    await _fetchBranding(_orgCtrl.text);
+  }
+
+  void _onOrgChanged() {
+    _brandDebounce?.cancel();
+    _brandDebounce = Timer(const Duration(milliseconds: 450), () {
+      _fetchBranding(_orgCtrl.text);
+    });
+  }
+
+  Future<void> _fetchBranding(String org) async {
+    final sub = org.trim().toLowerCase();
+    if (sub.isEmpty) return;
+    try {
+      final res = await ApiClient().dio.get(
+        '/auth/branding',
+        queryParameters: {'subdomain': sub},
+      );
+      final data = res.data;
+      if (data is! Map || data['success'] != true) return;
+      final resolved = AppConfig.resolveMediaUrl(data['logo']?.toString());
+      if (!mounted) return;
+      setState(() {
+        if (resolved.isNotEmpty) _logoUrl = resolved;
+      });
+      if (resolved.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_prefLoginLogo, resolved);
+      }
+    } catch (_) {
+      // keep cached / default 360 mark
+    }
   }
 
   @override
   void dispose() {
+    _brandDebounce?.cancel();
+    _orgCtrl.removeListener(_onOrgChanged);
     _orgCtrl.dispose();
     _userCtrl.dispose();
     _passCtrl.dispose();
@@ -111,7 +147,12 @@ class _LoginViewState extends State<LoginView> {
     if (_remember) {
       await prefs.setString(_prefOrg, org);
       await prefs.setString(_prefUser, user);
-    } else {
+    }
+    final companyLogo = AppConfig.resolveMediaUrl(auth.company?.logo);
+    if (companyLogo.isNotEmpty) {
+      await prefs.setString(_prefLoginLogo, companyLogo);
+    }
+    if (!_remember) {
       await prefs.remove(_prefOrg);
       await prefs.remove(_prefUser);
     }
@@ -126,38 +167,24 @@ class _LoginViewState extends State<LoginView> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Random HR/office photo each refresh (soft blur like WebHR)
+          const ColoredBox(color: Color(0xFF1A1A1E)),
           Positioned.fill(
             child: ImageFiltered(
-              imageFilter: ImageFilter.blur(sigmaX: 2.5, sigmaY: 2.5),
-              child: Image.network(
-                _bgUrl,
+              imageFilter: ImageFilter.blur(sigmaX: 1.6, sigmaY: 1.6),
+              child: Image(
+                image: _bgImage,
                 fit: BoxFit.cover,
                 alignment: Alignment.center,
                 filterQuality: FilterQuality.medium,
-                errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: Color(0xFF1A1A1E),
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  LoginBackgrounds.assetPath('LoginBG29.jpg'),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                 ),
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return const ColoredBox(
-                    color: Color(0xFF1A1A1E),
-                    child: Center(
-                      child: SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    ),
-                  );
-                },
               ),
             ),
           ),
-          // Soft blur + dark scrim so card / logo stay readable
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -188,9 +215,9 @@ class _LoginViewState extends State<LoginView> {
                   child: const Icon(Icons.groups, color: Colors.white, size: 18),
                 ),
                 const SizedBox(width: 10),
-                Text(
+                const Text(
                   'HR360',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,
                     fontWeight: FontWeight.w700,
@@ -229,39 +256,14 @@ class _LoginViewState extends State<LoginView> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            width: 72,
-                            height: 72,
-                            decoration: BoxDecoration(
-                              color: _orange,
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _orange.withValues(alpha: 0.35),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Text(
-                                '360',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 20,
-                                  letterSpacing: -0.5,
-                                ),
-                              ),
-                            ),
-                          ),
+                          _LoginCompanyLogo(url: _logoUrl),
                           const SizedBox(height: 22),
-                          Text(
+                          const Text(
                             'Employee Login',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w500,
-                              color: const Color(0xFF444444),
+                              color: Color(0xFF444444),
                             ),
                           ),
                           const SizedBox(height: 40),
@@ -337,11 +339,11 @@ class _LoginViewState extends State<LoginView> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  Text(
+                                  const Text(
                                     'Remember Me',
-                                    style: GoogleFonts.inter(
+                                    style: TextStyle(
                                       fontSize: 14,
-                                      color: const Color(0xFF555555),
+                                      color: Color(0xFF555555),
                                     ),
                                   ),
                                 ],
@@ -372,23 +374,16 @@ class _LoginViewState extends State<LoginView> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.vpn_key, size: 20),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          'Login',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
+                                  : const Text(
+                                      'Sign In',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                             ),
                           ),
-                          const SizedBox(height: 22),
+                          const SizedBox(height: 16),
                           TextButton(
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -401,7 +396,7 @@ class _LoginViewState extends State<LoginView> {
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: const Color(0xFF777777),
-                              textStyle: GoogleFonts.inter(fontSize: 13.5),
+                              textStyle: const TextStyle(fontSize: 13.5),
                             ),
                             child: const Text('Forgot your password?'),
                           ),
@@ -418,10 +413,9 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
-  TextStyle get _fieldTextStyle => GoogleFonts.inter(
-        fontSize: 14.5,
-        color: const Color(0xFF333333),
-        fontWeight: FontWeight.w500,
+  TextStyle get _fieldTextStyle => const TextStyle(
+        fontSize: 14,
+        color: Color(0xFF222222),
       );
 
   Widget _rowField({required String label, required Widget child}) {
@@ -432,47 +426,100 @@ class _LoginViewState extends State<LoginView> {
           width: _labelW,
           child: Text(
             label,
-            style: GoogleFonts.inter(
+            textAlign: TextAlign.right,
+            style: const TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
               color: _labelColor,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 16),
         Expanded(child: child),
       ],
     );
   }
 
   InputDecoration _deco(String hint) {
-    final radius = BorderRadius.circular(8);
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.inter(
-        color: Colors.grey.shade500,
+      hintStyle: TextStyle(
         fontSize: 14,
-        fontWeight: FontWeight.w400,
+        color: Colors.grey.shade600,
       ),
-      isDense: false,
       filled: true,
       fillColor: _fieldBg,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: BorderSide.none,
+      ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: radius,
-        borderSide: const BorderSide(color: _blue, width: 1.6),
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: _blue, width: 1.5),
       ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: radius,
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.2),
+    );
+  }
+}
+
+class _LoginCompanyLogo extends StatelessWidget {
+  const _LoginCompanyLogo({this.url});
+
+  final String? url;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = url?.trim() ?? '';
+    final hasLogo = resolved.isNotEmpty;
+
+    return Container(
+      width: 88,
+      height: 88,
+      decoration: BoxDecoration(
+        color: hasLogo ? Colors.white : const Color(0xFFF15A24),
+        borderRadius: BorderRadius.circular(10),
+        border: hasLogo ? Border.all(color: const Color(0xFFE8E4DC)) : null,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF15A24).withValues(alpha: hasLogo ? 0.12 : 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: radius,
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.6),
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      child: hasLogo
+          ? Padding(
+              padding: const EdgeInsets.all(8),
+              child: Image.network(
+                resolved,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const _Default360Mark(),
+              ),
+            )
+          : const _Default360Mark(),
+    );
+  }
+}
+
+class _Default360Mark extends StatelessWidget {
+  const _Default360Mark();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+      '360',
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w900,
+        fontSize: 22,
+        letterSpacing: -0.5,
       ),
-      errorStyle: const TextStyle(fontSize: 11.5, height: 1),
     );
   }
 }

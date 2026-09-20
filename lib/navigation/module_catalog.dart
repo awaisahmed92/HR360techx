@@ -69,7 +69,7 @@ class ModuleCatalog {
         HrSubNav(id: 'policies', label: 'Policies', icon: Icons.policy_outlined, screen: 'master', entity: 'policies'),
         HrSubNav(id: 'announcements', label: 'Announcements', icon: Icons.campaign_outlined, screen: 'master', entity: 'announcements'),
         HrSubNav(id: 'letters', label: 'HR Letters', icon: Icons.mail_outline, screen: 'letters'),
-        HrSubNav(id: 'system_settings', label: 'System Settings', icon: Icons.tune_outlined, screen: 'settings'),
+        HrSubNav(id: 'system_settings', label: 'System Settings', icon: Icons.tune_outlined, screen: 'system_settings'),
         HrSubNav(id: 'system_logs', label: 'System Logs', icon: Icons.receipt_long_outlined, screen: 'master', entity: 'system_logs'),
       ],
     ),

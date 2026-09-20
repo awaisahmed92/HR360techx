@@ -53,65 +53,69 @@ class _LeaveModuleSettingsViewState extends State<LeaveModuleSettingsView> {
 
     return ColoredBox(
       color: HrUi.pageBg(context),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Icon(Icons.mail_outline, color: HrTheme.heading(context)),
-              const SizedBox(width: 8),
-              Text('Leaves',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: HrTheme.heading(context),
-                  )),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: widget.onBack,
-                icon: const Icon(Icons.arrow_back, size: 16),
-                label: const Text('Back'),
-              ),
-            ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+            child: Row(
+              children: [
+                Icon(Icons.mail_outline, color: HrTheme.heading(context)),
+                const SizedBox(width: 8),
+                Text('Leaves',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: HrTheme.heading(context),
+                    )),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: widget.onBack,
+                  icon: const Icon(Icons.arrow_back, size: 16),
+                  label: const Text('Back'),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          HrSettingsShell(
-            title: 'Leaves Settings',
-            navItems: _items,
-            selectedNav: _nav,
-            onNav: (v) => setState(() => _nav = v),
-            onSave: () async {
-              String? err;
-              if (_nav == 'Leaves Options') {
-                err = await leave.saveModuleOptions();
-              } else if (_nav == 'Approvals') {
-                err = await ss.saveApprovalSettings('leave');
-              } else if (_nav == 'Notifications') {
-                err = await ss.saveNotificationSettings('leave');
-              } else if (_nav == 'Leave Thresholds') {
-                // Thresholds save per-row
-                err = null;
-              }
-              if (!mounted) return;
-              if (_nav == 'Leave Thresholds') return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(err ?? 'Settings saved'),
-                  backgroundColor:
-                      err == null ? const Color(0xFF10B981) : Colors.redAccent,
-                ),
-              );
-            },
-            child: switch (_nav) {
-              'Leaves Options' => _LeaveOptionsPanel(onManageTypes: widget.onManageTypes),
-              'Leave Thresholds' => const _LeaveThresholdsPanel(),
-              'Approvals' => const _LeaveApprovalsPanel(),
-              'Notifications' => const _LeaveNotificationsPanel(),
-              _ => Text(
-                  'Data Grid column preferences coming soon.',
-                  style: TextStyle(color: HrUi.muted(context)),
-                ),
-            },
+          Expanded(
+            child: HrSettingsShell(
+              title: 'Leaves Settings',
+              navItems: _items,
+              selectedNav: _nav,
+              onNav: (v) => setState(() => _nav = v),
+              onSave: () async {
+                String? err;
+                if (_nav == 'Leaves Options') {
+                  err = await leave.saveModuleOptions();
+                } else if (_nav == 'Approvals') {
+                  err = await ss.saveApprovalSettings('leave');
+                } else if (_nav == 'Notifications') {
+                  err = await ss.saveNotificationSettings('leave');
+                } else if (_nav == 'Leave Thresholds') {
+                  // Thresholds save per-row
+                  err = null;
+                }
+                if (!mounted) return;
+                if (_nav == 'Leave Thresholds') return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(err ?? 'Settings saved'),
+                    backgroundColor:
+                        err == null ? const Color(0xFF10B981) : Colors.redAccent,
+                  ),
+                );
+              },
+              child: switch (_nav) {
+                'Leaves Options' => _LeaveOptionsPanel(onManageTypes: widget.onManageTypes),
+                'Leave Thresholds' => const _LeaveThresholdsPanel(),
+                'Approvals' => const _LeaveApprovalsPanel(),
+                'Notifications' => const _LeaveNotificationsPanel(),
+                _ => Text(
+                    'Data Grid column preferences coming soon.',
+                    style: TextStyle(color: HrUi.muted(context)),
+                  ),
+              },
+            ),
           ),
         ],
       ),

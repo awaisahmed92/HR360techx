@@ -19,12 +19,15 @@ use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Api\TerminationController;
 use App\Http\Controllers\Api\TravelController;
 use App\Http\Controllers\Api\UiPrefsController;
+use App\Http\Controllers\Api\OrganizationSettingsController;
 use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\WorkflowSettingsController;
+use App\Http\Controllers\Api\StatusFeedController;
 use App\Http\Middleware\TenantAuth;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/auth/branding', [AuthController::class, 'branding']);
 
 Route::middleware([TenantAuth::class])->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
@@ -90,6 +93,13 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/settings/notifications', [WorkflowSettingsController::class, 'saveNotifications']);
     Route::get('/settings/ui-prefs', [UiPrefsController::class, 'get']);
     Route::post('/settings/ui-prefs', [UiPrefsController::class, 'save']);
+    Route::get('/settings/organization', [OrganizationSettingsController::class, 'get']);
+    Route::post('/settings/organization', [OrganizationSettingsController::class, 'save']);
+
+    Route::get('/feed', [StatusFeedController::class, 'index']);
+    Route::post('/feed', [StatusFeedController::class, 'store']);
+    Route::post('/feed/{id}/like', [StatusFeedController::class, 'like'])->whereNumber('id');
+    Route::post('/feed/{id}/comment', [StatusFeedController::class, 'comment'])->whereNumber('id');
     Route::get('/notifications', [WorkflowSettingsController::class, 'listNotifications']);
     Route::post('/notifications/read', [WorkflowSettingsController::class, 'markRead']);
     Route::get('/employees/stats', [EmployeeController::class, 'stats']);

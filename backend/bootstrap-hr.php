@@ -42,6 +42,7 @@ $requiredTables = [
     '26_phase4_talent.sql' => ['hr_candidate'],
     '27_phase4_depth.sql' => ['performance_cycle'],
     '28_phase5_devices.sql' => ['biometric_devices', 'device_attendance'],
+    '29_status_feed.sql' => ['status_posts'],
 ];
 
 function pdo(string $host, string $port, string $user, string $pass, ?string $db = null): PDO

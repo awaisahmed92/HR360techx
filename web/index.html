@@ -2,162 +2,245 @@
 <html lang="en">
 <head>
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="HR360 TechX - Next-Gen 360 Human Resources & Talent Cloud Single Page Application">
+  <meta name="description" content="HR360 TechX Employee Login">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="HR360 TechX">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%234F46E5%22/><text y=%22.9em%22 font-size=%2255%22 x=%2218%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22>360</text></svg>">
-
-  <title>HR360 TechX — 360° Workforce & Talent Cloud</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232A72B5%22/><text y=%22.9em%22 font-size=%2255%22 x=%2218%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22>360</text></svg>">
+  <title>HR360 TechX — Employee Login</title>
   <link rel="manifest" href="manifest.json">
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-
   <style>
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: #0F172A;
-      color: #F8FAFC;
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 100%;
+      width: 100%;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #1a1a1e;
       overflow: hidden;
-      height: 100vh;
-      width: 100vw;
     }
-    #loading-container {
+    /* Hide Flutter's default top progress strip */
+    .flutter-loader, flt-progress, .loading {
+      display: none !important;
+    }
+    #boot-login {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      width: 100vw;
-      background: radial-gradient(circle at 50% 40%, #1E1B4B 0%, #0F172A 70%);
-      transition: opacity 0.5s ease-out;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.65)),
+        #1a1a1e center / cover no-repeat;
+      padding: 24px;
     }
-    .logo-badge {
+    #boot-login .brand {
+      position: absolute;
+      top: 28px;
+      left: 32px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: .2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #boot-login .brand-dot {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.7);
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+    }
+    #boot-login .card {
+      width: min(560px, 100%);
+      min-height: 440px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+      padding: 48px 56px 40px;
+      box-sizing: border-box;
+    }
+    #boot-login .logo {
       width: 72px;
       height: 72px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      margin: 0 auto 22px;
+      background: #F15A24;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 900;
+      font-size: 20px;
+      display: grid;
+      place-items: center;
+      letter-spacing: -.5px;
+    }
+    #boot-login h1 {
+      margin: 0 0 40px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 500;
+      color: #444;
+    }
+    #boot-login .row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
-      margin-bottom: 24px;
-      position: relative;
+      gap: 16px;
+      margin-bottom: 18px;
     }
-    .logo-badge::after {
-      content: '';
-      position: absolute;
-      inset: -3px;
-      border-radius: 23px;
-      background: linear-gradient(135deg, #6366F1, #A855F7);
-      z-index: -1;
-      opacity: 0.6;
-      filter: blur(8px);
-      animation: pulse 2s infinite alternate;
-    }
-    .logo-badge svg {
-      width: 40px;
-      height: 40px;
-      fill: #FFFFFF;
-    }
-    .brand-title {
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: #FFFFFF;
-      margin-bottom: 6px;
-    }
-    .brand-title span {
-      background: linear-gradient(135deg, #818CF8, #C084FC);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .brand-subtitle {
+    #boot-login label {
+      width: 128px;
+      flex-shrink: 0;
+      text-align: right;
+      color: #3a3a3a;
       font-size: 14px;
-      font-weight: 500;
-      color: #94A3B8;
-      margin-bottom: 32px;
-      letter-spacing: 0.5px;
     }
-    .spinner-bar {
-      width: 180px;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 999px;
-      overflow: hidden;
-      position: relative;
+    #boot-login input {
+      flex: 1;
+      height: 44px;
+      border: 0;
+      border-radius: 6px;
+      background: #e8e8e8;
+      padding: 0 14px;
+      font-size: 14px;
+      outline: none;
     }
-    .spinner-bar::before {
-      content: '';
-      position: absolute;
-      height: 100%;
-      width: 40%;
-      background: linear-gradient(90deg, #4F46E5, #06B6D4);
-      border-radius: 999px;
-      animation: loadprogress 1.4s ease-in-out infinite;
+    #boot-login button {
+      width: 100%;
+      height: 48px;
+      margin-top: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: #2A72B5;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: default;
     }
-    @keyframes loadprogress {
-      0% { left: -40%; width: 30%; }
-      50% { width: 60%; }
-      100% { left: 100%; width: 30%; }
+    #boot-login .hint {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 12px;
+      color: #888;
     }
-    @keyframes pulse {
-      0% { opacity: 0.3; transform: scale(0.96); }
-      100% { opacity: 0.8; transform: scale(1.04); }
+    #boot-login.restoring .card,
+    #boot-login.restoring .brand { display: none; }
+    #boot-login.restoring {
+      background: #1a1a1e !important;
+    }
+    #boot-login .hold {
+      display: none;
+      width: 26px;
+      height: 26px;
+      border: 2.4px solid #2A72B5;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: boot-spin .7s linear infinite;
+    }
+    #boot-login.restoring .hold { display: block; }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @media (max-width: 640px) {
+      #boot-login .card { padding: 36px 24px 32px; }
+      #boot-login .row { flex-direction: column; align-items: stretch; gap: 6px; }
+      #boot-login label { width: auto; text-align: left; }
     }
   </style>
 </head>
 <body>
-  <div id="loading-container">
-    <div class="logo-badge">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-      </svg>
+  <!-- Instant login chrome while Flutter JS downloads (no branded splash). -->
+  <div id="boot-login" aria-label="Employee Login">
+    <div class="brand"><span class="brand-dot">360</span> HR360</div>
+    <div class="card">
+      <div class="logo">360</div>
+      <h1>Employee Login</h1>
+      <div class="row">
+        <label>Organization:</label>
+        <input value="demo" readonly tabindex="-1">
+      </div>
+      <div class="row">
+        <label>Employee ID:</label>
+        <input placeholder="Employee ID" readonly tabindex="-1">
+      </div>
+      <div class="row">
+        <label>Password:</label>
+        <input type="password" placeholder="Password" readonly tabindex="-1">
+      </div>
+      <button type="button">Sign In</button>
+      <div class="hint">Opening login…</div>
     </div>
-    <div class="brand-title">HR360 <span>TechX</span></div>
-    <div class="brand-subtitle">Workforce Intelligence & 360° Management</div>
-    <div class="spinner-bar"></div>
+    <div class="hold" aria-hidden="true"></div>
   </div>
+  <script>
+    (function () {
+      var files = [
+        'login-background-images/images1.jpeg',
+        'login-background-images/LoginBG13.jpg',
+        'login-background-images/LoginBG28.jpg',
+        'login-background-images/LoginBG29.jpg',
+        'login-background-images/LoginBG38.jpg',
+        'login-background-images/LoginBG103.jpg',
+        'login-background-images/LoginBG143.jpg',
+        'login-background-images/LoginBG148.jpg',
+        'login-background-images/LoginBG161.jpg',
+        'login-background-images/LoginBG188.jpg',
+        'login-background-images/LoginBG215.jpg',
+        'login-background-images/LoginBG244.jpg',
+        'login-background-images/LoginBG257.jpg'
+      ];
+      var file = files[Math.floor(Math.random() * files.length)];
+      var el = document.getElementById('boot-login');
+      var hasSession = !!(
+        localStorage.getItem('hr360_auth_session_v1') ||
+        localStorage.getItem('flutter.hr360_session_json') ||
+        localStorage.getItem('flutter.hr360_auth_token')
+      );
+      if (el && hasSession) {
+        el.classList.add('restoring');
+      } else if (el) {
+        el.style.backgroundImage =
+          'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.65)), url("' + file + '")';
+      }
+    })();
+  </script>
 
   <script src="flutter.js" defer></script>
   <script>
-    window.addEventListener('load', function(ev) {
-      if (typeof _flutter !== 'undefined') {
-        _flutter.loader.loadEntrypoint({
-          serviceWorker: {
-            serviceWorkerVersion: null,
-          },
-          onEntrypointLoaded: function(engineInitializer) {
-            engineInitializer.initializeEngine().then(function(appRunner) {
-              var loader = document.getElementById('loading-container');
-              if (loader) {
-                loader.style.opacity = '0';
-                setTimeout(function() {
-                  loader.remove();
-                }, 500);
-              }
-              appRunner.runApp();
-            });
-          }
-        });
+    function removeBootLogin() {
+      var el = document.getElementById('boot-login');
+      if (el) el.remove();
+    }
+
+    window.addEventListener('load', function () {
+      if (typeof _flutter === 'undefined') return;
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: { serviceWorkerVersion: null },
+        onEntrypointLoaded: function (engineInitializer) {
+          engineInitializer.initializeEngine().then(function (appRunner) {
+            return appRunner.runApp();
+          }).then(function () {
+            // Drop the HTML shell as soon as Flutter has started.
+            setTimeout(removeBootLogin, 50);
+          }).catch(function () {
+            removeBootLogin();
+          });
+        }
+      });
+    });
+
+    // Fallback: if Flutter paints a view, remove the shell.
+    var observer = new MutationObserver(function () {
+      if (document.querySelector('flt-glass-pane, flutter-view, flt-scene-host')) {
+        removeBootLogin();
+        observer.disconnect();
       }
     });
+    observer.observe(document.body, { childList: true, subtree: true });
   </script>
 </body>
 </html>

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../network/api_client.dart';
 import 'auth_models.dart';
+import 'session_vault.dart';
 
 class AuthException implements Exception {
   AuthException(this.message);
@@ -25,19 +26,48 @@ class AuthService {
   AuthSession? get session => _session;
   String? get token => _session?.token;
 
-  Future<void> restoreSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(AppConfig.prefsSessionKey);
-    if (raw == null || raw.isEmpty) return;
+  void hydrateFromRaw(String? raw) {
+    final map = _decodeSessionMap(raw);
+    if (map == null) return;
     try {
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      _session = AuthSession.fromJson(map);
-      if (_session!.token.isEmpty && !_session!.isDemo) {
-        _session = null;
+      final session = AuthSession.fromJson(map);
+      if (session.token.isEmpty && !session.isDemo) return;
+      _session = session;
+    } catch (_) {}
+  }
+
+  Map<String, dynamic>? _decodeSessionMap(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      dynamic decoded = jsonDecode(raw);
+      // SharedPreferences web stores strings as JSON, so one extra unwrap.
+      if (decoded is String) {
+        decoded = jsonDecode(decoded);
       }
-    } catch (_) {
-      _session = null;
-    }
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> restoreSession() async {
+    hydrateFromRaw(readSessionVault());
+    if (_session != null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      hydrateFromRaw(prefs.getString(AppConfig.prefsSessionKey));
+      final token = prefs.getString(AppConfig.prefsTokenKey);
+      if (_session == null && token != null && token.isNotEmpty) {
+        hydrateFromRaw(jsonEncode({
+          'token': token,
+          'user': <String, dynamic>{},
+          'company': <String, dynamic>{},
+          'permissions': {'all': true},
+          'is_demo': prefs.getBool(AppConfig.prefsUseDemoKey) == true,
+        }));
+      }
+    } catch (_) {}
   }
 
   Future<AuthSession> login({
@@ -110,10 +140,13 @@ class AuthService {
 
   Future<void> logout() async {
     _session = null;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(AppConfig.prefsTokenKey);
-    await prefs.remove(AppConfig.prefsSessionKey);
-    await prefs.remove(AppConfig.prefsUseDemoKey);
+    clearSessionVault();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(AppConfig.prefsTokenKey);
+      await prefs.remove(AppConfig.prefsSessionKey);
+      await prefs.remove(AppConfig.prefsUseDemoKey);
+    } catch (_) {}
   }
 
   Future<AuthSession?> refreshMe() async {
@@ -174,13 +207,22 @@ class AuthService {
 
   Future<void> _persist(AuthSession session) async {
     _session = session;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConfig.prefsTokenKey, session.token);
-    await prefs.setString(
-      AppConfig.prefsSessionKey,
-      jsonEncode(session.toJson()),
-    );
-    await prefs.setBool(AppConfig.prefsUseDemoKey, session.isDemo);
+    final compact = jsonEncode({
+      'token': session.token,
+      'user': session.user.toJson(),
+      'company': session.company.toJson(),
+      'permissions': session.permissions.toJson(),
+      'is_demo': session.isDemo,
+    });
+    writeSessionVault(compact);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(AppConfig.prefsTokenKey, session.token);
+      await prefs.setString(AppConfig.prefsSessionKey, compact);
+      await prefs.setBool(AppConfig.prefsUseDemoKey, session.isDemo);
+    } catch (_) {
+      // Vault already saved — quota / plugin failure must not drop the session.
+    }
   }
 
   AuthSession _demoSession(String subdomain) {
