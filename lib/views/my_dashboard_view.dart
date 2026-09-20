@@ -134,9 +134,9 @@ class _MyDashboardViewState extends State<MyDashboardView> {
     );
 
     return ColoredBox(
-      color: isDark ? AppTheme.darkBg : const Color(0xFFF0EDE8),
+      color: isDark ? AppTheme.darkBg : const Color(0xFFF7F7F5),
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
           _HeroBanner(
             bannerImage: _bannerImage,
@@ -145,17 +145,17 @@ class _MyDashboardViewState extends State<MyDashboardView> {
             role: role,
             app: app,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 980;
+              final wide = constraints.maxWidth >= 820;
               if (!wide) {
                 return Column(
                   children: [
                     feed,
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     alerts,
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     celebrations,
                   ],
                 );
@@ -163,14 +163,14 @@ class _MyDashboardViewState extends State<MyDashboardView> {
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 7, child: feed),
-                  const SizedBox(width: 16),
+                  Expanded(flex: 8, child: feed),
+                  const SizedBox(width: 14),
                   Expanded(
                     flex: 4,
                     child: Column(
                       children: [
                         alerts,
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
                         celebrations,
                       ],
                     ),

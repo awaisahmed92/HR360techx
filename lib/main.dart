@@ -11,6 +11,8 @@ import 'views/master_crud_view.dart';
 import 'views/my_dashboard_view.dart';
 import 'views/module_hub_views.dart';
 import 'views/dashboard_view.dart';
+import 'views/employees_dashboard_view.dart';
+import 'views/employee_directory_view.dart';
 import 'views/employees_view.dart';
 import 'views/employee_roles_view.dart';
 import 'views/performance_view.dart';
@@ -185,6 +187,8 @@ class _MainShellState extends State<MainShell> {
         return const EmployeeRolesView();
       case 'employees_dashboard':
         return const EmployeesDashboardView();
+      case 'employee_directory':
+        return const EmployeeDirectoryView();
       case 'performance':
         return const PerformanceView();
       case 'recruitment':

@@ -18,6 +18,17 @@ class EmployeeState extends ChangeNotifier {
     'inactive': 0,
     'male': 0,
     'female': 0,
+    'job_titles': 0,
+    'types': 0,
+    'categories': 0,
+  };
+  Map<String, List<Map<String, dynamic>>> charts = {
+    'gender': [],
+    'companies': [],
+    'departments': [],
+    'age_groups': [],
+    'categories': [],
+    'divisions': [],
   };
   Map<String, dynamic> options = {};
   List<Map<String, dynamic>> roleCatalog = [];
@@ -50,7 +61,29 @@ class EmployeeState extends ChangeNotifier {
           'inactive': (s['inactive'] as num?)?.toInt() ?? 0,
           'male': (s['male'] as num?)?.toInt() ?? 0,
           'female': (s['female'] as num?)?.toInt() ?? 0,
+          'job_titles': (s['job_titles'] as num?)?.toInt() ??
+              (s['jobTitles'] as num?)?.toInt() ??
+              0,
+          'types': (s['types'] as num?)?.toInt() ?? 0,
+          'categories': (s['categories'] as num?)?.toInt() ?? 0,
         };
+        final rawCharts = statsData['charts'];
+        if (rawCharts is Map) {
+          charts = {
+            for (final key in [
+              'gender',
+              'companies',
+              'departments',
+              'age_groups',
+              'categories',
+              'divisions',
+            ])
+              key: ((rawCharts[key] as List?) ?? [])
+                  .whereType<Map>()
+                  .map((e) => asStringKeyedMap(e))
+                  .toList(),
+          };
+        }
       }
 
       final metaData = results[2].data;

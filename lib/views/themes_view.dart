@@ -182,17 +182,31 @@ class ThemesPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 28),
-        Wrap(
-          spacing: 28,
-          runSpacing: 28,
-          children: [
-            for (final theme in BrandThemes.all)
-              _ThemeSwatch(
-                option: theme,
-                selected: theme.id == brandId,
-                onTap: () => onPick(theme.id),
-              ),
-          ],
+        LayoutBuilder(
+          builder: (context, c) {
+            final cols = c.maxWidth >= 900
+                ? 5
+                : c.maxWidth >= 640
+                    ? 4
+                    : c.maxWidth >= 420
+                        ? 3
+                        : 2;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 28,
+              children: [
+                for (final theme in BrandThemes.all)
+                  SizedBox(
+                    width: (c.maxWidth - 12 * (cols - 1)) / cols,
+                    child: _ThemeSwatch(
+                      option: theme,
+                      selected: theme.id == brandId,
+                      onTap: () => onPick(theme.id),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -219,9 +233,7 @@ class _ThemeSwatch extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        width: 110,
-        child: Column(
+      child: Column(
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
@@ -271,7 +283,6 @@ class _ThemeSwatch extends StatelessWidget {
               ),
             ),
           ],
-        ),
       ),
     );
   }

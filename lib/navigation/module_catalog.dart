@@ -174,7 +174,7 @@ class ModuleCatalog {
       label: 'Directory',
       icon: Icons.contact_page_outlined,
       children: [
-        HrSubNav(id: 'directory', label: 'Employee Directory', icon: Icons.menu_book_outlined, screen: 'employees'),
+        HrSubNav(id: 'directory', label: 'Employee Directory', icon: Icons.menu_book_outlined, screen: 'employee_directory'),
       ],
     ),
     HrModuleNav(

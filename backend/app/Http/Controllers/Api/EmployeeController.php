@@ -121,15 +121,141 @@ class EmployeeController extends Controller
         $inactive = (int) DB::table('employee')->where('status', 0)->count();
         $male = 0;
         $female = 0;
+        $other = 0;
         if (Schema::hasColumn('employee', 'gender')) {
             $male = (int) DB::table('employee')->where('gender', 1)->count();
             $female = (int) DB::table('employee')->where('gender', 2)->count();
+            $other = (int) DB::table('employee')->where('gender', 3)->count();
+        }
+
+        $jobTitles = Schema::hasColumn('employee', 'designation')
+            ? (int) DB::table('employee')->whereNotNull('designation')->where('designation', '>', 0)->distinct()->count('designation')
+            : 0;
+        $types = Schema::hasColumn('employee', 'employee_type')
+            ? (int) DB::table('employee')->whereNotNull('employee_type')->where('employee_type', '>', 0)->distinct()->count('employee_type')
+            : 0;
+        $categories = Schema::hasColumn('employee', 'employee_category')
+            ? (int) DB::table('employee')->whereNotNull('employee_category')->where('employee_category', '>', 0)->distinct()->count('employee_category')
+            : 0;
+
+        $gender = [];
+        if ($male > 0) {
+            $gender[] = ['name' => 'Male', 'count' => $male];
+        }
+        if ($female > 0) {
+            $gender[] = ['name' => 'Female', 'count' => $female];
+        }
+        if ($other > 0) {
+            $gender[] = ['name' => 'Other', 'count' => $other];
+        }
+        if ($gender === [] && $total > 0) {
+            $gender[] = ['name' => 'Unspecified', 'count' => $total];
         }
 
         return response()->json([
             'success' => true,
-            'stats' => compact('total', 'active', 'inactive', 'male', 'female'),
+            'stats' => compact('total', 'active', 'inactive', 'male', 'female', 'jobTitles', 'types', 'categories') + [
+                'job_titles' => $jobTitles,
+            ],
+            'charts' => [
+                'gender' => $gender,
+                'companies' => $this->countByLookup('company_id', 'company', 'id', 'hr_company_name', 'name'),
+                'departments' => $this->countByLookup('department', 'department', 'department_id', 'name'),
+                'age_groups' => $this->ageGroups(),
+                'categories' => $this->countByLookup('employee_category', 'employee_category', 'id', 'name'),
+                'divisions' => $this->countByLookup('division_id', 'hr_org_division', 'id', 'name'),
+            ],
         ]);
+    }
+
+    /** @return list<array{name: string, count: int}> */
+    protected function countByLookup(string $empCol, string $table, string $pk, string $nameCol, ?string $fallbackName = null): array
+    {
+        if (!Schema::hasTable('employee') || !Schema::hasColumn('employee', $empCol) || !Schema::hasTable($table)) {
+            if ($table === 'company' && Schema::hasTable('company')) {
+                $company = DB::table('company')->first();
+                $total = (int) DB::table('employee')->count();
+                if ($company && $total > 0) {
+                    $label = (string) ($company->hr_company_name ?? $company->name ?? 'Company');
+
+                    return [['name' => $label, 'count' => $total]];
+                }
+            }
+
+            return [];
+        }
+
+        $labelExpr = Schema::hasColumn($table, $nameCol)
+            ? "t.$nameCol"
+            : ($fallbackName && Schema::hasColumn($table, $fallbackName) ? "t.$fallbackName" : 'NULL');
+
+        $rows = DB::table('employee as e')
+            ->leftJoin("$table as t", "t.$pk", '=', "e.$empCol")
+            ->selectRaw("COALESCE($labelExpr, 'Unassigned') as name, COUNT(*) as cnt")
+            ->groupByRaw("COALESCE($labelExpr, 'Unassigned')")
+            ->orderByDesc('cnt')
+            ->limit(16)
+            ->get();
+
+        $out = $rows->map(fn ($r) => [
+            'name' => (string) $r->name,
+            'count' => (int) $r->cnt,
+        ])->values()->all();
+
+        if ($table === 'company' && $out !== [] && count($out) === 1 && ($out[0]['name'] ?? '') === 'Unassigned') {
+            $company = DB::table('company')->first();
+            if ($company) {
+                $out[0]['name'] = (string) ($company->hr_company_name ?? $company->name ?? 'Company');
+            }
+        }
+
+        if ($out === [] && $table === 'company') {
+            $company = DB::table('company')->first();
+            $total = (int) DB::table('employee')->count();
+            if ($company && $total > 0) {
+                return [[
+                    'name' => (string) ($company->hr_company_name ?? $company->name ?? 'Company'),
+                    'count' => $total,
+                ]];
+            }
+        }
+
+        return $out;
+    }
+
+    /** @return list<array{name: string, count: int}> */
+    protected function ageGroups(): array
+    {
+        $buckets = ['18-24' => 0, '25-34' => 0, '35-44' => 0, '45-54' => 0, '55+' => 0];
+        if (!Schema::hasTable('employee') || !Schema::hasColumn('employee', 'date_of_birth')) {
+            return [];
+        }
+        foreach (DB::table('employee')->whereNotNull('date_of_birth')->pluck('date_of_birth') as $dob) {
+            if ($dob === '' || $dob === '0000-00-00') {
+                continue;
+            }
+            try {
+                $age = \Carbon\Carbon::parse((string) $dob)->age;
+            } catch (\Throwable $e) {
+                continue;
+            }
+            if ($age < 25) {
+                $buckets['18-24']++;
+            } elseif ($age < 35) {
+                $buckets['25-34']++;
+            } elseif ($age < 45) {
+                $buckets['35-44']++;
+            } elseif ($age < 55) {
+                $buckets['45-54']++;
+            } else {
+                $buckets['55+']++;
+            }
+        }
+
+        return collect($buckets)
+            ->map(fn ($count, $name) => ['name' => (string) $name, 'count' => (int) $count])
+            ->values()
+            ->all();
     }
 
     public function meta()
