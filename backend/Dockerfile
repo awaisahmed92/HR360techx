@@ -8,9 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
-COPY composer.json composer.lock ./
+COPY backend/composer.json backend/composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
-COPY . .
+COPY backend/ .
+COPY database ./database-sql
 RUN composer dump-autoload --optimize \
 	&& chown -R www-data:www-data storage bootstrap/cache \
 	&& chmod -R 775 storage bootstrap/cache \
@@ -18,9 +19,10 @@ RUN composer dump-autoload --optimize \
 
 ENV APP_ENV=production
 ENV APP_DEBUG=false
+ENV HR360_SQL_DIR=/var/www/html/database-sql
 EXPOSE 8000
 
-HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=8 \
 	CMD curl -fsS http://127.0.0.1:8000/up || exit 1
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
