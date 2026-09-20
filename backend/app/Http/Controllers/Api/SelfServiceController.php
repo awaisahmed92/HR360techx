@@ -607,7 +607,8 @@ class SelfServiceController extends Controller
                 ->where('r.status', 0)
                 ->select('r.*', 'e.name as employee_name', 'e.line_manager')
                 ->orderByDesc('r.id')->limit(50)->get() as $r) {
-                if ($isAdmin || $uid === (int) ($r->line_manager ?? 0) || $uid === (int) ($r->employee_id ?? 0)) {
+                $owner = (int) ($r->employee_id ?? 0);
+                if ($owner !== $uid && ($isAdmin || $uid === (int) ($r->line_manager ?? 0))) {
                     $items[] = [
                         'kind' => 'resignation',
                         'module' => 'Resignations',

@@ -119,11 +119,22 @@ class UiPrefsController extends Controller
             return;
         }
 
-        // Superuser / no employee row → company-level prefs
+        // Superuser / no employee row → company-level prefs (merge so org settings stay).
         if (($isSuper || $employeeId < 1) && Schema::hasColumn('company', 'ui_prefs')) {
             $company = DB::table('company')->first();
             if ($company) {
-                DB::table('company')->where('id', $company->id)->update(['ui_prefs' => $json]);
+                $existing = [];
+                if (!empty($company->ui_prefs)) {
+                    $decoded = json_decode((string) $company->ui_prefs, true);
+                    if (is_array($decoded)) {
+                        $existing = $decoded;
+                    }
+                }
+                $existing['brand_theme_id'] = (string) ($prefs['brand_theme_id'] ?? 'bright_navy_blue');
+                $existing['dark_mode'] = (bool) ($prefs['dark_mode'] ?? false);
+                DB::table('company')->where('id', $company->id)->update([
+                    'ui_prefs' => json_encode($existing),
+                ]);
             }
         }
     }

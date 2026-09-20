@@ -22,6 +22,13 @@ class OrganizationSettingsController extends Controller
 
     public function save(Request $request)
     {
+        if (!$this->isAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to change organization settings.',
+            ], 403);
+        }
+
         $incoming = $request->all();
         $current = $this->read($request);
         $merged = array_merge($current, array_filter(
@@ -160,5 +167,15 @@ class OrganizationSettingsController extends Controller
         DB::table('company')->where('id', $company->id)->update([
             'ui_prefs' => json_encode($existing),
         ]);
+    }
+
+    protected function isAdmin(Request $request): bool
+    {
+        $claims = $request->attributes->get('hr_claims');
+        if (!is_array($claims)) {
+            return false;
+        }
+
+        return (int) ($claims['user_status'] ?? 0) === 2 || !empty($claims['is_superuser']);
     }
 }

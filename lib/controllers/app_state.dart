@@ -339,6 +339,12 @@ class AppState extends ChangeNotifier {
       remote = await _feedRepo?.post(text: trimmed, type: type);
     } catch (_) {}
 
+    final restricted =
+        type == 'holiday' || type == 'announcement' || type == 'recognition';
+    if (remote == null && restricted && (_feedRepo?.isLive ?? false)) {
+      return;
+    }
+
     final post = remote ?? {
       'id': DateTime.now().millisecondsSinceEpoch.toString(),
       'author': author,

@@ -25,10 +25,12 @@ class StatusFeedRepository {
 
   ApiClient _c() => ApiClient(tokenProvider: () async => getSession()?.token);
 
-  bool get _live {
+  bool get isLive {
     final s = getSession();
     return s != null && !s.isDemo && s.token.isNotEmpty;
   }
+
+  bool get _live => isLive;
 
   static List<Map<String, dynamic>> _maps(dynamic raw) {
     if (raw is! List) return const [];

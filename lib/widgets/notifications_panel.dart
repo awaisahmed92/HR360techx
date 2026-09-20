@@ -560,6 +560,9 @@ class _NotificationsPanelState extends State<_NotificationsPanel> {
   }
 
   Widget _postPane(BuildContext context, {required String author, required Color brand}) {
+    final auth = context.watch<AuthState>();
+    final canBroadcast = auth.user?.isAdmin == true || auth.permissions.all;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(
@@ -567,7 +570,9 @@ class _NotificationsPanelState extends State<_NotificationsPanel> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Post a status, holiday or announcement',
+            canBroadcast
+                ? 'Post a status, holiday or announcement'
+                : 'Post a status update',
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,
@@ -596,8 +601,10 @@ class _NotificationsPanelState extends State<_NotificationsPanel> {
           Row(
             children: [
               _typeBtn('status', Icons.chat_bubble_outline, 'Status'),
-              _typeBtn('holiday', Icons.celebration_outlined, 'Holiday'),
-              _typeBtn('announcement', Icons.campaign_outlined, 'Announce'),
+              if (canBroadcast) ...[
+                _typeBtn('holiday', Icons.celebration_outlined, 'Holiday'),
+                _typeBtn('announcement', Icons.campaign_outlined, 'Announce'),
+              ],
             ],
           ),
           const SizedBox(height: 12),
@@ -609,7 +616,7 @@ class _NotificationsPanelState extends State<_NotificationsPanel> {
               await context.read<AppState>().postStatus(
                     author: author,
                     text: text,
-                    type: _postType,
+                    type: canBroadcast ? _postType : 'status',
                   );
               _postCtrl.clear();
               if (!mounted) return;

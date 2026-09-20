@@ -37,6 +37,13 @@ class StatusFeedController extends Controller
         ]);
 
         $type = $this->normalizeType($data['type'] ?? 'status');
+        if (in_array($type, ['holiday', 'announcement', 'recognition'], true) && !$this->isAdmin($request)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only administrators can post company-wide announcements.',
+            ], 403);
+        }
+
         $author = $this->actorName($request);
         $employeeId = $this->actorId($request);
         $now = now();
@@ -286,6 +293,13 @@ class StatusFeedController extends Controller
         $c = $request->attributes->get('hr_claims');
 
         return is_array($c) ? $c : [];
+    }
+
+    protected function isAdmin(Request $request): bool
+    {
+        $c = $this->claims($request);
+
+        return (int) ($c['user_status'] ?? 0) === 2 || !empty($c['is_superuser']);
     }
 
     protected function actorId(Request $request): int

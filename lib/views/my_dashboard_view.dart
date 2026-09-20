@@ -90,11 +90,15 @@ class _MyDashboardViewState extends State<MyDashboardView> {
     final actionCount = notifs.where((n) => n['is_read'] != true).length;
     final approvalCount = approvals.length;
 
+    final canBroadcast =
+        auth.user?.isAdmin == true || auth.permissions.all;
+
     final feed = _FeedCard(
       controller: _status,
       brand: brand,
       postType: _postType,
       onType: (t) => setState(() => _postType = t),
+      canBroadcast: canBroadcast,
       author: name,
       authorTitle: role,
       posts: app.statusFeed,
@@ -372,6 +376,7 @@ class _FeedCard extends StatelessWidget {
     required this.brand,
     required this.postType,
     required this.onType,
+    this.canBroadcast = false,
     required this.author,
     required this.authorTitle,
     required this.posts,
@@ -384,6 +389,7 @@ class _FeedCard extends StatelessWidget {
   final Color brand;
   final String postType;
   final ValueChanged<String> onType;
+  final bool canBroadcast;
   final String author;
   final String authorTitle;
   final List<Map<String, dynamic>> posts;
@@ -450,9 +456,11 @@ class _FeedCard extends StatelessWidget {
                       _attachIcon(context, Icons.link, 'Link'),
                       _attachIcon(context, Icons.attach_file, 'Attachment'),
                       _typeChip(context, 'status', Icons.chat_bubble_outline, 'Status'),
-                      _typeChip(context, 'holiday', Icons.celebration_outlined, 'Holiday'),
-                      _typeChip(context, 'announcement', Icons.campaign_outlined, 'Announce'),
-                      _typeChip(context, 'recognition', Icons.emoji_events_outlined, 'Recognition'),
+                      if (canBroadcast) ...[
+                        _typeChip(context, 'holiday', Icons.celebration_outlined, 'Holiday'),
+                        _typeChip(context, 'announcement', Icons.campaign_outlined, 'Announce'),
+                        _typeChip(context, 'recognition', Icons.emoji_events_outlined, 'Recognition'),
+                      ],
                     ],
                   ),
                 ),
@@ -470,7 +478,7 @@ class _FeedCard extends StatelessWidget {
                     await app.postStatus(
                       author: author,
                       text: text,
-                      type: postType,
+                      type: canBroadcast ? postType : 'status',
                       authorTitle: authorTitle,
                     );
                     controller.clear();

@@ -89,7 +89,11 @@ class _LoginViewState extends State<LoginView> {
 
   Future<void> _fetchBranding(String org) async {
     final sub = org.trim().toLowerCase();
-    if (sub.isEmpty) return;
+    if (sub.isEmpty) {
+      if (!mounted) return;
+      setState(() => _logoUrl = null);
+      return;
+    }
     try {
       final res = await ApiClient().dio.get(
         '/auth/branding',
@@ -100,11 +104,13 @@ class _LoginViewState extends State<LoginView> {
       final resolved = AppConfig.resolveMediaUrl(data['logo']?.toString());
       if (!mounted) return;
       setState(() {
-        if (resolved.isNotEmpty) _logoUrl = resolved;
+        _logoUrl = resolved.isNotEmpty ? resolved : null;
       });
+      final prefs = await SharedPreferences.getInstance();
       if (resolved.isNotEmpty) {
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_prefLoginLogo, resolved);
+      } else {
+        await prefs.remove(_prefLoginLogo);
       }
     } catch (_) {
       // keep cached / default 360 mark
