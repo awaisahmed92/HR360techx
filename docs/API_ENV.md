@@ -32,23 +32,29 @@ Coolify settings:
 `API_UPSTREAM=api:8000` is already set on **web** only.
 
 ## After first successful deploy
-No manual SQL import is required for a fresh Coolify stack.
+No manual SQL import is required.
 
-On **api** start, `bootstrap-hr.php` will:
-1. Create `hr360_master` + tenant DB (needs `DB_ROOT_PASSWORD`)
-2. Upsert tenant subdomain `demo` → your `DB_DATABASE` on host `db`
-3. Apply every `database/*.sql` file (rewritten from `hr360_demo` → production DB name)
-4. Set login: organization `demo`, employee `admin`, password `admin`
+On **api** start, `bootstrap-hr.php` applies every `database/*.sql` file, verifies
+required module tables (termination, letter, training, …), and sets login
+`demo` / `admin` / `admin`.
 
-Optional Laravel framework tables only:
+See `database/SCHEMA.md`.
+
+Optional framework tables only:
 ```bash
 php artisan migrate --force
 ```
 
+Re-run schema inside the api container:
+```bash
+php artisan hr360:schema
+```
+
+API serves via **nginx + php-fpm** (not `artisan serve`) so parallel Flutter
+requests do not queue and time out.
+
 This app is **not** Laravel Breeze/Jetstream users. Login uses tenant `employee` rows
 (plus `hr360_master.tenants`). There is no public registration page.
-
-Schema files are tracked in tenant table `_schema_migrations` so restarts only apply new SQL.
 
 ## Verify
 | URL | Expect |

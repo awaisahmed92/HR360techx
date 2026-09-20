@@ -134,8 +134,22 @@ class EmployeeController extends Controller
 
     public function meta()
     {
+        try {
+            return $this->buildMeta();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Employee meta failed: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    protected function buildMeta()
+    {
         $fk = function (string $table, string $pk, string $label = 'name') {
-            if (!Schema::hasTable($table)) {
+            if (!Schema::hasTable($table) || !Schema::hasColumn($table, $pk) || !Schema::hasColumn($table, $label)) {
                 return [];
             }
 
@@ -145,15 +159,22 @@ class EmployeeController extends Controller
             ])->values()->all();
         };
 
-        $managers = DB::table('employee')
-            ->where('status', '>', 0)
-            ->orderBy('name')
-            ->get(['employee_id', 'name', 'surname', 'user_name'])
-            ->map(fn ($r) => [
+        $managers = [];
+        if (Schema::hasTable('employee') && Schema::hasColumn('employee', 'employee_id')) {
+            $cols = ['employee_id', 'name', 'user_name'];
+            if (Schema::hasColumn('employee', 'surname')) {
+                $cols[] = 'surname';
+            }
+            $q = DB::table('employee');
+            if (Schema::hasColumn('employee', 'status')) {
+                $q->where('status', '>', 0);
+            }
+            $managers = $q->orderBy('name')->get($cols)->map(fn ($r) => [
                 'id' => (int) $r->employee_id,
                 'name' => UiPrefsController::displayName($r),
                 'user_name' => (string) ($r->user_name ?? ''),
             ])->values()->all();
+        }
 
         $companies = [];
         if (Schema::hasTable('company')) {

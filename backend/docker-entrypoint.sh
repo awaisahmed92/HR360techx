@@ -9,13 +9,15 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
   export APP_KEY="$(php -r "echo 'base64:'.base64_encode(random_bytes(32));")"
 fi
 
-mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache
+mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache /run/nginx
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
 # Clear config cache so Coolify env vars are picked up on each start
 php artisan config:clear 2>/dev/null || true
 
-php bootstrap-hr.php || echo "[hr360-api] bootstrap skipped"
+echo "[hr360-api] installing HR schema (idempotent)..."
+php bootstrap-hr.php || echo "[hr360-api] bootstrap reported an error (see logs above)"
 
-echo "[hr360-api] listening on 0.0.0.0:8000 (APP_URL=${APP_URL:-unset})"
-exec php artisan serve --host=0.0.0.0 --port=8000
+echo "[hr360-api] starting php-fpm + nginx on :8000 (APP_URL=${APP_URL:-unset})"
+php-fpm -D
+exec nginx -g 'daemon off;'
