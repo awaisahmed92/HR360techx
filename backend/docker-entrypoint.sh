@@ -16,7 +16,20 @@ chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 php artisan config:clear 2>/dev/null || true
 
 echo "[hr360-api] installing HR schema (idempotent)..."
-php bootstrap-hr.php || echo "[hr360-api] bootstrap reported an error (see logs above)"
+if ! php bootstrap-hr.php; then
+  echo "[hr360-api] schema install incomplete — retrying with --force"
+  if ! php bootstrap-hr.php --force; then
+    echo "[hr360-api] ############################################################"
+    echo "[hr360-api] # SCHEMA IS INCOMPLETE. The API will answer with errors on #"
+    echo "[hr360-api] # any feature whose tables/columns are listed above.       #"
+    echo "[hr360-api] # Diagnose with: php bootstrap-hr.php --check              #"
+    echo "[hr360-api] ############################################################"
+    if [ "$HR360_SCHEMA_STRICT" = "1" ]; then
+      echo "[hr360-api] HR360_SCHEMA_STRICT=1 — failing the deploy on purpose"
+      exit 1
+    fi
+  fi
+fi
 
 echo "[hr360-api] starting php-fpm + nginx on :8000 (APP_URL=${APP_URL:-unset})"
 php-fpm -D

@@ -87,10 +87,33 @@ CREATE TABLE IF NOT EXISTS `hr_employee_bank` (
   KEY `idx_emp_bank` (`employee_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Extra process columns (ignore if exist — applied via PHP migrate)
--- ALTER TABLE process_salary ADD COLUMN sessi_amount ...
--- ALTER TABLE process_salary ADD COLUMN pf_amount ...
--- ALTER TABLE process_salary ADD COLUMN overtime_amount ...
+-- Extra process columns. 15_payroll_pending.sql adds late_amount AFTER
+-- advance_amount, so these must exist first on a fresh database.
+SET @db := DATABASE();
+
+SET @sql := (SELECT IF(COUNT(*)=0,
+  'ALTER TABLE process_salary ADD COLUMN sessi_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER eobi_amount',
+  'SELECT 1') FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA=@db AND TABLE_NAME='process_salary' AND COLUMN_NAME='sessi_amount');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+
+SET @sql := (SELECT IF(COUNT(*)=0,
+  'ALTER TABLE process_salary ADD COLUMN pf_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER sessi_amount',
+  'SELECT 1') FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA=@db AND TABLE_NAME='process_salary' AND COLUMN_NAME='pf_amount');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+
+SET @sql := (SELECT IF(COUNT(*)=0,
+  'ALTER TABLE process_salary ADD COLUMN overtime_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER pf_amount',
+  'SELECT 1') FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA=@db AND TABLE_NAME='process_salary' AND COLUMN_NAME='overtime_amount');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+
+SET @sql := (SELECT IF(COUNT(*)=0,
+  'ALTER TABLE process_salary ADD COLUMN advance_amount DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER overtime_amount',
+  'SELECT 1') FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA=@db AND TABLE_NAME='process_salary' AND COLUMN_NAME='advance_amount');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
 
 INSERT INTO `hr_payroll_item` (`code`, `name`, `category`, `calc_type`, `default_value`, `taxable`)
 SELECT 'SESSI', 'SESSI Deduction', 'deduction', 'percent', 1, 0 FROM DUAL

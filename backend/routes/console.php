@@ -7,15 +7,21 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Artisan::command('hr360:schema', function () {
-    $this->info('Running HR360 schema installer (bootstrap-hr.php)...');
-    passthru('php '.escapeshellarg(base_path('bootstrap-hr.php')), $code);
-    if ($code !== 0) {
-        $this->error('Schema installer exited with code '.$code);
-
-        return 1;
+Artisan::command('hr360:schema {--check} {--force} {--capture=} {--new=} {--file=}', function () {
+    $flags = [];
+    foreach (['check', 'force'] as $flag) {
+        if ($this->option($flag)) {
+            $flags[] = '--'.$flag;
+        }
     }
-    $this->info('Done. Login: organization demo / admin / admin');
+    foreach (['capture', 'new', 'file'] as $option) {
+        $value = $this->option($option);
+        if ($value !== null && $value !== '') {
+            $flags[] = '--'.$option.'='.$value;
+        }
+    }
 
-    return 0;
-})->purpose('Apply full HR tenant schema from database/*.sql');
+    passthru('php '.escapeshellarg(base_path('bootstrap-hr.php')).($flags ? ' '.implode(' ', $flags) : ''), $code);
+
+    return $code === 0 ? 0 : 1;
+})->purpose('Apply / verify the HR schema from database/*.sql (--check, --force, --capture=name, --new=name)');
