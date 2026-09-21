@@ -44,12 +44,13 @@ import 'views/account_settings_view.dart';
 import 'views/system_settings_view.dart';
 import 'widgets/webhr_nav.dart';
 
-/// Read once, before Flutter rewrites the address bar to `/`.
+/// Read once from the real browser address, before Flutter normalizes the route.
 bool _launchOnSignUp = false;
 
 bool _locationWantsSignUp() {
+  if (browserWantsSignUp()) return true;
   final url = Uri.base;
-  final target = '${url.path} ${url.fragment}'.toLowerCase();
+  final target = '${url.path} ${url.fragment} ${url.query}'.toLowerCase();
   return target.contains('sign-up') || target.contains('signup');
 }
 
@@ -89,9 +90,11 @@ class HR360App extends StatelessWidget {
       theme: AppTheme.lightThemeFor(appState.brandColor),
       darkTheme: AppTheme.darkThemeFor(appState.brandColor),
       themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      initialRoute: (_launchOnSignUp || browserWantsSignUp()) ? '/sign-up' : '/',
       onGenerateRoute: (settings) {
         final name = (settings.name ?? '').toLowerCase();
         final signUp = _launchOnSignUp ||
+            browserWantsSignUp() ||
             name.contains('sign-up') ||
             name.contains('signup');
         return MaterialPageRoute<void>(
@@ -130,11 +133,16 @@ class _PublicEntry extends StatefulWidget {
 }
 
 class _PublicEntryState extends State<_PublicEntry> {
-  late bool _signUp = widget.startOnSignUp || _locationWantsSignUp();
+  late bool _signUp =
+      widget.startOnSignUp || browserWantsSignUp() || _locationWantsSignUp();
 
   @override
   void initState() {
     super.initState();
+    listenBrowserPath((signUp) {
+      if (!mounted || signUp == _signUp) return;
+      setState(() => _signUp = signUp);
+    });
     if (_signUp) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setBrowserPath('/sign-up');

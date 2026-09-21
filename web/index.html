@@ -178,6 +178,27 @@
   </div>
   <script>
     (function () {
+      var path = (location.pathname || '').toLowerCase();
+      var isSignUp = path.indexOf('sign-up') !== -1 || path.indexOf('signup') !== -1
+        || (location.hash || '').toLowerCase().indexOf('sign-up') !== -1;
+      var el = document.getElementById('boot-login');
+      if (isSignUp) {
+        document.title = 'HR360 TechX — Sign Up';
+        if (el) {
+          el.setAttribute('aria-label', 'Sign Up');
+          el.innerHTML =
+            '<div class="brand"><span class="brand-dot">360</span> HR360</div>' +
+            '<div class="card">' +
+            '<div class="logo">360</div>' +
+            '<h1>Let\'s get signed up!</h1>' +
+            '<div class="hint">Opening sign-up…</div>' +
+            '</div>';
+          el.style.background =
+            'linear-gradient(180deg, rgba(234,243,251,.92), rgba(234,243,251,.98)), #EAF3FB';
+          el.style.color = '#16233A';
+        }
+        return;
+      }
       var files = [
         'login-background-images/images1.jpeg',
         'login-background-images/LoginBG13.jpg',
@@ -194,7 +215,6 @@
         'login-background-images/LoginBG257.jpg'
       ];
       var file = files[Math.floor(Math.random() * files.length)];
-      var el = document.getElementById('boot-login');
       var hasSession = !!(
         localStorage.getItem('hr360_auth_session_v1') ||
         localStorage.getItem('flutter.hr360_session_json') ||

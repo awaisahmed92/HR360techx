@@ -11,7 +11,21 @@ void setBrowserPath(String path) {
 
 void listenBrowserPath(void Function(bool signUp) onChange) {
   html.window.onPopState.listen((_) {
-    final path = (html.window.location.pathname ?? '').toLowerCase();
-    onChange(path.contains('sign-up') || path.contains('signup'));
+    onChange(browserWantsSignUp());
   });
+}
+
+/// True when the real browser address is the public sign-up page.
+/// Prefer this over Uri.base — path URL strategy can report `/` there.
+bool browserWantsSignUp() {
+  final loc = html.window.location;
+  final path = (loc.pathname ?? '').toLowerCase();
+  final hash = loc.hash.toLowerCase();
+  final search = (loc.search ?? '').toLowerCase();
+  return path.contains('sign-up') ||
+      path.contains('signup') ||
+      hash.contains('sign-up') ||
+      hash.contains('signup') ||
+      search.contains('signup=1') ||
+      search.contains('sign-up');
 }
