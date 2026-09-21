@@ -54,6 +54,37 @@ git add database\NN_my_change_name.sql && git commit -m "..." && git push
 
 Deploying is then just a redeploy in Coolify — the container runs the installer itself.
 
+## Comparing production against local
+
+Production MySQL is an internal compose service with no published port, so you cannot
+reach it from your laptop. Run the check inside the **api** container (Coolify →
+Terminal, or `docker exec -it <api-container> sh`):
+
+```bash
+php bootstrap-hr.php --check
+```
+
+That lists anything production is missing relative to `database/*.sql`, and since local
+is verified identical to those files, it is effectively a comparison against local.
+
+For a column-by-column comparison including types, use the fingerprint. In the
+container:
+
+```bash
+php bootstrap-hr.php --signature > /tmp/prod.txt
+```
+
+And locally:
+
+```powershell
+.\db.bat signature > prod_vs_local.txt
+```
+
+The last line of each run prints something like
+`database hr360_demo: 952 columns, fingerprint c3e0e083…`. Equal fingerprints mean the
+two schemas are identical; if they differ, diff the two files to see exactly which
+columns or types are out of step.
+
 ## Commands
 
 | Command | Meaning |
@@ -63,6 +94,7 @@ Deploying is then just a redeploy in Coolify — the container runs the installe
 | `.\db.bat capture <name>` | Write hand-made local changes into a new SQL file. |
 | `.\db.bat new <name>` | Scaffold the next numbered SQL file. |
 | `.\db.bat force` | Re-apply every SQL file. |
+| `.\db.bat signature` | Print every column plus a fingerprint, for diffing two databases. |
 
 Inside the api container (or anywhere Laravel is booted) the same thing is available as
 `php artisan hr360:schema`, `php artisan hr360:schema --check`, `--force`,

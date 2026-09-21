@@ -16,12 +16,15 @@
  *   php bootstrap-hr.php --file=29_x.sql apply one file
  *   php bootstrap-hr.php --new=my_thing  scaffold the next numbered SQL file
  *   php bootstrap-hr.php --capture       write a SQL file for hand-made local changes
+ *   php bootstrap-hr.php --signature     print a diffable list of every column
  *
  * Exit code 0 = schema complete, 1 = something is still missing.
  */
 $args = array_slice($argv ?? [], 1);
 $optCheck = in_array('--check', $args, true);
+$optSignature = in_array('--signature', $args, true);
 $optForce = in_array('--force', $args, true);
+$readOnly = $optCheck || $optSignature;
 $optFile = null;
 $optNew = null;
 $optCapture = null;
@@ -530,7 +533,7 @@ try {
     $sqlDir = findSqlDir();
 
     // ── Databases + privileges (only possible when the root password is known)
-    if ($rootPass !== '' && !$optCheck) {
+    if ($rootPass !== '' && !$readOnly) {
         $root = pdo($host, $port, 'root', $rootPass);
         foreach ([$masterDb, $appDb] as $db) {
             $root->exec('CREATE DATABASE IF NOT EXISTS `'.str_replace('`', '', $db).'` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
@@ -541,10 +544,21 @@ try {
         }
         $root->exec('FLUSH PRIVILEGES');
         say('databases ready: '.$masterDb.', '.$appDb);
+    } elseif (!$readOnly) {
+        // No root password (normal on local): the app user can usually still
+        // create its own databases, which beats failing with "Unknown database".
+        try {
+            $server = pdo($host, $port, $appUser, $appPass);
+            foreach ([$masterDb, $appDb] as $db) {
+                $server->exec('CREATE DATABASE IF NOT EXISTS `'.str_replace('`', '', $db).'` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
+            }
+        } catch (Throwable $e) {
+            shout('could not pre-create databases ('.$e->getMessage().') — continuing');
+        }
     }
 
     // ── Master DB: tenant registry ──────────────────────────────────────
-    if (!$optCheck) {
+    if (!$readOnly) {
         $master = pdo($host, $port, $appUser, $appPass, $masterDb);
         $master->exec(<<<'SQL'
 CREATE TABLE IF NOT EXISTS `tenants` (
@@ -586,7 +600,27 @@ SQL);
     // ── Tenant DB ───────────────────────────────────────────────────────
     $tenant = pdo($host, $port, $appUser, $appPass, $appDb);
 
-    if (!$optCheck) {
+    // ── --signature: a diffable fingerprint for comparing two databases ──
+    if ($optSignature) {
+        $rows = $tenant->query(
+            'SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE '
+            .'FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() '
+            .'AND TABLE_NAME <> "_schema_migrations" ORDER BY TABLE_NAME, COLUMN_NAME'
+        )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        $lines = [];
+        foreach ($rows as $row) {
+            $lines[] = $row['TABLE_NAME'].'.'.$row['COLUMN_NAME'].' | '.$row['COLUMN_TYPE']
+                .' | '.($row['IS_NULLABLE'] === 'NO' ? 'NOT NULL' : 'NULL');
+        }
+
+        // Detail on stdout so it can be redirected and diffed; notes on stderr.
+        echo implode("\n", $lines), "\n";
+        shout('database '.$appDb.': '.count($lines).' columns, fingerprint '.sha1(implode("\n", $lines)));
+        exit(0);
+    }
+
+    if (!$readOnly) {
         $tenant->exec(<<<'SQL'
 CREATE TABLE IF NOT EXISTS `_schema_migrations` (
   `filename` VARCHAR(191) NOT NULL,
