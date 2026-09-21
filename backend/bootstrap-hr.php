@@ -995,23 +995,31 @@ SQL);
         say('emptied '.$cleared.' table(s) — tenant database is blank');
     }
 
-    // ── Seed the admin login once the core tables exist ─────────────────
+    // ── Seed the demo admin only when that login does not exist yet ─────
+    // Never overwrite an existing password — a production redeploy must not
+    // reset whoever already signed in as admin.
     if (isset($tables['employee']) && $optProvision === null && (getenv('HR360_SKIP_SEED') ?: '0') !== '1') {
         if (!isset($columns['employee.surname'])) {
-            $tenant->exec('ALTER TABLE `employee` ADD COLUMN `surname` VARCHAR(191) NULL AFTER `name`');
+            try {
+                $tenant->exec('ALTER TABLE `employee` ADD COLUMN `surname` VARCHAR(191) NULL AFTER `name`');
+            } catch (PDOException $e) {
+                // Column may already exist on a concurrent boot.
+            }
         }
-        $hash = password_hash('admin', PASSWORD_BCRYPT);
         $find = $tenant->prepare('SELECT employee_id FROM employee WHERE user_name = ? LIMIT 1');
         $find->execute(['admin']);
         $adminId = $find->fetchColumn();
-        if ($adminId) {
-            $upd = $tenant->prepare('UPDATE employee SET password = ?, status = 2, is_first_login = 0 WHERE employee_id = ?');
-            $upd->execute([$hash, $adminId]);
-        } else {
-            $ins = $tenant->prepare('INSERT INTO employee (name, surname, user_name, email, password, status, designation, employee_code, is_first_login) VALUES (?,?,?,?,?,2,1,?,0)');
+        if (!$adminId) {
+            $hash = password_hash('admin', PASSWORD_BCRYPT);
+            $ins = $tenant->prepare(
+                'INSERT INTO employee (name, surname, user_name, email, password, status, designation, employee_code, is_first_login) '
+                .'VALUES (?,?,?,?,?,2,1,?,0)'
+            );
             $ins->execute(['Demo', 'Admin', 'admin', 'admin@demo.local', $hash, 'EMP-0001']);
+            say('created demo login: organization demo / admin / admin');
+        } else {
+            say('demo admin already present — password left unchanged');
         }
-        say('login ready: organization demo / admin / admin');
     }
 
     // ── Final verdict ───────────────────────────────────────────────────

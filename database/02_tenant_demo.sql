@@ -137,7 +137,8 @@ INSERT INTO `leave_type` (`id`, `name`, `days`) VALUES
   (3, 'Casual Leave', 6)
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `days` = VALUES(`days`);
 
--- Passwords: admin / admin123  and  staff / staff123  (bcrypt)
+-- Seed users only when missing. Never overwrite an existing password on re-apply.
+-- Default passwords (first install only): admin / admin123  and  staff / staff123
 INSERT INTO `employee`
   (`employee_id`, `name`, `user_name`, `email`, `password`, `status`, `designation`, `department`, `station`, `project`, `line_manager`, `employee_code`, `is_first_login`)
 VALUES
@@ -149,6 +150,5 @@ VALUES
    1, 2, 2, 1, 1, 1, 'EMP-002', 0)
 ON DUPLICATE KEY UPDATE
   `name` = VALUES(`name`),
-  `password` = VALUES(`password`),
   `status` = VALUES(`status`),
   `line_manager` = VALUES(`line_manager`);
