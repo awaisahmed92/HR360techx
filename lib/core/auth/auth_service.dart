@@ -80,7 +80,7 @@ class AuthService {
     final cleanedUser = username.trim();
 
     if (cleanedSub.isEmpty || cleanedUser.isEmpty || password.isEmpty) {
-      throw AuthException('Organization, username and password are required.');
+      throw AuthException('Company name, username and password are required.');
     }
 
     // Demo path — no backend required

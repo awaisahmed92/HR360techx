@@ -83,15 +83,24 @@ class AuthController extends Controller
             ]);
         }
 
+        $loginName = trim($data['username']);
         $user = DB::table('employee')
-            ->where(function ($q) use ($data) {
-                $q->where('user_name', $data['username'])
-                    ->orWhere('email', $data['username']);
+            ->where(function ($q) use ($loginName) {
+                $q->whereRaw('LOWER(user_name) = ?', [strtolower($loginName)])
+                    ->orWhereRaw('LOWER(email) = ?', [strtolower($loginName)]);
             })
             ->first();
 
-        if (!$user || !$this->passwordOk($data['password'], (string) ($user->password ?? ''))) {
+        $storedPassword = $user ? (string) ($user->password ?? '') : '';
+        if (!$user || !$this->passwordOk($data['password'], $storedPassword)) {
             return response()->json(['success' => false, 'message' => 'Invalid credentials.'], 401);
+        }
+
+        // Rewrite legacy hashes ($2Y$, cost 10, …) to the hasher this app verifies.
+        if ($user->employee_id && $this->passwordNeedsUpgrade($storedPassword)) {
+            DB::table('employee')->where('employee_id', $user->employee_id)->update([
+                'password' => Hash::make($data['password']),
+            ]);
         }
 
         $employeeId = (int) $user->employee_id;
@@ -272,17 +281,45 @@ class AuthController extends Controller
 
     protected function passwordOk(string $plain, string $stored): bool
     {
-        if ($stored !== '' && Hash::check($plain, $stored)) {
+        $stored = trim($stored);
+        if ($stored === '') {
+            return false;
+        }
+
+        // Some bcrypt builds store $2Y$ / $2A$. PHP only recognizes $2y$, $2a$, $2b$,
+        // and Laravel then throws instead of checking the password.
+        $hash = $stored;
+        if (preg_match('/^\$2[aAxXyY]\$/', $stored)) {
+            $hash = '$2y$'.substr($stored, 4);
+        }
+        try {
+            if (Hash::check($plain, $hash)) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // Not a hash this verifier understands; try the legacy comparisons below.
+        }
+        if (hash_equals($stored, $plain)) {
             return true;
         }
-        if ($stored !== '' && $stored === $plain) {
-            return true;
-        }
-        if ($stored !== '' && md5($plain) === $stored) {
+        if (hash_equals($stored, md5($plain))) {
             return true;
         }
 
         return false;
+    }
+
+    protected function passwordNeedsUpgrade(string $stored): bool
+    {
+        $stored = trim($stored);
+        if ($stored === '' || !str_starts_with($stored, '$2y$')) {
+            return true;
+        }
+        try {
+            return Hash::needsRehash($stored);
+        } catch (\Throwable $e) {
+            return true;
+        }
     }
 
     protected function loadRolls(int $employeeId): array

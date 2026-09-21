@@ -17,6 +17,7 @@
  *   php bootstrap-hr.php --new=my_thing  scaffold the next numbered SQL file
  *   php bootstrap-hr.php --capture       write a SQL file for hand-made local changes
  *   php bootstrap-hr.php --signature     print a diffable list of every column
+ *   php bootstrap-hr.php --provision=db  build an empty tenant DB (schema, zero rows)
  *
  * Exit code 0 = schema complete, 1 = something is still missing.
  */
@@ -28,7 +29,11 @@ $readOnly = $optCheck || $optSignature;
 $optFile = null;
 $optNew = null;
 $optCapture = null;
+$optProvision = null;
 foreach ($args as $arg) {
+    if (str_starts_with($arg, '--provision=')) {
+        $optProvision = trim(substr($arg, 12));
+    }
     if (str_starts_with($arg, '--file=')) {
         $optFile = basename(substr($arg, 7));
     }
@@ -97,6 +102,16 @@ $appUser = getenv('DB_USERNAME') ?: 'root';
 $appPass = getenv('DB_PASSWORD') ?: '';
 $masterDb = getenv('DB_MASTER_DATABASE') ?: 'hr360_master';
 $rootPass = getenv('DB_ROOT_PASSWORD') ?: '';
+
+// Provisioning a brand-new tenant: build the schema in the named database and
+// leave it completely empty. The caller (signup) inserts the admin row itself.
+if ($optProvision !== null) {
+    if (!preg_match('/^[A-Za-z0-9_]{3,64}$/', $optProvision)) {
+        shout('--provision needs a database name of letters, digits and underscores');
+        exit(1);
+    }
+    $appDb = $optProvision;
+}
 
 /** Files that must never run against the tenant DB. */
 $skipFiles = ['01_master.sql', '11_reset_employee_passwords.sql'];
@@ -321,6 +336,37 @@ SET @sql := (SELECT IF(COUNT(*)=0,
 PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
 
 SQL;
+}
+
+/**
+ * Add columns to a table when they are absent.
+ *
+ * @param array<string, string> $columns name => definition
+ */
+function ensureColumns(PDO $conn, string $table, array $columns): void
+{
+    $present = [];
+    $stmt = $conn->prepare(
+        'SELECT LOWER(COLUMN_NAME) FROM information_schema.COLUMNS '
+        .'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+    );
+    $stmt->execute([$table]);
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) ?: [] as $name) {
+        $present[(string) $name] = true;
+    }
+
+    foreach ($columns as $name => $definition) {
+        if (isset($present[strtolower($name)])) {
+            continue;
+        }
+        try {
+            $conn->exec('ALTER TABLE `'.$table.'` ADD COLUMN `'.$name.'` '.$definition);
+        } catch (PDOException $e) {
+            if (!isIgnorableSqlError($e)) {
+                throw $e;
+            }
+        }
+    }
 }
 
 function isIgnorableSqlError(Throwable $e): bool
@@ -558,7 +604,8 @@ try {
     }
 
     // ── Master DB: tenant registry ──────────────────────────────────────
-    if (!$readOnly) {
+    // Provisioning skips this: signup writes the tenant row with real details.
+    if (!$readOnly && $optProvision === null) {
         $master = pdo($host, $port, $appUser, $appPass, $masterDb);
         $master->exec(<<<'SQL'
 CREATE TABLE IF NOT EXISTS `tenants` (
@@ -574,6 +621,35 @@ CREATE TABLE IF NOT EXISTS `tenants` (
   `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_tenants_subdomain` (`subdomain`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+SQL);
+
+        // Self sign-up details (see database/01_master.sql).
+        ensureColumns($master, 'tenants', [
+            'company_code' => 'VARCHAR(100) NULL',
+            'industry' => 'VARCHAR(120) NULL',
+            'country' => 'VARCHAR(120) NULL',
+            'contact_name' => 'VARCHAR(191) NULL',
+            'contact_designation' => 'VARCHAR(191) NULL',
+            'contact_email' => 'VARCHAR(191) NULL',
+            'contact_phone' => 'VARCHAR(60) NULL',
+            'source' => "VARCHAR(40) NOT NULL DEFAULT 'manual'",
+        ]);
+        $master->exec('UPDATE `tenants` SET `company_code` = `subdomain` WHERE `company_code` IS NULL OR `company_code` = ""');
+
+        $master->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS `tenant_admins` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `tenant_id` INT UNSIGNED NOT NULL,
+  `name` VARCHAR(191) NOT NULL,
+  `designation` VARCHAR(191) NULL,
+  `email` VARCHAR(191) NOT NULL,
+  `user_name` VARCHAR(100) NOT NULL,
+  `employee_id` INT UNSIGNED NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_tenant_admins_tenant` (`tenant_id`),
+  KEY `idx_tenant_admins_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 SQL);
 
@@ -894,8 +970,33 @@ SQL);
         .($adoptedCount > 0 ? ', adopted '.$adoptedCount.' already-present file(s)' : '')
         .', up to date '.$skippedCount);
 
+    // ── Provisioning: strip every seeded row, leaving bare structure ─────
+    if ($optProvision !== null) {
+        $tenant->exec('SET FOREIGN_KEY_CHECKS=0');
+        $cleared = 0;
+        foreach (array_keys($tables) as $table) {
+            if ($table === '_schema_migrations') {
+                continue;
+            }
+            try {
+                $tenant->exec('TRUNCATE TABLE `'.$table.'`');
+                $cleared++;
+            } catch (PDOException $e) {
+                // Fall back to DELETE where TRUNCATE is refused.
+                try {
+                    $tenant->exec('DELETE FROM `'.$table.'`');
+                    $cleared++;
+                } catch (PDOException $inner) {
+                    shout('could not clear '.$table.': '.$inner->getMessage());
+                }
+            }
+        }
+        $tenant->exec('SET FOREIGN_KEY_CHECKS=1');
+        say('emptied '.$cleared.' table(s) — tenant database is blank');
+    }
+
     // ── Seed the admin login once the core tables exist ─────────────────
-    if (isset($tables['employee']) && (getenv('HR360_SKIP_SEED') ?: '0') !== '1') {
+    if (isset($tables['employee']) && $optProvision === null && (getenv('HR360_SKIP_SEED') ?: '0') !== '1') {
         if (!isset($columns['employee.surname'])) {
             $tenant->exec('ALTER TABLE `employee` ADD COLUMN `surname` VARCHAR(191) NULL AFTER `name`');
         }

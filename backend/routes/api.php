@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\HrReportController;
 use App\Http\Controllers\Api\PerformanceController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\SelfServiceController;
+use App\Http\Controllers\Api\SignupController;
 use App\Http\Controllers\Api\TrainingController;
 use App\Http\Controllers\Api\TerminationController;
 use App\Http\Controllers\Api\TravelController;
@@ -28,6 +29,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::get('/auth/branding', [AuthController::class, 'branding']);
+
+// Public self sign-up: creates an organization, its database and its first admin.
+Route::get('/signup/availability', [SignupController::class, 'availability']);
+Route::post('/signup', [SignupController::class, 'store']);
 
 Route::middleware([TenantAuth::class])->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);

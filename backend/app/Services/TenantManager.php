@@ -8,12 +8,22 @@ use stdClass;
 
 class TenantManager
 {
+    /** Organizations are looked up by subdomain or by the company code from signup. */
     public static function findBySubdomain(string $subdomain): ?object
     {
+        $key = strtolower(trim($subdomain));
+        // Sign-up creates database hr360_<code>. Accept either the code or that name.
+        $code = str_starts_with($key, 'hr360_') ? substr($key, 6) : $key;
+
         return DB::connection('master')
             ->table('tenants')
-            ->where('subdomain', $subdomain)
             ->where('status', 'active')
+            ->where(function ($q) use ($key, $code) {
+                $q->whereRaw('LOWER(subdomain) = ?', [$code])
+                    ->orWhereRaw('LOWER(COALESCE(company_code, "")) = ?', [$code])
+                    ->orWhereRaw('LOWER(name) = ?', [$key])
+                    ->orWhereRaw('LOWER(db_name) = ?', [$key]);
+            })
             ->first();
     }
 

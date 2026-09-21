@@ -13,7 +13,10 @@ import '../core/network/api_client.dart';
 
 /// WebHR-style employee login — wide white card, label-left gray fields.
 class LoginView extends StatefulWidget {
-  const LoginView({super.key});
+  const LoginView({super.key, this.onSignUp});
+
+  /// Opens the public sign-up form. Null hides the link.
+  final VoidCallback? onSignUp;
 
   @override
   State<LoginView> createState() => _LoginViewState();
@@ -274,26 +277,26 @@ class _LoginViewState extends State<LoginView> {
                           ),
                           const SizedBox(height: 40),
                           _rowField(
-                            label: 'Organization:',
+                            label: 'Company Name:',
                             child: TextFormField(
                               controller: _orgCtrl,
                               textInputAction: TextInputAction.next,
                               style: _fieldTextStyle,
                               validator: (v) =>
                                   (v == null || v.trim().isEmpty) ? 'Required' : null,
-                              decoration: _deco('Organization'),
+                              decoration: _deco('Company Name'),
                             ),
                           ),
                           const SizedBox(height: 18),
                           _rowField(
-                            label: 'Employee ID:',
+                            label: 'UserName:',
                             child: TextFormField(
                               controller: _userCtrl,
                               textInputAction: TextInputAction.next,
                               style: _fieldTextStyle,
                               validator: (v) =>
                                   (v == null || v.trim().isEmpty) ? 'Required' : null,
-                              decoration: _deco('Employee ID'),
+                              decoration: _deco('UserName'),
                             ),
                           ),
                           const SizedBox(height: 18),
@@ -406,6 +409,32 @@ class _LoginViewState extends State<LoginView> {
                             ),
                             child: const Text('Forgot your password?'),
                           ),
+                          if (widget.onSignUp != null) ...[
+                            const Divider(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  "Don't have an organization?",
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    color: Color(0xFF777777),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: widget.onSignUp,
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: _blue,
+                                    textStyle: const TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  child: const Text('Sign up'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),

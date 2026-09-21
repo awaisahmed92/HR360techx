@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'controllers/app_state.dart';
 import 'core/auth/auth_state.dart';
@@ -36,12 +37,26 @@ import 'views/travel_view.dart';
 import 'views/timesheet_view.dart';
 import 'views/approvals_inbox_view.dart';
 import 'views/profile_view.dart';
+import 'views/sign_up_view.dart';
+import 'core/config/browser_path_stub.dart'
+    if (dart.library.html) 'core/config/browser_path_web.dart';
 import 'views/account_settings_view.dart';
 import 'views/system_settings_view.dart';
 import 'widgets/webhr_nav.dart';
 
+/// Read once, before Flutter rewrites the address bar to `/`.
+bool _launchOnSignUp = false;
+
+bool _locationWantsSignUp() {
+  final url = Uri.base;
+  final target = '${url.path} ${url.fragment}'.toLowerCase();
+  return target.contains('sign-up') || target.contains('signup');
+}
+
 void main() {
+  usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
+  _launchOnSignUp = _locationWantsSignUp();
   runApp(
     MultiProvider(
       providers: [
@@ -67,7 +82,6 @@ class HR360App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
-    final auth = context.watch<AuthState>();
 
     return MaterialApp(
       title: 'HR360 TechX — 360° Workforce & Talent Cloud',
@@ -75,12 +89,72 @@ class HR360App extends StatelessWidget {
       theme: AppTheme.lightThemeFor(appState.brandColor),
       darkTheme: AppTheme.darkThemeFor(appState.brandColor),
       themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      home: switch (auth.status) {
-        AuthStatus.unknown => const _SessionRestoreHold(),
-        AuthStatus.unauthenticated => const LoginView(),
-        AuthStatus.authenticated => const MainShell(),
+      onGenerateRoute: (settings) {
+        final name = (settings.name ?? '').toLowerCase();
+        final signUp = _launchOnSignUp ||
+            name.contains('sign-up') ||
+            name.contains('signup');
+        return MaterialPageRoute<void>(
+          settings: RouteSettings(name: signUp ? '/sign-up' : '/'),
+          builder: (_) => _Root(startOnSignUp: signUp),
+        );
       },
     );
+  }
+}
+
+class _Root extends StatelessWidget {
+  const _Root({required this.startOnSignUp});
+
+  final bool startOnSignUp;
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthState>();
+    return switch (auth.status) {
+      AuthStatus.unknown => const _SessionRestoreHold(),
+      AuthStatus.unauthenticated => _PublicEntry(startOnSignUp: startOnSignUp),
+      AuthStatus.authenticated => const MainShell(),
+    };
+  }
+}
+
+/// Login, or the public sign-up form when the browser is on /sign-up.
+class _PublicEntry extends StatefulWidget {
+  const _PublicEntry({required this.startOnSignUp});
+
+  final bool startOnSignUp;
+
+  @override
+  State<_PublicEntry> createState() => _PublicEntryState();
+}
+
+class _PublicEntryState extends State<_PublicEntry> {
+  late bool _signUp = widget.startOnSignUp || _locationWantsSignUp();
+
+  @override
+  void initState() {
+    super.initState();
+    if (_signUp) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setBrowserPath('/sign-up');
+      });
+    }
+  }
+
+  void _openLogin() {
+    _launchOnSignUp = false;
+    setState(() => _signUp = false);
+    setBrowserPath('/');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_signUp) {
+      return SignUpView(onBackToLogin: _openLogin);
+    }
+
+    return const LoginView();
   }
 }
 
