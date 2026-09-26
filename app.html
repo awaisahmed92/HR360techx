@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="HR360 TechX - Next-Gen 360° Human Resources & Workforce Intelligence Single Page Application">
+  <title>HR360 TechX — 360° Workforce & Talent Cloud SPA</title>
+  
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400..700,0..1,0" />
+
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --primary-light: #6366F1;
+      --primary-dark: #4338CA;
+      --accent: #7C3AED;
+      --cyan: #06B6D4;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --info: #3B82F6;
+
+      --bg: #0B1120;
+      --surface: #111827;
+      --card: #1E293B;
+      --card-hover: #26334D;
+      --border: #334155;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.25);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
+      --sidebar-width: 260px;
+      --header-height: 72px;
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="light"] {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --card: #FFFFFF;
+      --card-hover: #F1F5F9;
+      --border: #E2E8F0;
+      --text-primary: #0F172A;
+      --text-secondary: #64748B;
+      --text-muted: #94A3B8;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-primary);
+      overflow-x: hidden;
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 999px;
+    }
+
+    /* Layout Shell */
+    #app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* Sidebar Navigation Rail */
+    #sidebar {
+      width: var(--sidebar-width);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: var(--transition);
+      z-index: 50;
+    }
+
+    #sidebar.collapsed {
+      width: 80px;
+    }
+
+    .sidebar-header {
+      height: var(--header-height);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 900;
+      font-size: 15px;
+      box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+      flex-shrink: 0;
+    }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .brand-tag {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 5px;
+      background: rgba(79, 70, 229, 0.15);
+      color: var(--primary-light);
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    #sidebar.collapsed .brand-meta,
+    #sidebar.collapsed .nav-group-title,
+    #sidebar.collapsed .nav-label,
+    #sidebar.collapsed .nav-badge,
+    #sidebar.collapsed .user-meta,
+    #sidebar.collapsed .sidebar-toggle {
+      display: none;
+    }
+
+    #sidebar.collapsed .sidebar-header {
+      justify-content: center;
+      padding: 0 10px;
+    }
+
+    .nav-list {
+      flex: 1;
+      padding: 16px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+    }
+
+    .nav-group-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      padding: 8px 12px 4px 12px;
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      background: var(--card-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: rgba(79, 70, 229, 0.15);
+      color: var(--primary-light);
+      border: 1px solid rgba(79, 70, 229, 0.3);
+    }
+
+    .nav-item .material-symbols-rounded {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      background: rgba(79, 70, 229, 0.15);
+      color: var(--primary-light);
+      border: 1px solid rgba(79, 70, 229, 0.3);
+    }
+
+    .user-footer {
+      padding: 12px;
+      margin: 10px;
+      border-radius: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .user-meta {
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .user-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+    }
+
+    /* Main Shell */
+    #main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Header Bar */
+    header {
+      height: var(--header-height);
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+
+    .header-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .clock-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition);
+    }
+
+    .clock-pill.clocked-out {
+      background: rgba(245, 158, 11, 0.12);
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .btn-primary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 16px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: white;
+      border-radius: 10px;
+      border: none;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+      transition: var(--transition);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .icon-btn:hover {
+      background: var(--card-hover);
+    }
+
+    .notif-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    /* Views Body Container */
+    .view-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .view-section {
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Banner */
+    .welcome-banner {
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.2));
+      border: 1px solid rgba(79, 70, 229, 0.35);
+      border-radius: 16px;
+      padding: 22px 26px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .banner-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .banner-content h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .banner-content p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(79, 70, 229, 0.5);
+      box-shadow: 0 10px 24px rgba(79, 70, 229, 0.15);
+    }
+
+    .metric-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .metric-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .trend-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .trend-tag.positive {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .metric-value {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .metric-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .metric-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Cards & Panels */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .panel-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-title {
+      font-size: 15.5px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .panel-subtitle {
+      font-size: 11.5px;
+      color: var(--text-secondary);
+    }
+
+    .panel-action-link {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--primary-light);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    /* Department Progress Bars */
+    .dept-item {
+      margin-bottom: 12px;
+    }
+
+    .dept-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .progress-track {
+      height: 8px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    [data-theme="light"] .progress-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.8s ease;
+    }
+
+    /* Radar Canvas Container */
+    .radar-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 240px;
+      width: 100%;
+      position: relative;
+    }
+
+    canvas {
+      max-width: 100%;
+    }
+
+    /* Workforce Hub / Directory */
+    .filter-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+
+    .filter-top-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .search-input-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      height: 44px;
+    }
+
+    .search-input-box input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 13.5px;
+    }
+
+    .filter-pills {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .chip-pill {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .chip-pill:hover,
+    .chip-pill.active {
+      background: rgba(79, 70, 229, 0.15);
+      color: var(--primary-light);
+      border-color: var(--primary);
+    }
+
+    .employees-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .emp-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .emp-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(79, 70, 229, 0.5);
+      box-shadow: 0 12px 24px rgba(79, 70, 229, 0.15);
+    }
+
+    .emp-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .emp-avatar-box {
+      position: relative;
+    }
+
+    .emp-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .status-dot-badge {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--card);
+    }
+
+    .emp-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .emp-name {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--text-primary);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .emp-role {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .emp-rating-badge {
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .emp-tag-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .emp-tag {
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      background: rgba(79, 70, 229, 0.1);
+      color: var(--primary-light);
+    }
+
+    .emp-actions-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn-outline {
+      flex: 1;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .btn-outline:hover {
+      background: var(--card-hover);
+    }
+
+    .btn-sm-primary {
+      flex: 1;
+      padding: 9px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .btn-sm-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    /* Kanban Pipeline */
+    .kanban-board {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+    }
+
+    .kanban-column {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .kanban-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .kanban-col-title {
+      font-size: 14px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kanban-col-count {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .candidate-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .candidate-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .cand-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .cand-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 8px 0 12px 0;
+    }
+
+    .cand-skill-pill {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text-secondary);
+    }
+
+    /* Modals / Dialogs */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-lg);
+      animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalPop {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 14px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* Toast Notification */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 14px 20px;
+      background: var(--card);
+      border: 1px solid var(--success);
+      color: var(--text-primary);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="brand-logo-container">
+          <div class="brand-badge">360</div>
+          <div class="brand-meta">
+            <div class="brand-title">HR360 <span class="brand-tag">TECHX</span></div>
+            <div class="brand-subtitle">Talent Cloud OS</div>
+          </div>
+        </a>
+        <button class="icon-btn sidebar-toggle" id="collapse-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
+          <span class="material-symbols-rounded">chevron_left</span>
+        </button>
+      </div>
+
+      <div class="nav-list">
+        <div class="nav-group-title">Main Platform</div>
+        <div class="nav-item active" onclick="switchTab(0)">
+          <span class="material-symbols-rounded">grid_view</span>
+          <span class="nav-label">Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(1)">
+          <span class="material-symbols-rounded">groups</span>
+          <span class="nav-label">Workforce Hub</span>
+          <span class="nav-badge" id="nav-workforce-count">7</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(2)">
+          <span class="material-symbols-rounded">radar</span>
+          <span class="nav-label">360° Performance</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(3)">
+          <span class="material-symbols-rounded">event_available</span>
+          <span class="nav-label">Leave & Attendance</span>
+          <span class="nav-badge" style="background:rgba(245,158,11,0.15); color:var(--warning); border-color:rgba(245,158,11,0.3);" id="nav-leave-count">2</span>
+        </div>
+
+        <div class="nav-group-title" style="margin-top: 14px;">Recruit & Finance</div>
+        <div class="nav-item" onclick="switchTab(4)">
+          <span class="material-symbols-rounded">view_kanban</span>
+          <span class="nav-label">Talent Pipeline</span>
+          <span class="nav-badge" style="background:rgba(124,58,237,0.15); color:var(--accent); border-color:rgba(124,58,237,0.3);" id="nav-pipeline-count">4</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(5)">
+          <span class="material-symbols-rounded">account_balance_wallet</span>
+          <span class="nav-label">Payroll & Analytics</span>
+        </div>
+      </div>
+
+      <div class="user-footer">
+        <img class="user-avatar" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" alt="Sarah Jenkins">
+        <div class="user-meta">
+          <div class="user-name">Dr. Sarah Jenkins</div>
+          <div class="user-role">VP Human Resources</div>
+        </div>
+        <div class="user-status-dot" title="Active"></div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main-content">
+      <header>
+        <div class="header-left">
+          <div class="header-title" id="page-title">Executive Overview</div>
+          <div class="header-subtitle" id="current-date-text">Thursday, September 17, 2026</div>
+        </div>
+
+        <div class="header-right">
+          <!-- Clock In/Out Simulation -->
+          <div class="clock-pill" id="clock-pill" onclick="toggleClock()">
+            <div class="pulse-dot"></div>
+            <span id="clock-text">Clocked In (Active)</span>
+          </div>
+
+          <!-- Quick Action Dropdown -->
+          <button class="btn-primary" onclick="openModal('modal-quick-action')">
+            <span class="material-symbols-rounded" style="font-size: 18px;">add</span>
+            Quick Action
+          </button>
+
+          <!-- Notifications -->
+          <button class="icon-btn" onclick="openModal('modal-notifications')" title="Notifications">
+            <span class="material-symbols-rounded">notifications</span>
+            <div class="notif-badge"></div>
+          </button>
+
+          <!-- Theme Toggle -->
+          <button class="icon-btn" onclick="toggleTheme()" id="theme-btn" title="Toggle Theme">
+            <span class="material-symbols-rounded" id="theme-icon">light_mode</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="view-scroll-area">
+        <!-- 0. DASHBOARD VIEW -->
+        <section class="view-section active" id="view-dashboard">
+          <div class="welcome-banner">
+            <div class="banner-icon">
+              <span class="material-symbols-rounded" style="font-size: 28px;">rocket_launch</span>
+            </div>
+            <div class="banner-content">
+              <h2>Welcome to HR360 TechX Talent Cloud 🚀</h2>
+              <p>All team metrics, 360° reviews, attendance, and recruitment pipelines are operating at peak health.</p>
+            </div>
+            <button class="btn-primary" style="margin-left: auto;" onclick="openModal('modal-add-review')">
+              <span class="material-symbols-rounded" style="font-size: 18px;">star</span>
+              New 360 Review
+            </button>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--primary), var(--accent));">
+                  <span class="material-symbols-rounded">groups</span>
+                </div>
+                <div class="trend-tag positive">
+                  <span class="material-symbols-rounded" style="font-size: 13px;">trending_up</span> +14.2%
+                </div>
+              </div>
+              <div>
+                <div class="metric-value" id="kpi-workforce">7</div>
+                <div class="metric-title">Total Workforce</div>
+                <div class="metric-desc">6 Active • 2 Remote</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--success), #059669);">
+                  <span class="material-symbols-rounded">event_available</span>
+                </div>
+                <div class="trend-tag positive">
+                  <span class="material-symbols-rounded" style="font-size: 13px;">trending_up</span> +2.1%
+                </div>
+              </div>
+              <div>
+                <div class="metric-value">98.4%</div>
+                <div class="metric-title">Attendance Rate</div>
+                <div class="metric-desc">1 On Approved Leave</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--cyan), var(--info));">
+                  <span class="material-symbols-rounded">view_kanban</span>
+                </div>
+                <div class="trend-tag positive">+4 New</div>
+              </div>
+              <div>
+                <div class="metric-value" id="kpi-pipeline">4</div>
+                <div class="metric-title">Active Pipeline</div>
+                <div class="metric-desc">Candidates across 5 stages</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-top">
+                <div class="metric-icon" style="background: linear-gradient(135deg, var(--warning), #D97706);">
+                  <span class="material-symbols-rounded">account_balance_wallet</span>
+                </div>
+                <div class="trend-tag positive">100% On-Time</div>
+              </div>
+              <div>
+                <div class="metric-value" id="kpi-payroll">$97.0k</div>
+                <div class="metric-title">Monthly Payroll</div>
+                <div class="metric-desc">Disbursed on 1st of month</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            <!-- Left: Department Headcount -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title-group">
+                  <span class="material-symbols-rounded" style="color: var(--primary-light);">pie_chart</span>
+                  <div>
+                    <div class="panel-title">Department Workforce Allocation</div>
+                    <div class="panel-subtitle">Headcount distribution across company units</div>
+                  </div>
+                </div>
+                <a class="panel-action-link" onclick="switchTab(1)">View Directory →</a>
+              </div>
+
+              <div id="dept-list">
+                <div class="dept-item">
+                  <div class="dept-header">
+                    <span>Engineering</span>
+                    <span style="color: var(--primary-light);">42 Members</span>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" style="width: 85%; background: var(--primary);"></div></div>
+                </div>
+                <div class="dept-item">
+                  <div class="dept-header">
+                    <span>Product & Architecture</span>
+                    <span style="color: var(--accent);">18 Members</span>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" style="width: 45%; background: var(--accent);"></div></div>
+                </div>
+                <div class="dept-item">
+                  <div class="dept-header">
+                    <span>Design & UX</span>
+                    <span style="color: var(--cyan);">14 Members</span>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" style="width: 32%; background: var(--cyan);"></div></div>
+                </div>
+                <div class="dept-item">
+                  <div class="dept-header">
+                    <span>Human Resources & Talent</span>
+                    <span style="color: var(--success);">12 Members</span>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" style="width: 28%; background: var(--success);"></div></div>
+                </div>
+                <div class="dept-item">
+                  <div class="dept-header">
+                    <span>Growth & Marketing</span>
+                    <span style="color: var(--warning);">16 Members</span>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" style="width: 38%; background: var(--warning);"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: 360 Radar Spotlight -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title-group">
+                  <span class="material-symbols-rounded" style="color: var(--accent);">radar</span>
+                  <div>
+                    <div class="panel-title">360° Competency Radar</div>
+                    <div class="panel-subtitle">Alex Rivera (Staff Architect) Synthesis</div>
+                  </div>
+                </div>
+                <a class="panel-action-link" onclick="switchTab(2)">Full 360 Hub →</a>
+              </div>
+              <div class="radar-container">
+                <canvas id="dashboardRadarCanvas" width="280" height="230"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 1. WORKFORCE DIRECTORY VIEW -->
+        <section class="view-section" id="view-workforce">
+          <div class="filter-bar">
+            <div class="filter-top-row">
+              <div class="search-input-box">
+                <span class="material-symbols-rounded" style="color: var(--text-secondary);">search</span>
+                <input type="text" id="employee-search-input" placeholder="Search employee by name, role, email, or department..." oninput="filterEmployees()">
+              </div>
+              <button class="btn-primary" onclick="openModal('modal-add-employee')">
+                <span class="material-symbols-rounded" style="font-size: 18px;">person_add</span>
+                Onboard Employee
+              </button>
+            </div>
+            <div class="filter-pills" id="dept-filter-pills">
+              <div class="chip-pill active" onclick="setDeptFilter('All', this)">All</div>
+              <div class="chip-pill" onclick="setDeptFilter('Engineering', this)">Engineering</div>
+              <div class="chip-pill" onclick="setDeptFilter('Design', this)">Design</div>
+              <div class="chip-pill" onclick="setDeptFilter('Product', this)">Product</div>
+              <div class="chip-pill" onclick="setDeptFilter('Human Resources', this)">Human Resources</div>
+              <div class="chip-pill" onclick="setDeptFilter('Marketing', this)">Marketing</div>
+            </div>
+          </div>
+
+          <div class="employees-grid" id="employees-grid-container"></div>
+        </section>
+
+        <!-- 2. 360° PERFORMANCE VIEW -->
+        <section class="view-section" id="view-performance">
+          <div class="welcome-banner" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.15)); border-color: rgba(245, 158, 11, 0.3);">
+            <div class="banner-icon" style="background: linear-gradient(135deg, var(--warning), #D97706);">
+              <span class="material-symbols-rounded" style="font-size: 28px;">radar</span>
+            </div>
+            <div class="banner-content">
+              <h2>360° Continuous Feedback & Growth Hub</h2>
+              <p>Holistic multi-rater appraisals: Peer, Manager, Self, and Cross-functional feedback cycles.</p>
+            </div>
+            <button class="btn-primary" style="margin-left: auto;" onclick="openModal('modal-add-review')">
+              <span class="material-symbols-rounded" style="font-size: 18px;">rate_review</span>
+              Log 360 Feedback
+            </button>
+          </div>
+
+          <div class="dashboard-grid">
+            <!-- Left: Interactive Radar Deep Dive -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Individual 360° Competency Radar</div>
+                  <div class="panel-subtitle">Select colleague to inspect multi-axis evaluation</div>
+                </div>
+                <select id="radar-emp-select" onchange="renderPerformanceRadar()" style="padding: 6px 12px; border-radius: 8px; background: var(--surface); color: var(--text-primary); border: 1px solid var(--border); outline: none;">
+                  <!-- Options filled via JS -->
+                </select>
+              </div>
+              <div class="radar-container" style="height: 280px;">
+                <canvas id="deepDiveRadarCanvas" width="320" height="270"></canvas>
+              </div>
+            </div>
+
+            <!-- Right: OKRs & Goals Progress -->
+            <div class="panel-card">
+              <div class="panel-header">
+                <div class="panel-title">Strategic OKRs & Key Milestones</div>
+              </div>
+              <div class="dept-item" style="margin-bottom: 18px;">
+                <div class="dept-header">
+                  <span>Single Page Architecture Performance</span>
+                  <span style="color: var(--success); font-weight: 800;">94%</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" style="width: 94%; background: var(--success);"></div></div>
+              </div>
+              <div class="dept-item" style="margin-bottom: 18px;">
+                <div class="dept-header">
+                  <span>Talent Retention & Satisfaction eNPS</span>
+                  <span style="color: var(--primary-light); font-weight: 800;">88%</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" style="width: 88%; background: var(--primary);"></div></div>
+              </div>
+              <div class="dept-item">
+                <div class="dept-header">
+                  <span>360 Appraisal Cycle Completion</span>
+                  <span style="color: var(--warning); font-weight: 800;">76%</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" style="width: 76%; background: var(--warning);"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-title" style="margin-bottom: 14px; font-size: 17px;">Recent 360 Feedback Syntheses</div>
+          <div id="reviews-feed-container"></div>
+        </section>
+
+        <!-- 3. LEAVE & ATTENDANCE VIEW -->
+        <section class="view-section" id="view-leave">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Annual Vacation</span>
+                <span class="material-symbols-rounded" style="color: var(--primary-light);">flight_takeoff</span>
+              </div>
+              <div class="metric-value">18 Days</div>
+              <div class="metric-desc">6 Used of 24 Total</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Sick & Medical</span>
+                <span class="material-symbols-rounded" style="color: var(--danger);">medical_services</span>
+              </div>
+              <div class="metric-value">10 Days</div>
+              <div class="metric-desc">2 Used of 12 Total</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Casual & Personal</span>
+                <span class="material-symbols-rounded" style="color: var(--warning);">beach_access</span>
+              </div>
+              <div class="metric-value">5 Days</div>
+              <div class="metric-desc">1 Used of 6 Total</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Remote Work Days</span>
+                <span class="material-symbols-rounded" style="color: var(--cyan);">home_work</span>
+              </div>
+              <div class="metric-value">Flexible</div>
+              <div class="metric-desc">Hybrid 3/2 Model</div>
+            </div>
+          </div>
+
+          <div class="panel-card" style="margin-bottom: 24px;">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Leave & Time-Off Requests</div>
+                <div class="panel-subtitle">Review, approve, and track employee leave requests</div>
+              </div>
+              <button class="btn-primary" style="background: var(--success);" onclick="openModal('modal-apply-leave')">
+                <span class="material-symbols-rounded" style="font-size: 18px;">add</span> Request Time Off
+              </button>
+            </div>
+            <div id="leave-requests-container"></div>
+          </div>
+        </section>
+
+        <!-- 4. TALENT PIPELINE VIEW -->
+        <section class="view-section" id="view-recruitment">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+              <div class="header-title" style="font-size: 18px;">Talent Pipeline & Kanban Board</div>
+              <div class="header-subtitle">Advance candidate interview stages in real-time</div>
+            </div>
+            <button class="btn-primary" onclick="openModal('modal-add-candidate')">
+              <span class="material-symbols-rounded" style="font-size: 18px;">person_add</span>
+              Add Candidate
+            </button>
+          </div>
+
+          <div class="kanban-board" id="kanban-board-container"></div>
+        </section>
+
+        <!-- 5. PAYROLL & ANALYTICS VIEW -->
+        <section class="view-section" id="view-payroll">
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Monthly Gross Payroll</span>
+                <span class="material-symbols-rounded" style="color: var(--primary);">account_balance</span>
+              </div>
+              <div class="metric-value" id="payroll-gross-val">$97,500</div>
+              <div class="metric-desc">Across 7 team members</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Net Disbursed Funds</span>
+                <span class="material-symbols-rounded" style="color: var(--success);">payments</span>
+              </div>
+              <div class="metric-value" id="payroll-net-val">$73,110</div>
+              <div class="metric-desc">Direct deposited to accounts</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Tax & Withholdings (22%)</span>
+                <span class="material-symbols-rounded" style="color: var(--warning);">receipt_long</span>
+              </div>
+              <div class="metric-value" id="payroll-tax-val">$21,450</div>
+              <div class="metric-desc">Federal & State compliance</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-top">
+                <span class="metric-title">Benefits Pool</span>
+                <span class="material-symbols-rounded" style="color: var(--cyan);">shield</span>
+              </div>
+              <div class="metric-value" id="payroll-benefits-val">$2,940</div>
+              <div class="metric-desc">Health & 401(k) matching</div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <div class="panel-title">Employee Payroll Breakdown (September 2026)</div>
+                <div class="panel-subtitle">Itemized salaries, deductions, and downloadable official tax statements</div>
+              </div>
+              <button class="btn-primary" onclick="showToast('Exported HR360_Payroll_Sept_2026.csv successfully!')">
+                <span class="material-symbols-rounded" style="font-size: 18px;">download</span> Export CSV
+              </button>
+            </div>
+            <div id="payroll-table-container"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <!-- 1. Add Employee Modal -->
+  <div class="modal-overlay" id="modal-add-employee">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Onboard New Employee</h3>
+        <button class="icon-btn" onclick="closeModal('modal-add-employee')"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <form onsubmit="handleAddEmployee(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="new-emp-name" required placeholder="e.g. Liam Vance">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Work Email</label>
+            <input type="email" id="new-emp-email" required placeholder="name@hr360techx.io">
+          </div>
+          <div class="form-group">
+            <label>Job Title</label>
+            <input type="text" id="new-emp-role" required placeholder="e.g. Senior Backend Dev">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Department</label>
+            <select id="new-emp-dept">
+              <option value="Engineering">Engineering</option>
+              <option value="Design">Design</option>
+              <option value="Product">Product</option>
+              <option value="Human Resources">Human Resources</option>
+              <option value="Marketing">Marketing</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="new-emp-status">
+              <option value="Active">Active</option>
+              <option value="Remote">Remote</option>
+              <option value="On Leave">On Leave</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Annual Base Salary ($)</label>
+            <input type="number" id="new-emp-salary" value="135000" required>
+          </div>
+          <div class="form-group">
+            <label>Location</label>
+            <input type="text" id="new-emp-location" value="San Francisco, CA" required>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="closeModal('modal-add-employee')">Cancel</button>
+          <button type="submit" class="btn-primary">Complete Onboarding</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Apply Leave Modal -->
+  <div class="modal-overlay" id="modal-apply-leave">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Request Time Off</h3>
+        <button class="icon-btn" onclick="closeModal('modal-apply-leave')"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <form onsubmit="handleApplyLeave(event)">
+        <div class="form-group">
+          <label>Leave Category</label>
+          <select id="leave-type">
+            <option value="Annual Leave">Annual Leave</option>
+            <option value="Sick Leave">Sick Leave</option>
+            <option value="Casual Leave">Casual Leave</option>
+            <option value="Work From Home">Work From Home</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Number of Days</label>
+          <input type="number" id="leave-days" value="2" min="1" max="30" required>
+        </div>
+        <div class="form-group">
+          <label>Reason / Notes</label>
+          <textarea id="leave-reason" rows="3" placeholder="Context for manager and HR approval"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="closeModal('modal-apply-leave')">Cancel</button>
+          <button type="submit" class="btn-primary" style="background: var(--success);">Submit Application</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Add 360 Review Modal -->
+  <div class="modal-overlay" id="modal-add-review">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Submit 360° Review</h3>
+        <button class="icon-btn" onclick="closeModal('modal-add-review')"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <form onsubmit="handleAddReview(event)">
+        <div class="form-group">
+          <label>Select Colleague</label>
+          <select id="review-emp-target"></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Review Type</label>
+            <select id="review-type">
+              <option value="Peer Review">Peer Review</option>
+              <option value="Manager Review">Manager Review</option>
+              <option value="Self Review">Self Review</option>
+              <option value="360 Synthesis">360 Synthesis</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Rating Score (1-5)</label>
+            <input type="number" id="review-score" value="4.9" min="1" max="5" step="0.1" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Detailed Feedback</label>
+          <textarea id="review-feedback" rows="4" required placeholder="Highlight strengths, collaboration, and growth areas"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="closeModal('modal-add-review')">Cancel</button>
+          <button type="submit" class="btn-primary">Submit 360 Review</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Add Candidate Modal -->
+  <div class="modal-overlay" id="modal-add-candidate">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Add Pipeline Candidate</h3>
+        <button class="icon-btn" onclick="closeModal('modal-add-candidate')"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <form onsubmit="handleAddCandidate(event)">
+        <div class="form-group">
+          <label>Candidate Name</label>
+          <input type="text" id="cand-name" required placeholder="e.g. Jordan Hayes">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Position Role</label>
+            <input type="text" id="cand-role" required placeholder="e.g. Senior Security Architect">
+          </div>
+          <div class="form-group">
+            <label>Experience</label>
+            <input type="text" id="cand-exp" value="5+ Years" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Key Skills (comma separated)</label>
+          <input type="text" id="cand-skills" value="Flutter, Dart, GraphQL, AWS" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-outline" onclick="closeModal('modal-add-candidate')">Cancel</button>
+          <button type="submit" class="btn-primary">Add Candidate</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Payslip Modal -->
+  <div class="modal-overlay" id="modal-payslip">
+    <div class="modal-box" id="payslip-modal-content"></div>
+  </div>
+
+  <!-- 6. Profile 360 Modal -->
+  <div class="modal-overlay" id="modal-profile">
+    <div class="modal-box" style="max-width: 620px;" id="profile-modal-content"></div>
+  </div>
+
+  <!-- 7. Quick Action Modal -->
+  <div class="modal-overlay" id="modal-quick-action">
+    <div class="modal-box" style="max-width: 440px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; font-weight: 800;">Quick Action Menu</h3>
+        <button class="icon-btn" onclick="closeModal('modal-quick-action')"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="nav-item" style="background: var(--surface);" onclick="closeModal('modal-quick-action'); openModal('modal-add-employee')">
+          <span class="material-symbols-rounded" style="color: var(--primary-light);">person_add</span>
+          <span>Onboard New Employee</span>
+        </div>
+        <div class="nav-item" style="background: var(--surface);" onclick="closeModal('modal-quick-action'); openModal('modal-apply-leave')">
+          <span class="material-symbols-rounded" style="color: var(--success);">beach_access</span>
+          <span>Apply for Leave</span>
+        </div>
+        <div class="nav-item" style="background: var(--surface);" onclick="closeModal('modal-quick-action'); openModal('modal-add-review')">
+          <span class="material-symbols-rounded" style="color: var(--warning);">star</span>
+          <span>Submit 360 Feedback</span>
+        </div>
+        <div class="nav-item" style="background: var(--surface);" onclick="closeModal('modal-quick-action'); openModal('modal-add-candidate')">
+          <span class="material-symbols-rounded" style="color: var(--cyan);">badge</span>
+          <span>Add Pipeline Candidate</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Notifications Modal -->
+  <div class="modal-overlay" id="modal-notifications">
+    <div class="modal-box" style="max-width: 460px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; font-weight: 800;">System Notifications</h3>
+        <button class="icon-btn" onclick="closeModal('modal-notifications')"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; gap: 12px; padding: 12px; background: var(--surface); border-radius: 12px;">
+          <div style="padding: 8px; border-radius: 8px; background: rgba(245,158,11,0.15); color: var(--warning);"><span class="material-symbols-rounded">star</span></div>
+          <div>
+            <div style="font-weight: 700; font-size: 13px;">360 Review Completed</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Sarah Jenkins submitted peer review for Alex Rivera</div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">10 mins ago</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; padding: 12px; background: var(--surface); border-radius: 12px;">
+          <div style="padding: 8px; border-radius: 8px; background: rgba(16,185,129,0.15); color: var(--success);"><span class="material-symbols-rounded">beach_access</span></div>
+          <div>
+            <div style="font-weight: 700; font-size: 13px;">New Leave Request</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">David Kim requested 3 days of Annual Leave</div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">45 mins ago</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; padding: 12px; background: var(--surface); border-radius: 12px;">
+          <div style="padding: 8px; border-radius: 8px; background: rgba(79,70,229,0.15); color: var(--primary-light);"><span class="material-symbols-rounded">badge</span></div>
+          <div>
+            <div style="font-weight: 700; font-size: 13px;">Candidate Advanced</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Elena Vance moved to Interview stage</div>
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">2 hours ago</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" onclick="closeModal('modal-notifications'); showToast('All notifications marked as read!')">Mark All Read</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <!-- JAVASCRIPT SPA LOGIC -->
+  <script>
+    // State
+    const state = {
+      isDarkMode: true,
+      currentTab: 0,
+      isClockedIn: true,
+      deptFilter: 'All',
+      searchQuery: '',
+      employees: [
+        {
+          id: 'EMP-1001',
+          name: 'Dr. Sarah Jenkins',
+          email: 's.jenkins@hr360techx.io',
+          role: 'VP Human Resources & People',
+          department: 'Human Resources',
+          avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+          status: 'Active',
+          rating: 4.9,
+          joinDate: 'Jan 2021',
+          phone: '+1 (555) 234-8890',
+          location: 'San Francisco, USA',
+          salary: 195000,
+          competencies: { 'Leadership': 0.95, 'Innovation': 0.90, 'Delivery': 0.96, 'Collaboration': 0.98, 'Strategic Thinking': 0.94 },
+          recentReview: 'Outstanding executive leadership in establishing company-wide 360 feedback culture.'
+        },
+        {
+          id: 'EMP-1002',
+          name: 'Alex Rivera',
+          email: 'alex.rivera@hr360techx.io',
+          role: 'Staff Flutter & Web Architect',
+          department: 'Engineering',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          status: 'Active',
+          rating: 4.95,
+          joinDate: 'Mar 2022',
+          phone: '+1 (555) 456-1234',
+          location: 'Austin, TX',
+          salary: 172000,
+          competencies: { 'Technical Execution': 0.98, 'Problem Solving': 0.95, 'Delivery': 0.94, 'Collaboration': 0.90, 'Mentorship': 0.88 },
+          recentReview: 'Engineered high-performance Single Page Architecture with zero UI bottlenecks.'
+        },
+        {
+          id: 'EMP-1003',
+          name: 'Marcus Chen',
+          email: 'm.chen@hr360techx.io',
+          role: 'Principal UX/UI Designer',
+          department: 'Design',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+          status: 'Active',
+          rating: 4.85,
+          joinDate: 'Nov 2022',
+          phone: '+1 (555) 678-9012',
+          location: 'Seattle, WA',
+          salary: 158000,
+          competencies: { 'Design Systems': 0.96, 'User Research': 0.92, 'Innovation': 0.95, 'Collaboration': 0.89, 'Delivery': 0.91 },
+          recentReview: 'Designed the HR360 fluid design tokens and micro-interaction suite.'
+        },
+        {
+          id: 'EMP-1004',
+          name: 'Elena Rostova',
+          email: 'e.rostova@hr360techx.io',
+          role: 'Director of Talent Acquisition',
+          department: 'Human Resources',
+          avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+          status: 'Remote',
+          rating: 4.80,
+          joinDate: 'Jul 2023',
+          phone: '+1 (555) 789-0123',
+          location: 'New York, USA',
+          salary: 145000,
+          competencies: { 'Talent Sourcing': 0.96, 'Negotiation': 0.94, 'Leadership': 0.88, 'Communication': 0.95, 'Delivery': 0.92 },
+          recentReview: 'Reduced average hiring turnaround by 35% with our new pipeline workflow.'
+        },
+        {
+          id: 'EMP-1005',
+          name: 'David Kim',
+          email: 'david.kim@hr360techx.io',
+          role: 'Senior Cloud & DevOps Engineer',
+          department: 'Engineering',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+          status: 'On Leave',
+          rating: 4.75,
+          joinDate: 'Feb 2023',
+          phone: '+1 (555) 890-1234',
+          location: 'Vancouver, Canada',
+          salary: 160000,
+          competencies: { 'Infrastructure': 0.97, 'Security': 0.93, 'Problem Solving': 0.95, 'Delivery': 0.89, 'Collaboration': 0.85 },
+          recentReview: 'Automated 99.99% uptime multi-region cloud deployment pipelines.'
+        },
+        {
+          id: 'EMP-1006',
+          name: 'Amira Patel',
+          email: 'a.patel@hr360techx.io',
+          role: 'Lead Product Manager',
+          department: 'Product',
+          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          status: 'Active',
+          rating: 4.90,
+          joinDate: 'Sep 2021',
+          phone: '+1 (555) 901-2345',
+          location: 'Chicago, USA',
+          salary: 165000,
+          competencies: { 'Product Strategy': 0.98, 'Stakeholder Alignment': 0.95, 'Data Driven': 0.92, 'Delivery': 0.94, 'Leadership': 0.91 },
+          recentReview: 'Drove 40% adoption growth across our Enterprise clients.'
+        },
+        {
+          id: 'EMP-1007',
+          name: 'Liam Gallagher',
+          email: 'liam.g@hr360techx.io',
+          role: 'VP of Growth & Marketing',
+          department: 'Marketing',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+          status: 'Remote',
+          rating: 4.70,
+          joinDate: 'Aug 2023',
+          phone: '+1 (555) 012-3456',
+          location: 'London, UK',
+          salary: 170000,
+          competencies: { 'Growth Marketing': 0.95, 'Campaign Strategy': 0.93, 'Analytics': 0.88, 'Leadership': 0.90, 'Innovation': 0.92 },
+          recentReview: 'Launched our global Q3 tech brand campaign exceeding all MQL targets.'
+        }
+      ],
+      leaveRequests: [
+        {
+          id: 'LR-301',
+          employeeName: 'David Kim',
+          employeeRole: 'Senior Cloud & DevOps Engineer',
+          employeeAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+          type: 'Annual Leave',
+          startDate: 'Sep 18, 2026',
+          endDate: 'Sep 21, 2026',
+          days: 3,
+          reason: 'Family trip and personal time off.',
+          status: 'Approved'
+        },
+        {
+          id: 'LR-302',
+          employeeName: 'Elena Rostova',
+          employeeRole: 'Director of Talent Acquisition',
+          employeeAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+          type: 'Work From Home',
+          startDate: 'Sep 22, 2026',
+          endDate: 'Sep 24, 2026',
+          days: 3,
+          reason: 'Home fiber line maintenance & focus sprint.',
+          status: 'Pending'
+        },
+        {
+          id: 'LR-303',
+          employeeName: 'Marcus Chen',
+          employeeRole: 'Principal UX/UI Designer',
+          employeeAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+          type: 'Casual Leave',
+          startDate: 'Sep 28, 2026',
+          endDate: 'Sep 29, 2026',
+          days: 2,
+          reason: 'Attending Design Systems Global Summit.',
+          status: 'Pending'
+        }
+      ],
+      reviews: [
+        {
+          id: 'REV-501',
+          employeeName: 'Alex Rivera',
+          reviewerName: 'Dr. Sarah Jenkins',
+          reviewerRole: 'VP HR',
+          reviewerAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+          reviewType: 'Manager Review',
+          score: 4.95,
+          feedback: 'Alex continues to raise the engineering bar across frontend and web platforms. Exceptional cross-functional collaboration.',
+          date: 'Sep 15, 2026'
+        },
+        {
+          id: 'REV-502',
+          employeeName: 'Marcus Chen',
+          reviewerName: 'Amira Patel',
+          reviewerRole: 'Lead Product Manager',
+          reviewerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+          reviewType: 'Peer Review',
+          score: 4.85,
+          feedback: 'Marcus brings user empathy into every product feature. Rapid prototyping and pixel perfection make our team move 2x faster.',
+          date: 'Sep 12, 2026'
+        }
+      ],
+      candidates: [
+        {
+          id: 'CND-801',
+          name: 'Elena Vance',
+          role: 'Staff Site Reliability Engineer',
+          department: 'Engineering',
+          stage: 'Interview',
+          experience: '7+ Years',
+          rating: 4.9,
+          skills: ['Kubernetes', 'Terraform', 'Go', 'GCP'],
+          avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'CND-802',
+          name: 'Daniel Thorne',
+          role: 'Senior Product Designer',
+          department: 'Design',
+          stage: 'Screening',
+          experience: '5 Years',
+          rating: 4.7,
+          skills: ['Figma', 'Prototyping', 'Design Systems'],
+          avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'CND-803',
+          name: 'Sofia Ramirez',
+          role: 'Senior Frontend Engineer',
+          department: 'Engineering',
+          stage: 'Offer',
+          experience: '6 Years',
+          rating: 4.95,
+          skills: ['Flutter Web', 'Dart', 'State Mgmt'],
+          avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=150&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'CND-804',
+          name: 'Zachary Taylor',
+          role: 'HR Business Partner',
+          department: 'Human Resources',
+          stage: 'Applied',
+          experience: '4 Years',
+          rating: 4.4,
+          skills: ['People Analytics', 'Talent Ops'],
+          avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80'
+        },
+        {
+          id: 'CND-805',
+          name: 'Maya Lin',
+          role: 'Lead Data Scientist',
+          department: 'Engineering',
+          stage: 'Hired',
+          experience: '8 Years',
+          rating: 5.0,
+          skills: ['Python', 'MLOps', 'PyTorch'],
+          avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80'
+        }
+      ]
+    };
+
+    // Navigation Tabs
+    const tabTitles = [
+      'Executive Overview',
+      'Workforce Directory',
+      '360° Performance & Feedback',
+      'Leave & Attendance Tracking',
+      'Talent Pipeline & Kanban',
+      'Payroll & Workforce Analytics'
+    ];
+
+    function switchTab(index) {
+      state.currentTab = index;
+      document.querySelectorAll('.nav-item').forEach((item, idx) => {
+        if (idx === index) item.classList.add('active');
+        else item.classList.remove('active');
+      });
+
+      document.querySelectorAll('.view-section').forEach((sec, idx) => {
+        if (idx === index) sec.classList.add('active');
+        else sec.classList.remove('active');
+      });
+
+      document.getElementById('page-title').textContent = tabTitles[index];
+
+      if (index === 0) drawRadar('dashboardRadarCanvas', state.employees[1].competencies);
+      if (index === 1) renderEmployees();
+      if (index === 2) {
+        populateRadarSelect();
+        renderPerformanceRadar();
+        renderReviewsFeed();
+      }
+      if (index === 3) renderLeaveRequests();
+      if (index === 4) renderKanban();
+      if (index === 5) renderPayroll();
+    }
+
+    // Toggle Theme
+    function toggleTheme() {
+      state.isDarkMode = !state.isDarkMode;
+      if (state.isDarkMode) {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('theme-icon').textContent = 'light_mode';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.getElementById('theme-icon').textContent = 'dark_mode';
+      }
+      drawRadar('dashboardRadarCanvas', state.employees[1].competencies);
+      if (state.currentTab === 2) renderPerformanceRadar();
+    }
+
+    // Toggle Sidebar
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('collapsed');
+    }
+
+    // Toggle Clock
+    function toggleClock() {
+      state.isClockedIn = !state.isClockedIn;
+      const pill = document.getElementById('clock-pill');
+      const text = document.getElementById('clock-text');
+      if (state.isClockedIn) {
+        pill.classList.remove('clocked-out');
+        text.textContent = 'Clocked In (Active)';
+        showToast('Successfully clocked in. Attendance recorded!');
+      } else {
+        pill.classList.add('clocked-out');
+        text.textContent = 'Clocked Out';
+        showToast('Clocked out. Have a wonderful rest of your day!');
+      }
+    }
+
+    // Modals
+    function openModal(id) {
+      document.getElementById(id).classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Toast
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<span class="material-symbols-rounded" style="color:var(--success);">check_circle</span> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Canvas Radar Chart Renderer (Custom 360 multi-axis polygon)
+    function drawRadar(canvasId, data) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const center = { x: w / 2, y: h / 2 };
+      const radius = Math.min(w, h) / 2 - 32;
+      const keys = Object.keys(data);
+      const count = keys.length;
+      const angleStep = (Math.PI * 2) / count;
+
+      const isDark = state.isDarkMode;
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+      const textColor = isDark ? '#94A3B8' : '#64748B';
+
+      // Concentric webs
+      for (let level = 1; level <= 4; level++) {
+        const lvlRadius = radius * (level / 4);
+        ctx.beginPath();
+        for (let i = 0; i < count; i++) {
+          const angle = -Math.PI / 2 + (i * angleStep);
+          const x = center.x + lvlRadius * Math.cos(angle);
+          const y = center.y + lvlRadius * Math.sin(angle);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Spoke axes and labels
+      ctx.font = '600 10px Plus Jakarta Sans';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 0; i < count; i++) {
+        const angle = -Math.PI / 2 + (i * angleStep);
+        const x = center.x + radius * Math.cos(angle);
+        const y = center.y + radius * Math.sin(angle);
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = gridColor;
+        ctx.stroke();
+
+        // Label
+        const lx = center.x + (radius + 20) * Math.cos(angle);
+        const ly = center.y + (radius + 18) * Math.sin(angle);
+        ctx.fillStyle = textColor;
+        ctx.fillText(keys[i], lx, ly);
+      }
+
+      // Data polygon fill
+      ctx.beginPath();
+      for (let i = 0; i < count; i++) {
+        const val = data[keys[i]] || 0;
+        const ptRadius = radius * val;
+        const angle = -Math.PI / 2 + (i * angleStep);
+        const x = center.x + ptRadius * Math.cos(angle);
+        const y = center.y + ptRadius * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(79, 70, 229, 0.35)';
+      ctx.fill();
+      ctx.strokeStyle = '#6366F1';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Vertex dots
+      for (let i = 0; i < count; i++) {
+        const val = data[keys[i]] || 0;
+        const ptRadius = radius * val;
+        const angle = -Math.PI / 2 + (i * angleStep);
+        const x = center.x + ptRadius * Math.cos(angle);
+        const y = center.y + ptRadius * Math.sin(angle);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#4F46E5';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+      }
+    }
+
+    // Render Employees Grid
+    function renderEmployees() {
+      const container = document.getElementById('employees-grid-container');
+      const filtered = state.employees.filter(emp => {
+        const matchesDept = state.deptFilter === 'All' || emp.department === state.deptFilter;
+        const q = state.searchQuery.toLowerCase();
+        const matchesSearch = emp.name.toLowerCase().includes(q) || emp.role.toLowerCase().includes(q) || emp.department.toLowerCase().includes(q);
+        return matchesDept && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text-secondary);">No matching team members found.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(emp => {
+        const statusColor = emp.status === 'Active' ? 'var(--success)' : (emp.status === 'Remote' ? 'var(--cyan)' : 'var(--warning)');
+        const topCompKey = Object.keys(emp.competencies)[0];
+        const topCompVal = Math.round((emp.competencies[topCompKey] || 0.9) * 100);
+
+        return `
+          <div class="emp-card">
+            <div class="emp-header">
+              <div class="emp-avatar-box">
+                <img class="emp-avatar" src="${emp.avatar}" alt="${emp.name}">
+                <div class="status-dot-badge" style="background:${statusColor};"></div>
+              </div>
+              <div class="emp-info">
+                <div class="emp-name">${emp.name}</div>
+                <div class="emp-role">${emp.role}</div>
+              </div>
+              <div class="emp-rating-badge">
+                <span class="material-symbols-rounded" style="font-size:14px;">star</span> ${emp.rating}
+              </div>
+            </div>
+
+            <div class="emp-tag-row">
+              <span class="emp-tag">${emp.department}</span>
+              <span class="emp-tag" style="background:rgba(16,185,129,0.1); color:${statusColor};">${emp.status}</span>
+            </div>
+
+            <div class="dept-item" style="margin-top: 4px;">
+              <div class="dept-header" style="font-size: 11px; margin-bottom: 4px;">
+                <span>360 Competency Index</span>
+                <span style="color: var(--primary-light); font-weight: 700;">${topCompVal}% Avg</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:${topCompVal}%; background:var(--primary);"></div></div>
+            </div>
+
+            <div class="emp-actions-row">
+              <button class="btn-outline" onclick="showProfileModal('${emp.id}')">360 Profile</button>
+              <button class="btn-sm-primary" onclick="showPayslipModal('${emp.id}')">Payslip</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setDeptFilter(dept, el) {
+      state.deptFilter = dept;
+      document.querySelectorAll('#dept-filter-pills .chip-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      renderEmployees();
+    }
+
+    function filterEmployees() {
+      state.searchQuery = document.getElementById('employee-search-input').value;
+      renderEmployees();
+    }
+
+    // 360 Profile Modal
+    function showProfileModal(empId) {
+      const emp = state.employees.find(e => e.id === empId);
+      if (!emp) return;
+      const content = document.getElementById('profile-modal-content');
+      content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <img style="width: 56px; height: 56px; border-radius: 50%; object-fit: cover;" src="${emp.avatar}">
+            <div>
+              <div style="font-size: 18px; font-weight: 800;">${emp.name}</div>
+              <div style="font-size: 13px; color: var(--primary-light); font-weight: 600;">${emp.role}</div>
+              <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 2px;">${emp.location} • Joined ${emp.joinDate}</div>
+            </div>
+          </div>
+          <button class="icon-btn" onclick="closeModal('modal-profile')"><span class="material-symbols-rounded">close</span></button>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <div style="font-size: 13.5px; font-weight: 700; margin-bottom: 10px;">360° Radar Evaluation</div>
+          <div class="radar-container" style="height: 220px;">
+            <canvas id="modalRadarCanvas" width="280" height="220"></canvas>
+          </div>
+        </div>
+
+        <div style="background: var(--surface); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px;">
+          <div style="font-weight: 700; font-size: 12.5px; color: var(--warning); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <span class="material-symbols-rounded" style="font-size: 18px;">format_quote</span> Executive Review Summary
+          </div>
+          <div style="font-size: 12.5px; font-style: italic; color: var(--text-secondary);">"${emp.recentReview}"</div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-outline" onclick="closeModal('modal-profile'); showPayslipModal('${emp.id}')">View Payslip</button>
+          <button class="btn-primary" onclick="closeModal('modal-profile'); openModal('modal-add-review')">Log 360 Feedback</button>
+        </div>
+      `;
+      openModal('modal-profile');
+      setTimeout(() => drawRadar('modalRadarCanvas', emp.competencies), 100);
+    }
+
+    // Payslip Modal
+    function showPayslipModal(empId) {
+      const emp = state.employees.find(e => e.id === empId);
+      if (!emp) return;
+      const gross = emp.salary / 12;
+      const tax = gross * 0.22;
+      const insurance = 420;
+      const retirement = gross * 0.05;
+      const net = gross - tax - insurance - retirement;
+
+      const content = document.getElementById('payslip-modal-content');
+      content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div>
+            <div style="font-size: 18px; font-weight: 800;">Official Payslip Statement</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">Period: September 2026 • HR360 Global</div>
+          </div>
+          <button class="icon-btn" onclick="closeModal('modal-payslip')"><span class="material-symbols-rounded">close</span></button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 18px;">
+          <img style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;" src="${emp.avatar}">
+          <div style="flex: 1;">
+            <div style="font-weight: 800; font-size: 14px;">${emp.name}</div>
+            <div style="font-size: 12px; color: var(--text-secondary);">${emp.role} • ${emp.department}</div>
+          </div>
+          <span style="font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px; background: rgba(16,185,129,0.15); color: var(--success);">PAID</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin-bottom: 10px;">
+          <span>Monthly Gross Earnings</span>
+          <span>$${gross.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+        </div>
+        <hr style="border: none; border-top: 1px solid var(--border); margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: var(--danger); margin-bottom: 6px;">
+          <span>Federal & State Withholdings (22%)</span>
+          <span>- $${tax.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: var(--danger); margin-bottom: 6px;">
+          <span>Medical & Dental Coverage</span>
+          <span>- $${insurance.toFixed(2)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12.5px; color: var(--danger); margin-bottom: 12px;">
+          <span>401(k) Retirement (5%)</span>
+          <span>- $${retirement.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+        </div>
+
+        <div style="padding: 14px; background: rgba(79,70,229,0.12); border: 1px solid rgba(79,70,229,0.3); border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <span style="font-weight: 800; color: var(--primary-light);">Net Disbursed Take-Home</span>
+          <span style="font-size: 19px; font-weight: 900; color: var(--primary-light);">$${net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-outline" onclick="window.print()">Print Statement</button>
+          <button class="btn-primary" onclick="closeModal('modal-payslip'); showToast('Official Payslip downloaded as PDF!')">Download PDF Slip</button>
+        </div>
+      `;
+      openModal('modal-payslip');
+    }
+
+    // Performance Radar Tab Select
+    function populateRadarSelect() {
+      const select = document.getElementById('radar-emp-select');
+      const targetSelect = document.getElementById('review-emp-target');
+      const opts = state.employees.map((e, idx) => `<option value="${idx}">${e.name} (${e.role})</option>`).join('');
+      if (select) select.innerHTML = opts;
+      if (targetSelect) targetSelect.innerHTML = opts;
+    }
+
+    function renderPerformanceRadar() {
+      const select = document.getElementById('radar-emp-select');
+      const idx = select ? parseInt(select.value) || 0 : 0;
+      const emp = state.employees[idx] || state.employees[0];
+      drawRadar('deepDiveRadarCanvas', emp.competencies);
+    }
+
+    function renderReviewsFeed() {
+      const container = document.getElementById('reviews-feed-container');
+      container.innerHTML = state.reviews.map(rev => `
+        <div class="panel-card" style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" src="${rev.reviewerAvatar}">
+              <div>
+                <div style="font-weight: 800; font-size: 13.5px;">${rev.reviewerName} (${rev.reviewerRole}) → ${rev.employeeName}</div>
+                <div style="font-size: 11.5px; color: var(--text-secondary);">${rev.reviewType} • ${rev.date}</div>
+              </div>
+            </div>
+            <div class="emp-rating-badge" style="font-size: 12.5px; padding: 4px 10px;">
+              <span class="material-symbols-rounded" style="font-size: 15px;">star</span> ${rev.score} / 5.0
+            </div>
+          </div>
+          <div style="font-size: 13px; font-style: italic; color: var(--text-secondary); line-height: 1.4;">"${rev.feedback}"</div>
+        </div>
+      `).join('');
+    }
+
+    // Leave Requests
+    function renderLeaveRequests() {
+      const container = document.getElementById('leave-requests-container');
+      container.innerHTML = state.leaveRequests.map(req => {
+        const isApproved = req.status === 'Approved';
+        const isPending = req.status === 'Pending';
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover;" src="${req.employeeAvatar}">
+              <div>
+                <div style="font-weight: 800; font-size: 14px;">${req.employeeName} <span class="emp-tag" style="margin-left: 6px;">${req.type}</span></div>
+                <div style="font-size: 12px; color: var(--text-secondary);">${req.startDate} → ${req.endDate} (${req.days} days) • "${req.reason}"</div>
+              </div>
+            </div>
+            <div>
+              ${isPending ? `
+                <button class="btn-sm-primary" style="background: var(--success); padding: 6px 14px; margin-right: 6px;" onclick="updateLeave('${req.id}', 'Approved')">Approve</button>
+                <button class="btn-outline" style="color: var(--danger); border-color: var(--danger); padding: 6px 14px;" onclick="updateLeave('${req.id}', 'Rejected')">Reject</button>
+              ` : `
+                <span style="font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 6px; background: ${isApproved ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'}; color: ${isApproved ? 'var(--success)' : 'var(--danger)'};">${req.status.toUpperCase()}</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateLeave(id, newStatus) {
+      const req = state.leaveRequests.find(r => r.id === id);
+      if (req) {
+        req.status = newStatus;
+        renderLeaveRequests();
+        showToast(`Leave request for ${req.employeeName} marked as ${newStatus}!`);
+      }
+    }
+
+    // Kanban Board
+    function renderKanban() {
+      const stages = [
+        { name: 'Applied', color: 'var(--info)' },
+        { name: 'Screening', color: 'var(--warning)' },
+        { name: 'Interview', color: 'var(--accent)' },
+        { name: 'Offer', color: 'var(--cyan)' },
+        { name: 'Hired', color: 'var(--success)' }
+      ];
+
+      const container = document.getElementById('kanban-board-container');
+      container.innerHTML = stages.map(st => {
+        const cands = state.candidates.filter(c => c.stage === st.name);
+        return `
+          <div class="kanban-column">
+            <div class="kanban-col-header">
+              <div class="kanban-col-title" style="color:${st.color};">
+                <span class="material-symbols-rounded">radio_button_checked</span> ${st.name}
+              </div>
+              <div class="kanban-col-count" style="background:rgba(255,255,255,0.08); color:${st.color};">${cands.length}</div>
+            </div>
+            ${cands.map(c => `
+              <div class="candidate-card">
+                <div class="candidate-header">
+                  <img class="cand-avatar" src="${c.avatar}">
+                  <div>
+                    <div style="font-weight: 800; font-size: 13px;">${c.name}</div>
+                    <div style="font-size: 11.5px; color: var(--primary-light); font-weight: 600;">${c.role}</div>
+                  </div>
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                  <span>Exp: ${c.experience}</span>
+                  <span style="color: var(--warning); font-weight: 700;">★ ${c.rating}</span>
+                </div>
+                <div class="cand-skills">
+                  ${c.skills.map(s => `<span class="cand-skill-pill">${s}</span>`).join('')}
+                </div>
+                ${c.stage !== 'Hired' ? `
+                  <button class="btn-sm-primary" style="width: 100%; font-size: 11px; padding: 6px;" onclick="advanceCandidate('${c.id}')">Advance Stage →</button>
+                ` : `
+                  <div style="text-align: center; font-size: 11px; color: var(--success); font-weight: 700; padding: 4px;">✓ Successfully Onboarded</div>
+                `}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function advanceCandidate(candId) {
+      const stages = ['Applied', 'Screening', 'Interview', 'Offer', 'Hired'];
+      const c = state.candidates.find(cand => cand.id === candId);
+      if (c) {
+        const curIdx = stages.indexOf(c.stage);
+        if (curIdx < stages.length - 1) {
+          c.stage = stages[curIdx + 1];
+          renderKanban();
+          showToast(`${c.name} advanced to ${c.stage}!`);
+        }
+      }
+    }
+
+    // Payroll Table
+    function renderPayroll() {
+      const container = document.getElementById('payroll-table-container');
+      container.innerHTML = state.employees.map(emp => {
+        const gross = emp.salary / 12;
+        const tax = gross * 0.22;
+        const insurance = 420;
+        const net = gross - tax - insurance;
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 2;">
+              <img style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" src="${emp.avatar}">
+              <div>
+                <div style="font-weight: 800; font-size: 13.5px;">${emp.name}</div>
+                <div style="font-size: 11.5px; color: var(--text-secondary);">${emp.role} • ${emp.department}</div>
+              </div>
+            </div>
+            <div style="flex: 1;">
+              <div style="font-size: 10.5px; color: var(--text-muted);">Gross Salary</div>
+              <div style="font-weight: 800; font-size: 13px;">$${gross.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+            </div>
+            <div style="flex: 1;">
+              <div style="font-size: 10.5px; color: var(--text-muted);">Net Take-Home</div>
+              <div style="font-weight: 800; font-size: 13px; color: var(--success);">$${net.toLocaleString('en-US', {maximumFractionDigits: 0})}</div>
+            </div>
+            <span style="font-size: 10.5px; font-weight: 800; padding: 4px 8px; border-radius: 6px; background: rgba(16,185,129,0.15); color: var(--success); margin-right: 12px;">PAID</span>
+            <button class="btn-sm-primary" style="padding: 6px 14px;" onclick="showPayslipModal('${emp.id}')">Payslip</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Form Submissions
+    function handleAddEmployee(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-emp-name').value;
+      const email = document.getElementById('new-emp-email').value;
+      const role = document.getElementById('new-emp-role').value;
+      const dept = document.getElementById('new-emp-dept').value;
+      const status = document.getElementById('new-emp-status').value;
+      const salary = parseFloat(document.getElementById('new-emp-salary').value) || 135000;
+      const location = document.getElementById('new-emp-location').value;
+
+      const newEmp = {
+        id: `EMP-${1000 + state.employees.length + 1}`,
+        name,
+        email,
+        role,
+        department: dept,
+        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        status,
+        rating: 4.85,
+        joinDate: 'Sep 2026',
+        phone: '+1 (555) 019-2834',
+        location,
+        salary,
+        competencies: { 'Leadership': 0.88, 'Innovation': 0.92, 'Delivery': 0.90, 'Collaboration': 0.94, 'Problem Solving': 0.89 },
+        recentReview: 'Newly onboarded talent. Initial 360 review cycle initiated.'
+      };
+
+      state.employees.unshift(newEmp);
+      document.getElementById('nav-workforce-count').textContent = state.employees.length;
+      document.getElementById('kpi-workforce').textContent = state.employees.length;
+      closeModal('modal-add-employee');
+      renderEmployees();
+      showToast(`Employee ${name} onboarded successfully!`);
+    }
+
+    function handleApplyLeave(e) {
+      e.preventDefault();
+      const type = document.getElementById('leave-type').value;
+      const days = parseInt(document.getElementById('leave-days').value) || 2;
+      const reason = document.getElementById('leave-reason').value || 'Personal leave.';
+
+      const newReq = {
+        id: `LR-${300 + state.leaveRequests.length + 1}`,
+        employeeName: 'Dr. Sarah Jenkins',
+        employeeRole: 'VP HR',
+        employeeAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+        type,
+        startDate: 'Sep 20, 2026',
+        endDate: 'Sep 22, 2026',
+        days,
+        reason,
+        status: 'Approved'
+      };
+
+      state.leaveRequests.unshift(newReq);
+      closeModal('modal-apply-leave');
+      if (state.currentTab === 3) renderLeaveRequests();
+      showToast(`Leave request for ${days} days approved!`);
+    }
+
+    function handleAddReview(e) {
+      e.preventDefault();
+      const targetIdx = parseInt(document.getElementById('review-emp-target').value) || 0;
+      const targetEmp = state.employees[targetIdx];
+      const type = document.getElementById('review-type').value;
+      const score = parseFloat(document.getElementById('review-score').value) || 4.8;
+      const feedback = document.getElementById('review-feedback').value;
+
+      const newRev = {
+        id: `REV-${500 + state.reviews.length + 1}`,
+        employeeName: targetEmp.name,
+        reviewerName: 'Dr. Sarah Jenkins',
+        reviewerRole: 'VP HR',
+        reviewerAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+        reviewType: type,
+        score,
+        feedback,
+        date: 'Sep 17, 2026'
+      };
+
+      state.reviews.unshift(newRev);
+      closeModal('modal-add-review');
+      if (state.currentTab === 2) renderReviewsFeed();
+      showToast(`360 feedback logged for ${targetEmp.name}!`);
+    }
+
+    function handleAddCandidate(e) {
+      e.preventDefault();
+      const name = document.getElementById('cand-name').value;
+      const role = document.getElementById('cand-role').value;
+      const exp = document.getElementById('cand-exp').value;
+      const skills = document.getElementById('cand-skills').value.split(',').map(s => s.trim());
+
+      const newCand = {
+        id: `CND-${800 + state.candidates.length + 1}`,
+        name,
+        role,
+        department: 'Engineering',
+        stage: 'Applied',
+        experience: exp,
+        rating: 4.8,
+        skills,
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+      };
+
+      state.candidates.unshift(newCand);
+      document.getElementById('nav-pipeline-count').textContent = state.candidates.filter(c => c.stage !== 'Hired').length;
+      document.getElementById('kpi-pipeline').textContent = state.candidates.filter(c => c.stage !== 'Hired').length;
+      closeModal('modal-add-candidate');
+      if (state.currentTab === 4) renderKanban();
+      showToast(`Candidate ${name} added to pipeline!`);
+    }
+
+    // Init on load
+    window.addEventListener('DOMContentLoaded', () => {
+      switchTab(0);
+      populateRadarSelect();
+    });
+  </script>
+</body>
+</html>

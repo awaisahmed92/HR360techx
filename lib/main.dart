@@ -37,6 +37,7 @@ import 'views/travel_view.dart';
 import 'views/timesheet_view.dart';
 import 'views/approvals_inbox_view.dart';
 import 'views/profile_view.dart';
+import 'views/product_intro_view.dart';
 import 'views/sign_up_view.dart';
 import 'core/config/browser_path_stub.dart'
     if (dart.library.html) 'core/config/browser_path_web.dart';
@@ -52,6 +53,21 @@ bool _locationWantsSignUp() {
   final url = Uri.base;
   final target = '${url.path} ${url.fragment} ${url.query}'.toLowerCase();
   return target.contains('sign-up') || target.contains('signup');
+}
+
+bool _locationWantsLogin() {
+  if (browserWantsLogin()) return true;
+  final url = Uri.base;
+  final target = '${url.path} ${url.fragment}'.toLowerCase();
+  return target.contains('/login');
+}
+
+enum _Gate { intro, login, signUp }
+
+_Gate _gateFromLocation() {
+  if (_locationWantsSignUp()) return _Gate.signUp;
+  if (_locationWantsLogin()) return _Gate.login;
+  return _Gate.intro;
 }
 
 void main() {
@@ -90,16 +106,30 @@ class HR360App extends StatelessWidget {
       theme: AppTheme.lightThemeFor(appState.brandColor),
       darkTheme: AppTheme.darkThemeFor(appState.brandColor),
       themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: (_launchOnSignUp || browserWantsSignUp()) ? '/sign-up' : '/',
+      initialRoute: switch (_gateFromLocation()) {
+        _Gate.signUp => '/sign-up',
+        _Gate.login => '/login',
+        _Gate.intro => '/',
+      },
       onGenerateRoute: (settings) {
         final name = (settings.name ?? '').toLowerCase();
         final signUp = _launchOnSignUp ||
             browserWantsSignUp() ||
             name.contains('sign-up') ||
             name.contains('signup');
+        final login = !signUp &&
+            (browserWantsLogin() || name == '/login' || name.endsWith('/login'));
+        final gate = signUp
+            ? _Gate.signUp
+            : (login ? _Gate.login : _Gate.intro);
+        final path = switch (gate) {
+          _Gate.signUp => '/sign-up',
+          _Gate.login => '/login',
+          _Gate.intro => '/',
+        };
         return MaterialPageRoute<void>(
-          settings: RouteSettings(name: signUp ? '/sign-up' : '/'),
-          builder: (_) => _Root(startOnSignUp: signUp),
+          settings: RouteSettings(name: path),
+          builder: (_) => _Root(start: gate),
         );
       },
     );
@@ -107,43 +137,44 @@ class HR360App extends StatelessWidget {
 }
 
 class _Root extends StatelessWidget {
-  const _Root({required this.startOnSignUp});
+  const _Root({required this.start});
 
-  final bool startOnSignUp;
+  final _Gate start;
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
     return switch (auth.status) {
       AuthStatus.unknown => const _SessionRestoreHold(),
-      AuthStatus.unauthenticated => _PublicEntry(startOnSignUp: startOnSignUp),
+      AuthStatus.unauthenticated => _PublicEntry(start: start),
       AuthStatus.authenticated => const MainShell(),
     };
   }
 }
 
-/// Login, or the public sign-up form when the browser is on /sign-up.
+/// Product intro, the existing login, or public sign-up.
 class _PublicEntry extends StatefulWidget {
-  const _PublicEntry({required this.startOnSignUp});
+  const _PublicEntry({required this.start});
 
-  final bool startOnSignUp;
+  final _Gate start;
 
   @override
   State<_PublicEntry> createState() => _PublicEntryState();
 }
 
 class _PublicEntryState extends State<_PublicEntry> {
-  late bool _signUp =
-      widget.startOnSignUp || browserWantsSignUp() || _locationWantsSignUp();
+  late _Gate _gate = widget.start;
 
   @override
   void initState() {
     super.initState();
-    listenBrowserPath((signUp) {
-      if (!mounted || signUp == _signUp) return;
-      setState(() => _signUp = signUp);
+    listenBrowserPath(() {
+      final next = _gateFromLocation();
+      _launchOnSignUp = next == _Gate.signUp;
+      if (!mounted || next == _gate) return;
+      setState(() => _gate = next);
     });
-    if (_signUp) {
+    if (_gate == _Gate.signUp) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setBrowserPath('/sign-up');
       });
@@ -152,17 +183,26 @@ class _PublicEntryState extends State<_PublicEntry> {
 
   void _openLogin() {
     _launchOnSignUp = false;
-    setState(() => _signUp = false);
-    setBrowserPath('/');
+    setState(() => _gate = _Gate.login);
+    setBrowserPath('/login');
+  }
+
+  void _openSignUp() {
+    _launchOnSignUp = true;
+    setState(() => _gate = _Gate.signUp);
+    setBrowserPath('/sign-up');
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_signUp) {
-      return SignUpView(onBackToLogin: _openLogin);
-    }
-
-    return const LoginView();
+    return switch (_gate) {
+      _Gate.signUp => SignUpView(onBackToLogin: _openLogin),
+      _Gate.login => const LoginView(),
+      _Gate.intro => ProductIntroView(
+          onTryNow: _openLogin,
+          onSignUp: _openSignUp,
+        ),
+    };
   }
 }
 
