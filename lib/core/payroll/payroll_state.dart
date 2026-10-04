@@ -17,6 +17,7 @@ class PayrollState extends ChangeNotifier {
   Map<String, dynamic> meta = {};
   List<Map<String, dynamic>> defines = [];
   List<Map<String, dynamic>> runs = [];
+  List<Map<String, dynamic>> myPayslips = [];
   Map<String, dynamic>? payslip;
 
   ApiClient get _api =>
@@ -168,6 +169,32 @@ class PayrollState extends ChangeNotifier {
     } on DioException catch (e) {
       return _msg(e);
     }
+  }
+
+  Future<void> loadMyPayslips() async {
+    if (_auth.isDemo) {
+      myPayslips = [];
+      notifyListeners();
+      return;
+    }
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      final res = await _api.dio.get('/payroll/my-payslips');
+      final d = res.data;
+      if (d is Map && d['success'] == true) {
+        myPayslips = ((d['payslips'] as List?) ?? [])
+            .map((e) => asStringKeyedMap(e))
+            .toList();
+      } else {
+        error = (d is Map ? d['message'] : null)?.toString() ?? 'Could not load payslips';
+      }
+    } on DioException catch (e) {
+      error = _msg(e);
+    }
+    busy = false;
+    notifyListeners();
   }
 
   Future<String?> loadPayslip(int id) async {

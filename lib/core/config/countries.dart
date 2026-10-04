@@ -20,6 +20,8 @@ class CountryOption {
     );
   }
 
+  String get dialCode => dialByCode[code] ?? '';
+
   String get gmtLabel {
     final sign = utcOffsetMinutes >= 0 ? '+' : '-';
     final abs = utcOffsetMinutes.abs();
@@ -32,6 +34,57 @@ class CountryOption {
         Duration(minutes: utcOffsetMinutes),
       );
 }
+
+const dialByCode = <String, String>{
+  'AE': '+971',
+  'AF': '+93',
+  'AR': '+54',
+  'AT': '+43',
+  'AU': '+61',
+  'BD': '+880',
+  'BE': '+32',
+  'BH': '+973',
+  'BR': '+55',
+  'CA': '+1',
+  'CH': '+41',
+  'CN': '+86',
+  'DE': '+49',
+  'DK': '+45',
+  'EG': '+20',
+  'ES': '+34',
+  'FR': '+33',
+  'GB': '+44',
+  'GR': '+30',
+  'HK': '+852',
+  'ID': '+62',
+  'IE': '+353',
+  'IN': '+91',
+  'IT': '+39',
+  'JP': '+81',
+  'KE': '+254',
+  'KR': '+82',
+  'KW': '+965',
+  'LK': '+94',
+  'MY': '+60',
+  'MX': '+52',
+  'NG': '+234',
+  'NL': '+31',
+  'NO': '+47',
+  'NP': '+977',
+  'NZ': '+64',
+  'OM': '+968',
+  'PH': '+63',
+  'PK': '+92',
+  'PL': '+48',
+  'QA': '+974',
+  'SA': '+966',
+  'SE': '+46',
+  'SG': '+65',
+  'TH': '+66',
+  'TR': '+90',
+  'US': '+1',
+  'ZA': '+27',
+};
 
 class Countries {
   static const defaultCode = 'PK';

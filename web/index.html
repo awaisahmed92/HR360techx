@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="HR360 TechX">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2245%22 fill=%22%232A72B5%22/><text y=%22.9em%22 font-size=%2255%22 x=%2218%22 fill=%22white%22 font-family=%22sans-serif%22 font-weight=%22bold%22>360</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="logo-mark.svg">
   <title>HR360 TechX — Employee Login</title>
   <link rel="manifest" href="manifest.json">
   <style>
@@ -53,11 +53,7 @@
     #boot-login .brand-dot {
       width: 34px;
       height: 34px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255,255,255,.7);
-      display: grid;
-      place-items: center;
-      font-size: 12px;
+      display: block;
     }
     #boot-login .card {
       width: min(560px, 100%);
@@ -72,14 +68,8 @@
       width: 72px;
       height: 72px;
       margin: 0 auto 22px;
-      background: #F15A24;
-      border-radius: 8px;
-      color: #fff;
-      font-weight: 900;
-      font-size: 20px;
-      display: grid;
-      place-items: center;
-      letter-spacing: -.5px;
+      display: block;
+      object-fit: contain;
     }
     #boot-login h1 {
       margin: 0 0 40px;
@@ -155,9 +145,9 @@
 <body>
   <!-- Instant login chrome while Flutter JS downloads (no branded splash). -->
   <div id="boot-login" aria-label="Employee Login">
-    <div class="brand"><span class="brand-dot">360</span> HR360</div>
+    <div class="brand"><img class="brand-dot" src="logo-mark.svg" alt=""> HR360</div>
     <div class="card">
-      <div class="logo">360</div>
+      <img class="logo" src="logo-mark.svg" alt="">
       <h1>Employee Login</h1>
       <div class="row">
         <label>Organization:</label>
@@ -187,9 +177,9 @@
         if (el) {
           el.setAttribute('aria-label', 'Sign Up');
           el.innerHTML =
-            '<div class="brand"><span class="brand-dot">360</span> HR360</div>' +
+            '<div class="brand"><img class="brand-dot" src="logo-mark.svg" alt=""> HR360</div>' +
             '<div class="card">' +
-            '<div class="logo">360</div>' +
+            '<img class="logo" src="logo-mark.svg" alt="">' +
             '<h1>Let\'s get signed up!</h1>' +
             '<div class="hint">Opening sign-up…</div>' +
             '</div>';

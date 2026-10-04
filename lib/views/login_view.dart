@@ -10,6 +10,7 @@ import '../core/auth/auth_state.dart';
 import '../core/config/app_config.dart';
 import '../core/config/login_backgrounds.dart';
 import '../core/network/api_client.dart';
+import '../widgets/company_logo.dart';
 
 /// WebHR-style employee login — wide white card, label-left gray fields.
 class LoginView extends StatefulWidget {
@@ -209,22 +210,14 @@ class _LoginViewState extends State<LoginView> {
               ),
             ),
           ),
-          Positioned(
+          const Positioned(
             top: 28,
             left: 32,
             child: Row(
               children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white70, width: 1.5),
-                  ),
-                  child: const Icon(Icons.groups, color: Colors.white, size: 18),
-                ),
-                const SizedBox(width: 10),
-                const Text(
+                CompanyLogo(size: 34),
+                SizedBox(width: 10),
+                Text(
                   'HR360',
                   style: TextStyle(
                     color: Colors.white,
@@ -515,12 +508,12 @@ class _LoginCompanyLogo extends StatelessWidget {
       width: 88,
       height: 88,
       decoration: BoxDecoration(
-        color: hasLogo ? Colors.white : const Color(0xFFF15A24),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: hasLogo ? Border.all(color: const Color(0xFFE8E4DC)) : null,
+        border: Border.all(color: const Color(0xFFE8E4DC)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFF15A24).withValues(alpha: hasLogo ? 0.12 : 0.35),
+            color: const Color(0xFF1E3A8A).withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -534,27 +527,14 @@ class _LoginCompanyLogo extends StatelessWidget {
               child: Image.network(
                 resolved,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const _Default360Mark(),
+                errorBuilder: (_, __, ___) => const CompanyLogo(size: 64),
               ),
             )
-          : const _Default360Mark(),
+          : const Padding(
+              padding: EdgeInsets.all(10),
+              child: CompanyLogo(size: 64),
+            ),
     );
   }
 }
 
-class _Default360Mark extends StatelessWidget {
-  const _Default360Mark();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text(
-      '360',
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w900,
-        fontSize: 22,
-        letterSpacing: -0.5,
-      ),
-    );
-  }
-}

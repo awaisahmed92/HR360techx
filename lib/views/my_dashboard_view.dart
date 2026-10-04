@@ -286,6 +286,18 @@ class _HeroBanner extends StatelessWidget {
                           children: [
                             TextButton.icon(
                               onPressed: () => app.openScreen(
+                                  moduleId: 'payroll', subId: 'salary_payslips'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.white70,
+                                padding: EdgeInsets.zero,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              icon: const Icon(Icons.receipt_long_outlined, size: 16),
+                              label: const Text('My Payslips'),
+                            ),
+                            const SizedBox(width: 12),
+                            TextButton.icon(
+                              onPressed: () => app.openScreen(
                                   moduleId: 'dashboard', subId: 'my_info'),
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white70,

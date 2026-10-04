@@ -32,6 +32,7 @@ Route::get('/auth/branding', [AuthController::class, 'branding']);
 
 // Public self sign-up: creates an organization, its database and its first admin.
 Route::get('/signup/availability', [SignupController::class, 'availability']);
+Route::get('/signup/captcha', [SignupController::class, 'captcha']);
 Route::post('/signup', [SignupController::class, 'store']);
 
 Route::middleware([TenantAuth::class])->group(function () {
@@ -138,6 +139,7 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/payroll/define/{id}/delete', [PayrollController::class, 'defineDelete'])->whereNumber('id');
     Route::get('/payroll/process', [PayrollController::class, 'processIndex']);
     Route::post('/payroll/process', [PayrollController::class, 'processRun']);
+    Route::get('/payroll/my-payslips', [PayrollController::class, 'myPayslips']);
     Route::get('/payroll/payslip/{id}', [PayrollController::class, 'payslip'])->whereNumber('id');
 
     Route::get('/payroll/setup', [PayrollController::class, 'setupGet']);

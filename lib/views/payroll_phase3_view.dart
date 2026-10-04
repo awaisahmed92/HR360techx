@@ -11,6 +11,26 @@ import '../widgets/hr_form_kit.dart';
 
 final _pkr = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 0);
 
+/// Opens the generated payslip. Print shows the page (browser Print / Save PDF).
+/// Download saves the same payslip as an HTML file.
+Future<void> openPayslipDocument(
+  BuildContext context,
+  int id, {
+  required bool download,
+}) async {
+  final token = context.read<AuthState>().session?.token ?? '';
+  final uri = Uri.parse(
+    '${AppConfig.apiBaseUrl}/payroll/payslip/$id/print'
+    '?access_token=${Uri.encodeQueryComponent(token)}'
+    '${download ? '&download=1' : ''}',
+  );
+  final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+  if (!context.mounted || ok) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Open manually: $uri')),
+  );
+}
+
 /// Payroll dashboard + process salary runs.
 class PayrollProcessView extends StatefulWidget {
   const PayrollProcessView({super.key});
@@ -373,20 +393,12 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
         ),
         actions: [
           TextButton(
-            onPressed: () async {
-              final token = context.read<AuthState>().session?.token ?? '';
-              final uri = Uri.parse(
-                '${AppConfig.apiBaseUrl}/payroll/payslip/$id/print'
-                '?access_token=${Uri.encodeQueryComponent(token)}',
-              );
-              final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-              if (!ok && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Open manually: $uri')),
-                );
-              }
-            },
-            child: const Text('Print / PDF'),
+            onPressed: () => openPayslipDocument(context, id, download: false),
+            child: const Text('Print'),
+          ),
+          TextButton(
+            onPressed: () => openPayslipDocument(context, id, download: true),
+            child: const Text('Download'),
           ),
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
         ],

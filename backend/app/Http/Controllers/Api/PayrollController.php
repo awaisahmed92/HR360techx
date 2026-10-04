@@ -95,12 +95,28 @@ class PayrollController extends Controller
 
     public function processIndex(Request $request)
     {
+        $scope = $this->payslipScope($request);
+
         return response()->json([
             'success' => true,
             'runs' => $this->payroll->listProcessed(
                 $request->query('date'),
-                $request->query('project_id') ? (int) $request->query('project_id') : null
+                $request->query('project_id') ? (int) $request->query('project_id') : null,
+                $scope
             ),
+        ]);
+    }
+
+    public function myPayslips(Request $request)
+    {
+        $scope = $this->payslipScope($request);
+        if ($scope === 0) {
+            return response()->json(['success' => true, 'payslips' => []]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'payslips' => $this->payroll->listProcessed(null, null, $scope),
         ]);
     }
 
@@ -126,11 +142,14 @@ class PayrollController extends Controller
         ]);
     }
 
-    public function payslip(int $id)
+    public function payslip(Request $request, int $id)
     {
         $slip = $this->payroll->payslip($id);
         if (!$slip) {
             return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+        if (!$this->canViewPayslip($request, (int) ($slip['employee']['id'] ?? 0))) {
+            return response()->json(['success' => false, 'message' => 'You can only open your own payslip.'], 403);
         }
 
         return response()->json(['success' => true, 'payslip' => $slip]);
@@ -373,6 +392,14 @@ class PayrollController extends Controller
 
     public function payslipPrint(Request $request, int $id)
     {
+        $slip = $this->payroll->payslip($id);
+        if (!$slip) {
+            return response('Payslip not found', 404);
+        }
+        if (!$this->canViewPayslip($request, (int) ($slip['employee']['id'] ?? 0))) {
+            return response('You can only open your own payslip.', 403);
+        }
+
         $base = rtrim($request->getSchemeAndHttpHost().$request->getBasePath(), '/');
         $html = $this->payroll->payslipHtml($id, preg_replace('#/api$#', '', $base));
         if ($html === null) {
@@ -387,6 +414,28 @@ class PayrollController extends Controller
         }
 
         return response($html, 200)->header('Content-Type', 'text/html; charset=UTF-8');
+    }
+
+    /**
+     * null = admin sees every employee. 0 = no employee on the token (empty list).
+     * A positive id limits the list and the print view to that employee.
+     */
+    private function payslipScope(Request $request): ?int
+    {
+        $claims = $request->attributes->get('hr_claims') ?? [];
+        $isAdmin = (int) ($claims['user_status'] ?? 0) === 2 || !empty($claims['is_superuser']);
+        if ($isAdmin) {
+            return null;
+        }
+
+        return (int) ($claims['employee_id'] ?? 0);
+    }
+
+    private function canViewPayslip(Request $request, int $ownerEmployeeId): bool
+    {
+        $scope = $this->payslipScope($request);
+
+        return $scope === null || ($scope > 0 && $scope === $ownerEmployeeId);
     }
 
     public function salaryStructure()

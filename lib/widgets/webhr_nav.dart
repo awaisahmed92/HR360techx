@@ -7,6 +7,7 @@ import '../core/util/person_name.dart';
 import '../navigation/module_catalog.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
+import 'company_logo.dart';
 
 /// WebHR dual-rail: icon strip + module submenu.
 class WebHrNavRail extends StatelessWidget {
@@ -34,20 +35,12 @@ class WebHrNavRail extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Center(
-                  child: Text(
-                    '360',
-                    style: TextStyle(
-                      color: onBrand,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
+                child: const CompanyLogo(size: 32),
               ),
               const SizedBox(height: 10),
               Expanded(

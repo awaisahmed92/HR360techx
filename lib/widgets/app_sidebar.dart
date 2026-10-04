@@ -5,6 +5,7 @@ import '../core/auth/auth_state.dart';
 import '../core/permissions/permission_gate.dart';
 import '../core/permissions/tab_access.dart';
 import '../theme/app_theme.dart';
+import 'company_logo.dart';
 
 class AppSidebar extends StatelessWidget {
   const AppSidebar({super.key, this.employeeShell = false});
@@ -60,32 +61,7 @@ class AppSidebar extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        gradient: AppTheme.brandGradient(brand),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: brand.withOpacity(0.35),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          '360',
-                          style: TextStyle(
-                            color: onBrand,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                    ),
+                    const CompanyLogo(size: 40),
                     if (!isCollapsed) ...[
                       const SizedBox(width: 12),
                       Column(

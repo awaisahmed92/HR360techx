@@ -33,13 +33,16 @@ class SignupService {
   final ApiClient _api;
 
   /// Null when the code can be used, otherwise the reason it cannot.
-  Future<String?> checkCode(String code) async {
+  Future<String?> checkCode(String code, {String companyName = ''}) async {
     final cleaned = code.trim();
     if (cleaned.isEmpty) return null;
     try {
       final res = await _api.dio.get(
         '/signup/availability',
-        queryParameters: {'code': cleaned},
+        queryParameters: {
+          'code': cleaned,
+          if (companyName.trim().isNotEmpty) 'name': companyName.trim(),
+        },
       );
       final data = res.data;
       if (data is! Map) return null;
@@ -48,6 +51,19 @@ class SignupService {
     } on DioException {
       // Availability is a convenience; the final submit re-validates anyway.
       return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> captcha() async {
+    try {
+      final res = await _api.dio.get('/signup/captcha');
+      final data = res.data;
+      if (data is Map && data['token'] != null && data['image'] != null) {
+        return Map<String, dynamic>.from(data);
+      }
+      throw SignupException('Could not load the verification code.');
+    } on DioException {
+      throw SignupException('Could not load the verification code.');
     }
   }
 
@@ -60,6 +76,8 @@ class SignupService {
     required String country,
     required String email,
     required String password,
+    required String captchaToken,
+    required String captchaAnswer,
     String? phone,
   }) async {
     try {
@@ -74,6 +92,8 @@ class SignupService {
           'country': country,
           'email': email.trim(),
           'password': password,
+          'captcha_token': captchaToken,
+          'captcha_answer': captchaAnswer.trim(),
           if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
         },
       );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/company_logo.dart';
 
 /// Public product page. Try now opens the existing login screen.
 class ProductIntroView extends StatelessWidget {
@@ -125,21 +126,7 @@ class _Bar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: const LinearGradient(
-              colors: [Color(0xFF1E4B8C), Color(0xFF3B6FB0)],
-            ),
-          ),
-          child: const Text(
-            '360',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12),
-          ),
-        ),
+        const CompanyLogo(size: 40),
         const SizedBox(width: 12),
         const Expanded(
           child: Column(

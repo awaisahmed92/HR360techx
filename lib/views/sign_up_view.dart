@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
 import '../core/auth/signup_service.dart';
 import '../core/config/countries.dart';
+import '../widgets/company_logo.dart';
+import '../widgets/phone_field.dart';
 
 /// Public self sign-up. Creates an organization with its own tenant database
 /// and a single admin user holding every right.
@@ -33,8 +37,12 @@ class _SignUpViewState extends State<SignUpView> {
   final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  final _captchaCtrl = TextEditingController();
 
   String? _country = 'Pakistan';
+  String? _captchaToken;
+  Uint8List? _captchaBytes;
+  String _phoneCountry = 'US';
   bool _obscure = true;
   bool _obscureConfirm = true;
   bool _busy = false;
@@ -49,6 +57,7 @@ class _SignUpViewState extends State<SignUpView> {
     super.initState();
     _companyCtrl.addListener(_suggestCode);
     _codeCtrl.addListener(_onCodeChanged);
+    _loadCaptcha();
   }
 
   @override
@@ -66,6 +75,7 @@ class _SignUpViewState extends State<SignUpView> {
       _phoneCtrl,
       _passCtrl,
       _confirmCtrl,
+      _captchaCtrl,
     ]) {
       c.dispose();
     }
@@ -99,7 +109,7 @@ class _SignUpViewState extends State<SignUpView> {
     final code = _codeCtrl.text.trim();
     if (code.length < 3) return;
     _codeDebounce = Timer(const Duration(milliseconds: 500), () async {
-      final problem = await _service.checkCode(code);
+      final problem = await _service.checkCode(code, companyName: _companyCtrl.text);
       if (!mounted || _codeCtrl.text.trim() != code) return;
       setState(() {
         _codeHint = problem;
@@ -108,9 +118,32 @@ class _SignUpViewState extends State<SignUpView> {
     });
   }
 
+  Future<void> _loadCaptcha() async {
+    try {
+      final data = await _service.captcha();
+      final image = data['image']?.toString() ?? '';
+      final comma = image.indexOf(',');
+      final bytes = comma >= 0 ? base64Decode(image.substring(comma + 1)) : null;
+      if (!mounted) return;
+      setState(() {
+        _captchaToken = data['token']?.toString();
+        _captchaBytes = bytes;
+        _captchaCtrl.clear();
+      });
+    } on SignupException catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.message);
+    }
+  }
+
   Future<void> _submit() async {
     setState(() => _error = null);
     if (!_formKey.currentState!.validate()) return;
+    final token = _captchaToken;
+    if (token == null || token.isEmpty) {
+      setState(() => _error = 'The verification code is still loading. Please wait.');
+      return;
+    }
 
     setState(() => _busy = true);
     try {
@@ -123,13 +156,16 @@ class _SignUpViewState extends State<SignUpView> {
         country: _country!,
         email: _emailCtrl.text,
         password: _passCtrl.text,
-        phone: _phoneCtrl.text,
+        phone: composePhone(_phoneCountry, _phoneCtrl.text),
+        captchaToken: token,
+        captchaAnswer: _captchaCtrl.text,
       );
       if (!mounted) return;
       setState(() => _done = result);
     } on SignupException catch (e) {
       if (!mounted) return;
       setState(() => _error = e.message);
+      await _loadCaptcha();
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -329,7 +365,10 @@ class _SignUpViewState extends State<SignUpView> {
                   ),
                 ),
             ],
-            onChanged: (v) => setState(() => _country = v),
+            onChanged: (v) => setState(() {
+              _country = v;
+              _phoneCountry = Countries.byName(v).code;
+            }),
             validator: (v) => v == null ? 'Select your country' : null,
           ),
           _field(
@@ -345,10 +384,10 @@ class _SignUpViewState extends State<SignUpView> {
               return null;
             },
           ),
-          _field(
+          PhoneField(
             controller: _phoneCtrl,
-            label: 'Mobile Number',
-            keyboardType: TextInputType.phone,
+            countryCode: _phoneCountry,
+            onCountryCode: (code) => setState(() => _phoneCountry = code),
           ),
           _field(
             controller: _passCtrl,
@@ -382,6 +421,45 @@ class _SignUpViewState extends State<SignUpView> {
             ),
             validator: (v) =>
                 v != _passCtrl.text ? 'Passwords do not match' : null,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 168,
+                  height: 56,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF3FB),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _border),
+                  ),
+                  child: _captchaBytes == null
+                      ? const Center(
+                          child: SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : Image.memory(_captchaBytes!, fit: BoxFit.cover, gaplessPlayback: true),
+                ),
+                IconButton(
+                  tooltip: 'New code',
+                  onPressed: _busy ? null : _loadCaptcha,
+                  icon: const Icon(Icons.refresh, color: _brand),
+                ),
+              ],
+            ),
+          ),
+          _field(
+            controller: _captchaCtrl,
+            label: 'Verification code *',
+            textCapitalization: TextCapitalization.characters,
+            validator: (v) => (v ?? '').trim().length < 4
+                ? 'Type the characters shown above'
+                : null,
           ),
           if (_error != null) ...[
             const SizedBox(height: 4),
@@ -628,28 +706,7 @@ class _BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF5EB0F0), Color(0xFF2F7FC4)],
-        ),
-      ),
-      alignment: Alignment.center,
-      child: const Text(
-        '360',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 15,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.4,
-        ),
-      ),
-    );
+    return const CompanyLogo(size: 56);
   }
 }
 

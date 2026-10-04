@@ -3,14 +3,24 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\SignupCaptcha;
 use App\Services\TenantProvisioner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class SignupController extends Controller
 {
-    public function __construct(protected TenantProvisioner $provisioner)
+    public function __construct(
+        protected TenantProvisioner $provisioner,
+        protected SignupCaptcha $captcha,
+    ) {
+    }
+
+    public function captcha()
     {
+        return response()->json([
+            'success' => true,
+        ] + $this->captcha->issue());
     }
 
     /** Live check for the Company Code field. */
@@ -35,12 +45,33 @@ class SignupController extends Controller
                 'message' => 'That company code is reserved. Please pick another.',
             ]);
         }
-        if (TenantProvisioner::codeTaken($code)) {
+        $companyName = (string) $request->query('name', '');
+        try {
+            $hrAlready = TenantProvisioner::codeTaken($code, $companyName);
+            $existing = $hrAlready ? null : TenantProvisioner::existingClient($code, $companyName);
+        } catch (RuntimeException $e) {
             return response()->json([
                 'success' => true,
                 'code' => $code,
                 'available' => false,
-                'message' => 'That company code is already registered.',
+                'message' => $e->getMessage(),
+            ]);
+        }
+        if ($hrAlready) {
+            return response()->json([
+                'success' => true,
+                'code' => $code,
+                'available' => false,
+                'message' => 'That company already has HR360. Sign in with the existing company code.',
+            ]);
+        }
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'code' => $code,
+                'available' => true,
+                'existing_client' => true,
+                'message' => 'This company is already on 360tech. HR will open on the same company record.',
             ]);
         }
 
@@ -65,9 +96,39 @@ class SignupController extends Controller
             'email' => 'required|email|max:191',
             'phone' => 'nullable|string|max:60',
             'password' => 'required|string|min:6|max:191',
+            'captcha_token' => 'required|string|max:64',
+            'captcha_answer' => 'required|string|max:12',
         ]);
 
+        if (! $this->captcha->check($data['captcha_token'], $data['captcha_answer'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The verification code is incorrect. Request a new code and try again.',
+            ], 422);
+        }
+
         $code = TenantProvisioner::normalizeCode($data['company_code']);
+        $companyName = trim($data['company_name']);
+        try {
+            $existing = TenantProvisioner::existingClient($code, $companyName);
+        } catch (RuntimeException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+        if ($existing && (int) ($existing->hr_app ?? 0) === 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'That company already has HR360. Sign in with the existing company code.',
+            ], 422);
+        }
+        if ($existing) {
+            $canonical = TenantProvisioner::normalizeCode((string) ($existing->company_code ?: $existing->subdomain));
+            if (strlen($canonical) >= 3) {
+                $code = $canonical;
+            }
+        }
         if (strlen($code) < 3) {
             return response()->json([
                 'success' => false,
@@ -89,7 +150,7 @@ class SignupController extends Controller
 
         try {
             $result = $this->provisioner->provision([
-                'company_name' => trim($data['company_name']),
+                'company_name' => $companyName,
                 'company_code' => $code,
                 'contact_name' => trim($data['name']),
                 'designation' => trim($data['designation']),

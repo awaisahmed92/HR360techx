@@ -609,7 +609,7 @@ class PayrollService
         return round($total, 2);
     }
 
-    public function listProcessed(?string $date = null, ?int $projectId = null): array
+    public function listProcessed(?string $date = null, ?int $projectId = null, ?int $employeeId = null): array
     {
         if (!Schema::hasTable('process_salary')) {
             return [];
@@ -617,13 +617,17 @@ class PayrollService
         $q = DB::table('process_salary as ps')
             ->leftJoin('employee as e', 'e.employee_id', '=', 'ps.employee_id')
             ->leftJoin('project as p', 'p.project_id', '=', 'ps.project_id')
-            ->select('ps.*', 'e.name as employee_name', 'p.name as project_name')
+            ->select('ps.*', 'e.name as employee_name', 'e.employee_code', 'p.name as project_name')
+            ->orderByDesc('ps.date')
             ->orderByDesc('ps.id');
         if ($date) {
             $q->where('ps.date', $date);
         }
         if ($projectId) {
             $q->where('ps.project_id', $projectId);
+        }
+        if ($employeeId !== null && $employeeId > 0) {
+            $q->where('ps.employee_id', $employeeId);
         }
 
         return $q->limit(500)->get()->map(fn ($r) => $this->mapProcess($r))->all();
@@ -1444,6 +1448,19 @@ th{background:#A67C5D;color:#fff;text-align:left}
             'arrears_amount' => (float) ($r->arrears_amount ?? 0),
             'net_salary' => (float) $r->net_salary,
             'date' => (string) ($r->date ?? ''),
+            'employee_code' => (string) ($r->employee_code ?? ''),
+            'period_start' => self::periodStart((string) ($r->date ?? '')),
+            'period_end' => (string) ($r->date ?? ''),
+            'status' => 'Processed',
         ];
+    }
+
+    protected static function periodStart(string $date): string
+    {
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return substr($date, 0, 8).'01';
+        }
+
+        return $date;
     }
 }

@@ -38,14 +38,62 @@ class TenantProvisioner
         return 'hr360_'.$code;
     }
 
-    /** Is this code free to use? */
-    public static function codeTaken(string $code): bool
+    /**
+     * True when this code already has an HR workspace.
+     * A client created from POS or Accounts is the same master row and can still add HR.
+     */
+    public static function codeTaken(string $code, string $companyName = ''): bool
     {
-        return DB::connection('master')
-            ->table('tenants')
-            ->where('subdomain', $code)
-            ->orWhere('company_code', $code)
-            ->exists();
+        $row = self::existingClient($code, $companyName);
+
+        return $row !== null && (int) ($row->hr_app ?? 0) === 1;
+    }
+
+    /**
+     * The shared master row for this company code or company name.
+     * "Awais Company" created in POS or Accounts is the same client when HR signs up.
+     */
+    public static function existingClient(string $code, string $companyName = ''): ?object
+    {
+        return self::pickClient(
+            DB::connection('master')->table('tenants')->get(),
+            self::matchKey($code),
+            self::matchKey($companyName),
+        );
+    }
+
+    public static function matchKey(string $raw): string
+    {
+        $key = strtolower(trim($raw));
+        $key = preg_replace('/[^a-z0-9]+/', '', $key) ?? '';
+
+        return substr($key, 0, 40);
+    }
+
+    /**
+     * @param  iterable<int, object>  $rows
+     */
+    public static function pickClient(iterable $rows, string $code, string $nameKey): ?object
+    {
+        $byCode = null;
+        $byName = null;
+        foreach ($rows as $row) {
+            $codes = array_filter([
+                self::matchKey((string) ($row->company_code ?? '')),
+                self::matchKey((string) ($row->subdomain ?? '')),
+            ]);
+            if ($code !== '' && in_array($code, $codes, true)) {
+                $byCode = $row;
+            }
+            if ($nameKey !== '' && self::matchKey((string) ($row->name ?? '')) === $nameKey) {
+                $byName ??= $row;
+            }
+        }
+        if ($byCode && $byName && (int) $byCode->id !== (int) $byName->id) {
+            throw new RuntimeException('That company name is already registered under a different company code.');
+        }
+
+        return $byCode ?? $byName;
     }
 
     /**
@@ -63,6 +111,7 @@ class TenantProvisioner
         $dbName = self::databaseNameFor($code);
         $created = false;
         $tenantId = null;
+        $insertedTenant = false;
 
         try {
             $this->createDatabase($dbName);
@@ -71,7 +120,7 @@ class TenantProvisioner
             $this->installSchema($dbName);
 
             $employeeId = $this->seedAdmin($dbName, $input);
-            $tenantId = $this->registerTenant($dbName, $input, $employeeId);
+            $tenantId = $this->registerTenant($dbName, $input, $employeeId, $insertedTenant);
 
             return [
                 'tenant_id' => $tenantId,
@@ -81,7 +130,7 @@ class TenantProvisioner
             ];
         } catch (\Throwable $e) {
             // Never leave a half-built organization behind.
-            if ($tenantId !== null) {
+            if ($tenantId !== null && $insertedTenant) {
                 DB::connection('master')->table('tenant_admins')->where('tenant_id', $tenantId)->delete();
                 DB::connection('master')->table('tenants')->where('id', $tenantId)->delete();
             }
@@ -265,38 +314,84 @@ class TenantProvisioner
         return (int) $pdo->lastInsertId();
     }
 
-    protected function registerTenant(string $dbName, array $input, int $employeeId): int
+    protected function registerTenant(string $dbName, array $input, int $employeeId, bool &$inserted = false): int
     {
-        $master = DB::connection('master');
-        $tenantId = (int) $master->table('tenants')->insertGetId([
-            'name' => $input['company_name'],
-            'subdomain' => $input['company_code'],
-            'company_code' => $input['company_code'],
-            'db_host' => (string) env('DB_HOST', '127.0.0.1'),
-            'db_name' => $dbName,
-            'db_user' => (string) env('DB_USERNAME', 'root'),
-            'db_password' => (string) env('DB_PASSWORD', ''),
-            'status' => 'active',
-            'hr_app' => 1,
-            'industry' => $input['industry'],
-            'country' => $input['country'],
-            'contact_name' => $input['contact_name'],
-            'contact_designation' => $input['designation'],
-            'contact_email' => $input['email'],
-            'contact_phone' => $input['phone'] ?? null,
-            'source' => 'signup',
-        ]);
+        return DB::connection('master')->transaction(function () use ($dbName, $input, $employeeId, &$inserted) {
+            $master = DB::connection('master');
+            $code = $input['company_code'];
+            $existing = self::pickClient(
+                $master->table('tenants')->lockForUpdate()->get(),
+                self::matchKey($code),
+                self::matchKey((string) ($input['company_name'] ?? '')),
+            );
 
-        $master->table('tenant_admins')->insert([
-            'tenant_id' => $tenantId,
-            'name' => $input['contact_name'],
-            'designation' => $input['designation'],
-            'email' => $input['email'],
-            'user_name' => $this->adminUserName($input['contact_name']),
-            'employee_id' => $employeeId,
-        ]);
+            if ($existing) {
+                $inserted = false;
+                $update = [
+                    'hr_app' => 1,
+                    'db_name' => $dbName,
+                    'db_host' => (string) env('DB_HOST', '127.0.0.1'),
+                    'db_user' => (string) env('DB_USERNAME', 'root'),
+                    'db_password' => (string) env('DB_PASSWORD', ''),
+                    'status' => 'active',
+                ];
+                if (empty($existing->company_code)) {
+                    $update['company_code'] = $code;
+                }
+                foreach ([
+                    'industry' => $input['industry'],
+                    'country' => $input['country'],
+                    'contact_name' => $input['contact_name'],
+                    'contact_designation' => $input['designation'],
+                    'contact_email' => $input['email'],
+                    'contact_phone' => $input['phone'] ?? null,
+                ] as $column => $value) {
+                    if ($value !== null && $value !== '' && empty($existing->{$column})) {
+                        $update[$column] = $value;
+                    }
+                }
+                $master->table('tenants')->where('id', $existing->id)->update($update);
+                $tenantId = (int) $existing->id;
+            } else {
+                $inserted = true;
+                $tenantId = (int) $master->table('tenants')->insertGetId([
+                    'name' => $input['company_name'],
+                    'subdomain' => $code,
+                    'company_code' => $code,
+                    'db_host' => (string) env('DB_HOST', '127.0.0.1'),
+                    'db_name' => $dbName,
+                    'db_user' => (string) env('DB_USERNAME', 'root'),
+                    'db_password' => (string) env('DB_PASSWORD', ''),
+                    'status' => 'active',
+                    'hr_app' => 1,
+                    'industry' => $input['industry'],
+                    'country' => $input['country'],
+                    'contact_name' => $input['contact_name'],
+                    'contact_designation' => $input['designation'],
+                    'contact_email' => $input['email'],
+                    'contact_phone' => $input['phone'] ?? null,
+                    'source' => 'signup',
+                ]);
+            }
 
-        return $tenantId;
+            $email = strtolower(trim($input['email']));
+            $adminExists = $master->table('tenant_admins')
+                ->where('tenant_id', $tenantId)
+                ->where('email', $email)
+                ->exists();
+            if (! $adminExists) {
+                $master->table('tenant_admins')->insert([
+                    'tenant_id' => $tenantId,
+                    'name' => $input['contact_name'],
+                    'designation' => $input['designation'],
+                    'email' => $email,
+                    'user_name' => $this->adminUserName($input['contact_name']),
+                    'employee_id' => $employeeId,
+                ]);
+            }
+
+            return $tenantId;
+        });
     }
 
     protected function tenantPdo(string $dbName): PDO

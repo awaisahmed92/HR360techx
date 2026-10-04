@@ -23,6 +23,7 @@ import 'views/training_view.dart';
 import 'views/lifecycle_views.dart';
 import 'views/letters_notifications_view.dart';
 import 'views/payroll_phase3_view.dart';
+import 'views/my_payslips_view.dart';
 import 'views/payroll_setup_view.dart';
 import 'views/payroll_reports_view.dart';
 import 'views/hr_reports_view.dart';
@@ -337,6 +338,8 @@ class _MainShellState extends State<MainShell> {
         return const PayrollView();
       case 'payroll_process':
         return const PayrollProcessView();
+      case 'my_payslips':
+        return const MyPayslipsView();
       case 'payroll_define':
         return const PayrollDefineView();
       case 'employee_pay':
