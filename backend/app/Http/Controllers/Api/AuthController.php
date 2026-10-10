@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\TenantHost;
 use App\Services\TenantManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,12 @@ class AuthController extends Controller
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
+
+        [$subdomain, $rejected] = $this->resolveSubdomain($request, (string) $data['subdomain']);
+        if ($rejected !== null) {
+            return $rejected;
+        }
+        $data['subdomain'] = $subdomain;
 
         $tenant = TenantManager::findBySubdomain(trim($data['subdomain']));
         if (!$tenant) {
@@ -229,6 +236,10 @@ class AuthController extends Controller
     public function branding(Request $request)
     {
         $sub = trim((string) ($request->query('subdomain') ?? $request->input('subdomain') ?? ''));
+        [$sub, $rejected] = $this->resolveSubdomain($request, $sub);
+        if ($rejected !== null) {
+            return $rejected;
+        }
         if ($sub === '') {
             return response()->json(['success' => false, 'message' => 'Organization required.'], 422);
         }
@@ -277,6 +288,36 @@ class AuthController extends Controller
                 'message' => 'Unable to load branding.',
             ], 500);
         }
+    }
+
+    /**
+     * On a company host, the code in the request must be that host's label.
+     *
+     * @return array{0: string, 1: \Illuminate\Http\JsonResponse|null}
+     */
+    protected function resolveSubdomain(Request $request, string $submitted): array
+    {
+        $fromHost = TenantHost::companyCode($request->getHost());
+        $submitted = trim($submitted);
+        if ($fromHost === null) {
+            return [$submitted, null];
+        }
+        if ($submitted === '') {
+            return [$fromHost, null];
+        }
+
+        $given = strtolower($submitted);
+        if (str_starts_with($given, 'hr360_')) {
+            $given = substr($given, 6);
+        }
+        if ($given !== $fromHost) {
+            return ['', response()->json([
+                'success' => false,
+                'message' => 'This address is for '.$fromHost.'.',
+            ], 422)];
+        }
+
+        return [$fromHost, null];
     }
 
     protected function passwordOk(string $plain, string $stored): bool

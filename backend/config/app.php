@@ -125,4 +125,7 @@ return [
 
     'hr360_token_secret' => env('HR360_TOKEN_SECRET', 'hr360-flutter-laravel-secret-change-me'),
 
+    /** Apex domain. Company sites are https://{code}.{hr360_base_domain}. */
+    'hr360_base_domain' => env('HR360_BASE_DOMAIN', 'hr360techx.com'),
+
 ];

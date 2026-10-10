@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/signup_service.dart';
+import '../core/config/app_config.dart';
 import '../core/config/countries.dart';
 import '../widgets/company_logo.dart';
 import '../widgets/phone_field.dart';
@@ -319,15 +322,19 @@ class _SignUpViewState extends State<SignUpView> {
             label: 'Company Code *',
             helper: _codeHint ??
                 (_codeOk
-                    ? 'Available — this is what you type at login.'
-                    : 'Lowercase letters and digits. You sign in with this code.'),
+                    ? 'Available — sign in at ${AppConfig.tenantUrl(_slug(_codeCtrl.text))}.'
+                    : 'Letters and digits only. This code becomes your web address.'),
             helperIsError: _codeHint != null,
             onTap: () => _codeTouched = true,
             suffix: _codeOk
                 ? const Icon(Icons.check_circle, color: Color(0xFF2E9E5B), size: 20)
                 : null,
             validator: (v) {
-              final code = _slug(v ?? '');
+              final raw = (v ?? '').trim();
+              if (raw.contains('_')) {
+                return 'Underscores cannot be used. This code becomes your web address.';
+              }
+              final code = _slug(raw);
               if (code.length < 3) return 'At least 3 letters or digits';
               if (_codeHint != null) return _codeHint;
               return null;
@@ -533,6 +540,18 @@ class _SignUpViewState extends State<SignUpView> {
     );
   }
 
+  Future<void> _goToSignIn() async {
+    final code = _done?.organization.trim() ?? '';
+    if (kIsWeb && code.isNotEmpty) {
+      final opened = await launchUrl(
+        Uri.parse(AppConfig.tenantUrl(code)),
+        webOnlyWindowName: '_self',
+      );
+      if (opened) return;
+    }
+    widget.onBackToLogin?.call();
+  }
+
   Widget _buildDone() {
     final done = _done!;
     return Column(
@@ -558,12 +577,13 @@ class _SignUpViewState extends State<SignUpView> {
           style: TextStyle(fontSize: 13.5, color: Color(0xFF6B7A90)),
         ),
         const SizedBox(height: 20),
-        _summaryRow('Company Name', done.organization),
+        _summaryRow('Sign-in address', AppConfig.tenantUrl(done.organization)),
+        _summaryRow('Company Code', done.organization),
         _summaryRow('UserName', _nameCtrl.text.trim()),
         _summaryRow('Password', 'The password you just chose'),
         const SizedBox(height: 8),
-        const Text(
-          'Use these three values on the login screen.',
+        Text(
+          'Open ${AppConfig.tenantUrl(done.organization)} and sign in with your username and password.',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 12.5, height: 1.35, color: Color(0xFF6B7A90)),
         ),
@@ -571,7 +591,7 @@ class _SignUpViewState extends State<SignUpView> {
         SizedBox(
           height: 48,
           child: FilledButton(
-            onPressed: widget.onBackToLogin,
+            onPressed: _goToSignIn,
             style: FilledButton.styleFrom(
               backgroundColor: _brand,
               foregroundColor: Colors.white,

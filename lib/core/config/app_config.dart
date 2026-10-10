@@ -19,6 +19,12 @@ class AppConfig {
   static const String _localXamppApi =
       'http://localhost/HR360techx/backend/public/api';
 
+  /// Apex host. A company site is https://{code}.[baseDomain].
+  static const String baseDomain = String.fromEnvironment(
+    'HR360_BASE_DOMAIN',
+    defaultValue: 'hr360techx.com',
+  );
+
   /// Offline mock login is disabled.
   static const bool allowDemoLogin = bool.fromEnvironment(
     'ALLOW_DEMO_LOGIN',
@@ -27,6 +33,33 @@ class AppConfig {
 
   /// Resolved at runtime (not a const) so web uses the current host.
   static String get apiBaseUrl => _normalize(_resolveApiBaseUrl());
+
+  /// Company code locked by the browser host, or null on the apex and on localhost.
+  static String? get tenantCodeFromHost {
+    if (!kIsWeb) return null;
+    return codeFromHost(Uri.base.host);
+  }
+
+  /// https://{code}.hr360techx.com
+  static String tenantUrl(String code) {
+    final cleaned = code.trim().toLowerCase();
+    return 'https://$cleaned.$baseDomain';
+  }
+
+  static String? codeFromHost(String host) {
+    final name = host.toLowerCase().split(':').first;
+    if (name.isEmpty || name == 'localhost' || name == '127.0.0.1' || name == baseDomain) {
+      return null;
+    }
+    final suffix = '.$baseDomain';
+    if (!name.endsWith(suffix)) return null;
+    final label = name.substring(0, name.length - suffix.length);
+    if (label.isEmpty || label.contains('.') || label == 'www' || label == 'api') {
+      return null;
+    }
+    if (!RegExp(r'^[a-z0-9]{1,40}$').hasMatch(label)) return null;
+    return label;
+  }
 
   static String _resolveApiBaseUrl() {
     if (_defineApi.trim().isNotEmpty) {

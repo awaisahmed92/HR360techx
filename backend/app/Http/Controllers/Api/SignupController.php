@@ -29,6 +29,14 @@ class SignupController extends Controller
         $raw = (string) $request->query('code', $request->input('code', ''));
         $code = TenantProvisioner::normalizeCode($raw);
 
+        if (str_contains($code, '_')) {
+            return response()->json([
+                'success' => true,
+                'code' => $code,
+                'available' => false,
+                'message' => 'Company code cannot contain underscores. It is used as your web address.',
+            ]);
+        }
         if (strlen($code) < 3) {
             return response()->json([
                 'success' => true,
@@ -128,6 +136,12 @@ class SignupController extends Controller
             if (strlen($canonical) >= 3) {
                 $code = $canonical;
             }
+        }
+        if (!$existing && str_contains($code, '_')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Company code cannot contain underscores. It is used as your web address.',
+            ], 422);
         }
         if (strlen($code) < 3) {
             return response()->json([

@@ -25,7 +25,8 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _orgCtrl = TextEditingController(text: 'demo');
+  final _lockedCode = AppConfig.tenantCodeFromHost;
+  final _orgCtrl = TextEditingController(text: AppConfig.tenantCodeFromHost ?? 'demo');
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _obscure = true;
@@ -73,7 +74,9 @@ class _LoginViewState extends State<LoginView> {
     setState(() {
       if (prefs.getBool(_prefRemember) == true) {
         _remember = true;
-        _orgCtrl.text = prefs.getString(_prefOrg) ?? 'demo';
+        if (_lockedCode == null) {
+          _orgCtrl.text = prefs.getString(_prefOrg) ?? 'demo';
+        }
         _userCtrl.text = prefs.getString(_prefUser) ?? '';
       }
       final resolved = AppConfig.resolveMediaUrl(
@@ -271,9 +274,11 @@ class _LoginViewState extends State<LoginView> {
                           const SizedBox(height: 40),
                           _rowField(
                             label: 'Company Name:',
-                            child: TextFormField(
-                              controller: _orgCtrl,
-                              textInputAction: TextInputAction.next,
+                              child: TextFormField(
+                                controller: _orgCtrl,
+                                readOnly: _lockedCode != null,
+                                enableInteractiveSelection: _lockedCode == null,
+                                textInputAction: TextInputAction.next,
                               style: _fieldTextStyle,
                               validator: (v) =>
                                   (v == null || v.trim().isEmpty) ? 'Required' : null,
