@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/app_state.dart';
 import 'core/auth/auth_state.dart';
+import 'core/config/app_config.dart';
 import 'core/leave/leave_state.dart';
 import 'core/self_service/self_service_state.dart';
 import 'core/settings/ui_prefs_repository.dart';
@@ -69,6 +70,8 @@ enum _Gate { intro, login, signUp }
 _Gate _gateFromLocation() {
   if (_locationWantsSignUp()) return _Gate.signUp;
   if (_locationWantsLogin()) return _Gate.login;
+  // A company address is that company's app. Stay on the login page at /.
+  if (AppConfig.tenantCodeFromHost != null) return _Gate.login;
   return _Gate.intro;
 }
 
@@ -110,7 +113,8 @@ class HR360App extends StatelessWidget {
       themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
       initialRoute: switch (_gateFromLocation()) {
         _Gate.signUp => '/sign-up',
-        _Gate.login => '/login',
+        // Keep https://{code}.hr360techx.com/ as the login address.
+        _Gate.login => _locationWantsLogin() ? '/login' : '/',
         _Gate.intro => '/',
       },
       onGenerateRoute: (settings) {
@@ -119,8 +123,11 @@ class HR360App extends StatelessWidget {
             browserWantsSignUp() ||
             name.contains('sign-up') ||
             name.contains('signup');
+        final tenantHome = !signUp &&
+            AppConfig.tenantCodeFromHost != null &&
+            (name.isEmpty || name == '/' || name == '/login' || name.endsWith('/login'));
         final login = !signUp &&
-            (browserWantsLogin() || name == '/login' || name.endsWith('/login'));
+            (tenantHome || browserWantsLogin() || name == '/login' || name.endsWith('/login'));
         final gate = signUp
             ? _Gate.signUp
             : (login ? _Gate.login : _Gate.intro);

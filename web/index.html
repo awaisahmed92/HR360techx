@@ -155,7 +155,7 @@
           <h1>Welcome Back</h1>
           <p class="sub">Sign in to continue</p>
           <label>Company Name</label>
-          <input type="text" value="demo" readonly tabindex="-1">
+          <input id="boot-company" type="text" value="" readonly tabindex="-1">
           <label>UserName</label>
           <input type="text" placeholder="UserName" readonly tabindex="-1">
           <label>Password</label>
@@ -164,7 +164,6 @@
           <button type="button">Log in</button>
           <span class="forgot">Forgot your password?</span>
           <p class="copy">© 2026 HR360. All Rights Reserved.</p>
-          <div class="hint">Opening login…</div>
         </div>
       </div>
       <aside class="hero">
@@ -177,6 +176,12 @@
   </div>
   <script>
     (function () {
+      var host = (location.hostname || '').toLowerCase();
+      var label = host.split('.')[0];
+      var company = document.getElementById('boot-company');
+      if (company && host.endsWith('.hr360techx.com') && label && label !== 'www' && label !== 'api') {
+        company.value = label;
+      }
       var path = (location.pathname || '').toLowerCase();
       var isSignUp = path.indexOf('sign-up') !== -1 || path.indexOf('signup') !== -1
         || (location.hash || '').toLowerCase().indexOf('sign-up') !== -1;
