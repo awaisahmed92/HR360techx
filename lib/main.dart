@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'controllers/app_state.dart';
 import 'core/auth/auth_state.dart';
@@ -42,6 +41,8 @@ import 'views/product_intro_view.dart';
 import 'views/sign_up_view.dart';
 import 'core/config/browser_path_stub.dart'
     if (dart.library.html) 'core/config/browser_path_web.dart';
+import 'core/config/url_strategy_stub.dart'
+    if (dart.library.html) 'core/config/url_strategy_web.dart';
 import 'views/account_settings_view.dart';
 import 'views/system_settings_view.dart';
 import 'widgets/webhr_nav.dart';
@@ -72,7 +73,7 @@ _Gate _gateFromLocation() {
 }
 
 void main() {
-  usePathUrlStrategy();
+  configureUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
   _launchOnSignUp = _locationWantsSignUp();
   runApp(
