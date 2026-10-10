@@ -370,7 +370,7 @@ class HrSettingsShell extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                     child: Text(
                       item,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: item == selectedNav ? onBrand : HrUi.label(context),
@@ -392,7 +392,7 @@ class HrSettingsShell extends StatelessWidget {
         children: [
           Text(
             selectedNav,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: HrUi.label(context),

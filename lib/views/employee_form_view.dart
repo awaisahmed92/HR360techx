@@ -496,7 +496,7 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
                       Expanded(
                         child: Text(
                           _editId == null ? 'Add New Employee' : 'Edit Employee',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: HrUi.label(context),

@@ -120,7 +120,7 @@ class _EmployeesViewState extends State<EmployeesView> {
               const SizedBox(width: 8),
               Text(
                 'Employees',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: HrUi.label(context),
@@ -190,7 +190,7 @@ class _EmployeesViewState extends State<EmployeesView> {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w700, color: const Color(0xFF1F2937)),
+                  style: GoogleFonts.plusJakartaSans(fontSize: 26, fontWeight: FontWeight.w700, color: const Color(0xFF1F2937)),
                 ),
               ],
             ),

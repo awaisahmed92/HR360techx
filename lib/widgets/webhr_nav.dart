@@ -365,32 +365,40 @@ class WebHrTopBar extends StatelessWidget {
         final showSearch = width >= 860;
         final showTitle = width >= 640;
         final showQuickLabel = width >= 520;
+        final bar = isDark ? AppTheme.ink : Colors.white;
+        final fg = isDark ? Colors.white : const Color(0xFF1A1D26);
+        final muted = isDark ? const Color(0xFFC5CAD3) : const Color(0xFF6B7280);
+        final field = isDark ? const Color(0xFF1E242E) : const Color(0xFFF3F5F8);
+        final fieldLine = isDark ? const Color(0xFF2A3140) : const Color(0xFFE6E8EE);
         return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      color: AppTheme.ink,
+      decoration: BoxDecoration(
+        color: bar,
+        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF2A3140) : const Color(0xFFE6E8EE))),
+      ),
       child: Row(
         children: [
           if (onMenu != null)
             IconButton(
               onPressed: onMenu,
-              icon: const Icon(Icons.menu, color: Colors.white),
+              icon: Icon(Icons.menu, color: fg),
             ),
           Container(
             width: 32,
             height: 32,
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? Colors.white : brand.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const CompanyLogo(size: 26),
           ),
           const SizedBox(width: 10),
-          const Text(
+          Text(
             'HR360',
             style: TextStyle(
-              color: Colors.white,
+              color: fg,
               fontSize: 16,
               fontWeight: FontWeight.w800,
             ),
@@ -401,8 +409,8 @@ class WebHrTopBar extends StatelessWidget {
               child: Text(
                 app.activeSub.label,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFFC5CAD3),
+                style: TextStyle(
+                  color: muted,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -415,21 +423,21 @@ class WebHrTopBar extends StatelessWidget {
               width: 240,
               height: 36,
               child: TextField(
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: TextStyle(color: fg, fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search Employees, Module, Help',
-                  hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                  hintStyle: TextStyle(fontSize: 12, color: muted),
                   filled: true,
-                  fillColor: const Color(0xFF1E242E),
+                  fillColor: field,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  suffixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
+                  suffixIcon: Icon(Icons.search, size: 18, color: muted),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF2A3140)),
+                    borderSide: BorderSide(color: fieldLine),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF2A3140)),
+                    borderSide: BorderSide(color: fieldLine),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -490,14 +498,14 @@ class WebHrTopBar extends StatelessWidget {
           IconButton(
             tooltip: 'Theme',
             onPressed: () => app.openScreen(moduleId: 'dashboard', subId: 'account_settings'),
-            icon: const Icon(Icons.palette_outlined, color: Colors.white),
+            icon: Icon(Icons.palette_outlined, color: fg),
           ),
           IconButton(
             tooltip: 'Dark / Light',
             onPressed: app.toggleTheme,
             icon: Icon(
               isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-              color: Colors.white,
+              color: fg,
             ),
           ),
           PopupMenuButton<String>(
@@ -575,10 +583,10 @@ class WebHrTopBar extends StatelessWidget {
                 ),
               ),
             ],
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 16,
-              backgroundColor: Color(0x33FFFFFF),
-              child: Icon(Icons.person_outline, size: 18, color: Colors.white),
+              backgroundColor: brand.withValues(alpha: 0.12),
+              child: Icon(Icons.person_outline, size: 18, color: brand),
             ),
           ),
         ],

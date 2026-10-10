@@ -129,7 +129,7 @@ class _ProfileViewState extends State<ProfileView> {
                     children: [
                       Text(
                         name.isEmpty ? 'My Info' : name,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.plusJakartaSans(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
@@ -274,7 +274,7 @@ class _ProfileViewState extends State<ProfileView> {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: HrUi.label(context),

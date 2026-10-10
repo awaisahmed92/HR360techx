@@ -145,7 +145,7 @@ class _EmployeeRolesViewState extends State<EmployeeRolesView> {
                   const SizedBox(width: 8),
                   Text(
                     'Employee Roles',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: HrUi.label(context),

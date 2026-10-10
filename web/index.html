@@ -18,151 +18,160 @@
       margin: 0;
       height: 100%;
       width: 100%;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #1a1a1e;
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f4f7fb;
       overflow: hidden;
     }
-    /* Hide Flutter's default top progress strip */
-    .flutter-loader, flt-progress, .loading {
-      display: none !important;
-    }
+    .flutter-loader, flt-progress, .loading { display: none !important; }
     #boot-login {
       position: fixed;
       inset: 0;
       z-index: 9999;
       display: flex;
+      background: linear-gradient(135deg, #f4f7fb 0%, #ffffff 100%);
+      color: #1f2937;
+    }
+    #boot-login .split { display: flex; width: 100%; min-height: 100%; }
+    #boot-login .pane {
+      flex: 0 0 38%;
+      display: flex;
       align-items: center;
       justify-content: center;
-      background:
-        linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.65)),
-        #1a1a1e center / cover no-repeat;
       padding: 24px;
+      box-sizing: border-box;
     }
-    #boot-login .brand {
-      position: absolute;
-      top: 28px;
-      left: 32px;
-      color: #fff;
-      font-weight: 700;
-      font-size: 22px;
-      letter-spacing: .2px;
+    #boot-login .card {
+      width: min(520px, 100%);
+      background: #fff;
+      border: 1px solid #e6e8ee;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(20, 24, 31, .08);
+      padding: 28px 28px 20px;
+      box-sizing: border-box;
+    }
+    #boot-login .brand-row {
       display: flex;
       align-items: center;
       gap: 10px;
+      margin-bottom: 26px;
+      font-size: 34px;
+      font-weight: 700;
     }
-    #boot-login .brand-dot {
-      width: 34px;
-      height: 34px;
-      display: block;
-    }
-    #boot-login .card {
-      width: min(560px, 100%);
-      min-height: 440px;
-      background: #fff;
-      border-radius: 4px;
-      box-shadow: 0 18px 40px rgba(0,0,0,.45);
-      padding: 48px 56px 40px;
+    #boot-login .brand-row img { width: 36px; height: 36px; object-fit: contain; }
+    #boot-login h1 { margin: 0; font-size: 30px; font-weight: 700; }
+    #boot-login .sub { margin: 4px 0 24px; color: #6b7280; font-size: 15px; }
+    #boot-login label { display: block; margin-bottom: 6px; font-size: 14px; }
+    #boot-login input[type=text],
+    #boot-login input[type=password] {
+      width: 100%;
       box-sizing: border-box;
+      height: 46px;
+      margin-bottom: 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #f9fafb;
+      padding: 0 14px;
+      font: inherit;
+      color: #1f2937;
     }
-    #boot-login .logo {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 22px;
-      display: block;
-      object-fit: contain;
-    }
-    #boot-login h1 {
-      margin: 0 0 40px;
-      text-align: center;
-      font-size: 24px;
-      font-weight: 500;
-      color: #444;
-    }
-    #boot-login .row {
+    #boot-login .check {
       display: flex;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 18px;
+      gap: 8px;
+      margin: 2px 0 14px;
     }
-    #boot-login label {
-      width: 128px;
-      flex-shrink: 0;
-      text-align: right;
-      color: #3a3a3a;
-      font-size: 14px;
-    }
-    #boot-login input {
-      flex: 1;
-      height: 44px;
-      border: 0;
-      border-radius: 6px;
-      background: #e8e8e8;
-      padding: 0 14px;
-      font-size: 14px;
-      outline: none;
-    }
+    #boot-login .check input { width: auto; height: auto; margin: 0; accent-color: #1e4b8c; }
     #boot-login button {
       width: 100%;
       height: 48px;
-      margin-top: 28px;
       border: 0;
-      border-radius: 6px;
-      background: #2A72B5;
+      border-radius: 12px;
+      background: #1e4b8c;
       color: #fff;
-      font-size: 15px;
+      font: inherit;
       font-weight: 600;
       cursor: default;
     }
-    #boot-login .hint {
-      margin-top: 14px;
+    #boot-login .forgot { display: block; margin-top: 8px; color: #1e4b8c; font-size: 14px; font-weight: 500; }
+    #boot-login .copy {
+      margin: 16px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid #e6e8ee;
+      color: #6b7280;
+      font-size: 11px;
+    }
+    #boot-login .hint { margin-top: 10px; text-align: center; font-size: 12px; color: #6b7280; }
+    #boot-login .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      font-size: 12px;
-      color: #888;
+      background: #fff;
+      padding: 36px;
     }
-    #boot-login.restoring .card,
-    #boot-login.restoring .brand { display: none; }
-    #boot-login.restoring {
-      background: #1a1a1e !important;
+    #boot-login .hero h2 { margin: 0; font-size: 50px; line-height: 1.15; font-weight: 700; }
+    #boot-login .hero p { max-width: 640px; margin: 16px 0 0; color: #6b7280; font-size: 20px; }
+    #boot-login .art {
+      width: min(520px, 100%);
+      height: 290px;
+      margin-top: 34px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f4f7fb, #e7eef6);
+      border: 1px solid rgba(30, 75, 140, .15);
+      color: #1e4b8c;
+      font-size: 72px;
     }
+    #boot-login.restoring .split { display: none; }
+    #boot-login.restoring { align-items: center; justify-content: center; }
     #boot-login .hold {
       display: none;
       width: 26px;
       height: 26px;
-      border: 2.4px solid #2A72B5;
+      border: 2.4px solid #1e4b8c;
       border-top-color: transparent;
       border-radius: 50%;
       animation: boot-spin .7s linear infinite;
     }
     #boot-login.restoring .hold { display: block; }
     @keyframes boot-spin { to { transform: rotate(360deg); } }
-    @media (max-width: 640px) {
-      #boot-login .card { padding: 36px 24px 32px; }
-      #boot-login .row { flex-direction: column; align-items: stretch; gap: 6px; }
-      #boot-login label { width: auto; text-align: left; }
+    @media (max-width: 979px) {
+      #boot-login .pane { flex: 1; }
+      #boot-login .hero { display: none; }
     }
   </style>
 </head>
 <body>
   <!-- Instant login chrome while Flutter JS downloads (no branded splash). -->
   <div id="boot-login" aria-label="Employee Login">
-    <div class="brand"><img class="brand-dot" src="logo-mark.svg" alt=""> HR360</div>
-    <div class="card">
-      <img class="logo" src="logo-mark.svg" alt="">
-      <h1>Employee Login</h1>
-      <div class="row">
-        <label>Organization:</label>
-        <input value="demo" readonly tabindex="-1">
+    <div class="split">
+      <div class="pane">
+        <div class="card">
+          <div class="brand-row"><img src="logo-mark.svg" alt=""> HR360</div>
+          <h1>Welcome Back</h1>
+          <p class="sub">Sign in to continue</p>
+          <label>Company Name</label>
+          <input type="text" value="demo" readonly tabindex="-1">
+          <label>UserName</label>
+          <input type="text" placeholder="UserName" readonly tabindex="-1">
+          <label>Password</label>
+          <input type="password" placeholder="Enter your password" readonly tabindex="-1">
+          <label class="check"><input type="checkbox" checked disabled tabindex="-1"> Remember Me</label>
+          <button type="button">Log in</button>
+          <span class="forgot">Forgot your password?</span>
+          <p class="copy">© 2026 HR360. All Rights Reserved.</p>
+          <div class="hint">Opening login…</div>
+        </div>
       </div>
-      <div class="row">
-        <label>Employee ID:</label>
-        <input placeholder="Employee ID" readonly tabindex="-1">
-      </div>
-      <div class="row">
-        <label>Password:</label>
-        <input type="password" placeholder="Password" readonly tabindex="-1">
-      </div>
-      <button type="button">Sign In</button>
-      <div class="hint">Opening login…</div>
+      <aside class="hero">
+        <h2>People, payroll,<br>and attendance<br>made simple</h2>
+        <p>HR360 helps companies manage employees, leave, payroll, and approvals in one place.</p>
+        <div class="art" aria-hidden="true">360</div>
+      </aside>
     </div>
     <div class="hold" aria-hidden="true"></div>
   </div>
@@ -176,46 +185,26 @@
         document.title = 'HR360 TechX — Sign Up';
         if (el) {
           el.setAttribute('aria-label', 'Sign Up');
-          el.innerHTML =
-            '<div class="brand"><img class="brand-dot" src="logo-mark.svg" alt=""> HR360</div>' +
-            '<div class="card">' +
-            '<img class="logo" src="logo-mark.svg" alt="">' +
-            '<h1>Let\'s get signed up!</h1>' +
-            '<div class="hint">Opening sign-up…</div>' +
-            '</div>';
-          el.style.background =
-            'linear-gradient(180deg, rgba(234,243,251,.92), rgba(234,243,251,.98)), #EAF3FB';
-          el.style.color = '#16233A';
+          var card = el.querySelector('.card');
+          if (card) {
+            card.innerHTML =
+              '<div class="brand-row"><img src="logo-mark.svg" alt=""> HR360</div>' +
+              '<h1>Let\'s get signed up!</h1>' +
+              '<p class="sub">Opening sign-up…</p>';
+          }
+          var hero = el.querySelector('.hero');
+          if (hero) hero.style.display = 'none';
+          var pane = el.querySelector('.pane');
+          if (pane) pane.style.flex = '1';
         }
         return;
       }
-      var files = [
-        'login-background-images/images1.jpeg',
-        'login-background-images/LoginBG13.jpg',
-        'login-background-images/LoginBG28.jpg',
-        'login-background-images/LoginBG29.jpg',
-        'login-background-images/LoginBG38.jpg',
-        'login-background-images/LoginBG103.jpg',
-        'login-background-images/LoginBG143.jpg',
-        'login-background-images/LoginBG148.jpg',
-        'login-background-images/LoginBG161.jpg',
-        'login-background-images/LoginBG188.jpg',
-        'login-background-images/LoginBG215.jpg',
-        'login-background-images/LoginBG244.jpg',
-        'login-background-images/LoginBG257.jpg'
-      ];
-      var file = files[Math.floor(Math.random() * files.length)];
       var hasSession = !!(
         localStorage.getItem('hr360_auth_session_v1') ||
         localStorage.getItem('flutter.hr360_session_json') ||
         localStorage.getItem('flutter.hr360_auth_token')
       );
-      if (el && hasSession) {
-        el.classList.add('restoring');
-      } else if (el) {
-        el.style.backgroundImage =
-          'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.65)), url("' + file + '")';
-      }
+      if (el && hasSession) el.classList.add('restoring');
     })();
   </script>
 

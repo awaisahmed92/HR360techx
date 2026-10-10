@@ -24,7 +24,7 @@ class SignUpView extends StatefulWidget {
 }
 
 class _SignUpViewState extends State<SignUpView> {
-  static const _brand = Color(0xFF3B8FD9);
+  static const _brand = Color(0xFF1E4B8C);
   static const _ink = Color(0xFF16233A);
   static const _border = Color(0xFFD5DBE5);
 
@@ -180,7 +180,7 @@ class _SignUpViewState extends State<SignUpView> {
     final wide = width >= 1000;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEAF3FB),
+      backgroundColor: const Color(0xFFF4F7FB),
       body: Stack(
         children: [
           const Positioned.fill(child: _SignUpBackdrop()),
@@ -230,11 +230,11 @@ class _SignUpViewState extends State<SignUpView> {
                               constraints: const BoxConstraints(maxWidth: 420),
                               child: Material(
                                 color: Colors.white,
-                                elevation: 8,
-                                shadowColor: const Color(0xFF3B8FD9).withValues(alpha: 0.16),
+                                elevation: 2,
+                                shadowColor: _brand.withValues(alpha: 0.16),
                                 clipBehavior: Clip.antiAlias,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.fromLTRB(28, 32, 28, 28),
@@ -585,7 +585,7 @@ class _SignUpViewState extends State<SignUpView> {
         Text(
           'Open ${AppConfig.tenantUrl(done.organization)} and sign in with your username and password.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12.5, height: 1.35, color: Color(0xFF6B7A90)),
+          style: const TextStyle(fontSize: 12.5, height: 1.35, color: Color(0xFF6B7A90)),
         ),
         const SizedBox(height: 22),
         SizedBox(

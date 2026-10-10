@@ -142,7 +142,7 @@ class _SettingsMenu extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 child: Text(
                   link,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight:
                         link == selected ? FontWeight.w700 : FontWeight.w500,
@@ -175,7 +175,7 @@ class ThemesPanel extends StatelessWidget {
       children: [
         Text(
           'Themes',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w500,
             color: textSecondary,
@@ -275,7 +275,7 @@ class _ThemeSwatch extends StatelessWidget {
             Text(
               option.name,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: labelColor,
