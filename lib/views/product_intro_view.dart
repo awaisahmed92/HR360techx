@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/company_logo.dart';
@@ -42,7 +43,10 @@ class ProductIntroView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _Bar(onTryNow: onTryNow, onSignUp: onSignUp),
+                        _Reveal(
+                          delay: Duration.zero,
+                          child: _Bar(onTryNow: onTryNow, onSignUp: onSignUp),
+                        ),
                         SizedBox(height: wide ? 68 : 42),
                         _Hero(
                           wide: wide,
@@ -50,20 +54,29 @@ class ProductIntroView extends StatelessWidget {
                           onSignUp: onSignUp,
                         ),
                         SizedBox(height: wide ? 84 : 58),
-                        const _SectionHeading(),
+                        const _Reveal(
+                          delay: Duration(milliseconds: 420),
+                          child: _SectionHeading(),
+                        ),
                         const SizedBox(height: 26),
                         const _Features(),
                         const SizedBox(height: 56),
-                        _BottomCta(
-                          onPressed: onSignUp ?? onTryNow,
+                        _Reveal(
+                          delay: const Duration(milliseconds: 780),
+                          child: _BottomCta(
+                            onPressed: onSignUp ?? onTryNow,
+                          ),
                         ),
                         const SizedBox(height: 28),
-                        const Center(
-                          child: Text(
-                            'HR360 TechX  •  One connected experience for every team',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: Color(0xFF64748B), fontSize: 12),
+                        const _Reveal(
+                          delay: Duration(milliseconds: 900),
+                          child: Center(
+                            child: Text(
+                              'HR360 TechX  •  One connected experience for every team',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  color: Color(0xFF64748B), fontSize: 12),
+                            ),
                           ),
                         ),
                       ],
@@ -164,13 +177,23 @@ class _Hero extends StatelessWidget {
     if (!wide) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [visual, const SizedBox(height: 36), copy],
+        children: [
+          visual,
+          const SizedBox(height: 36),
+          _Reveal(delay: const Duration(milliseconds: 220), child: copy),
+        ],
       );
     }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(flex: 9, child: copy),
+        Expanded(
+          flex: 9,
+          child: _Reveal(
+            delay: const Duration(milliseconds: 80),
+            child: copy,
+          ),
+        ),
         const SizedBox(width: 48),
         const Expanded(flex: 11, child: visual),
       ],
@@ -178,33 +201,119 @@ class _Hero extends StatelessWidget {
   }
 }
 
-class _HeroVisual extends StatelessWidget {
+class _HeroVisual extends StatefulWidget {
   const _HeroVisual();
 
   @override
+  State<_HeroVisual> createState() => _HeroVisualState();
+}
+
+class _HeroVisualState extends State<_HeroVisual> {
+  VideoPlayerController? _video;
+  bool _ready = false;
+  bool _hover = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final controller = VideoPlayerController.asset('assets/hr-banner.mp4');
+    _video = controller;
+    controller.setLooping(true);
+    controller.setVolume(0);
+    controller.initialize().then((_) {
+      if (!mounted) return;
+      setState(() => _ready = true);
+      if (!MediaQuery.disableAnimationsOf(context)) {
+        controller.play();
+      }
+    }).catchError((_) {
+      if (mounted) setState(() => _ready = false);
+    });
+  }
+
+  @override
+  void dispose() {
+    _video?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(7),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x55000000),
-            blurRadius: 40,
-            offset: Offset(0, 20),
+    final player = _video;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedScale(
+        scale: _hover ? 1.012 : 1,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOut,
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x55000000),
+                blurRadius: 40,
+                offset: Offset(0, 20),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Image.asset(
-            'assets/hr-banner.jpg',
-            fit: BoxFit.contain,
-            semanticLabel: 'Wherever your team is, we connect everyone',
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const ColoredBox(color: Color(0xFF07101F)),
+                  Image.asset(
+                    'assets/hr-banner.jpg',
+                    fit: BoxFit.contain,
+                    semanticLabel: 'Wherever your team is, we connect everyone',
+                  ),
+                  if (_ready && player != null)
+                    FittedBox(
+                      fit: BoxFit.contain,
+                      child: SizedBox(
+                        width: player.value.size.width,
+                        height: player.value.size.height,
+                        child: VideoPlayer(player),
+                      ),
+                    ),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: 0.40,
+                      heightFactor: 0.42,
+                      alignment: Alignment.centerLeft,
+                      child: ColoredBox(
+                        color: Color(0xF2081020),
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(18, 16, 14, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'The ultimate global cloud HR platform. Manage, pay, and support your people from any office, or anywhere in the world.',
+                                style: TextStyle(
+                                  color: Color(0xFFD6E3EF),
+                                  fontSize: 12.5,
+                                  height: 1.45,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -250,7 +359,7 @@ class _Bar extends StatelessWidget {
   }
 }
 
-class _Cta extends StatelessWidget {
+class _Cta extends StatefulWidget {
   const _Cta(
       {required this.label, required this.filled, required this.onPressed});
 
@@ -259,21 +368,89 @@ class _Cta extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
+  State<_Cta> createState() => _CtaState();
+}
+
+class _CtaState extends State<_Cta> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return TextButton(
-      onPressed: onPressed,
-      style: TextButton.styleFrom(
-        backgroundColor: filled ? const Color(0xFF1677C8) : Colors.transparent,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: filled
-              ? BorderSide.none
-              : const BorderSide(color: Color(0xFF3B4B61)),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedScale(
+        scale: _hover ? 1.04 : 1,
+        duration: const Duration(milliseconds: 180),
+        child: TextButton(
+          onPressed: widget.onPressed,
+          style: TextButton.styleFrom(
+            backgroundColor:
+                widget.filled ? const Color(0xFF1677C8) : Colors.transparent,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: widget.filled
+                  ? BorderSide.none
+                  : const BorderSide(color: Color(0xFF3B4B61)),
+            ),
+          ),
+          child: Text(widget.label,
+              style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
       ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+class _Reveal extends StatefulWidget {
+  const _Reveal({
+    required this.child,
+    this.delay = Duration.zero,
+  });
+
+  final Widget child;
+  final Duration delay;
+
+  @override
+  State<_Reveal> createState() => _RevealState();
+}
+
+class _RevealState extends State<_Reveal> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    Future<void>.delayed(widget.delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) return widget.child;
+    return FadeTransition(
+      opacity: CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.08),
+          end: Offset.zero,
+        ).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic)),
+        child: widget.child,
+      ),
     );
   }
 }
@@ -369,12 +546,15 @@ class _Features extends StatelessWidget {
           spacing: 16,
           runSpacing: 16,
           children: [
-            for (final item in items)
-              _Feature(
-                width: cardWidth,
-                icon: item.$1,
-                title: item.$2,
-                body: item.$3,
+            for (var i = 0; i < items.length; i++)
+              _Reveal(
+                delay: Duration(milliseconds: 480 + (i * 140)),
+                child: _Feature(
+                  width: cardWidth,
+                  icon: items[i].$1,
+                  title: items[i].$2,
+                  body: items[i].$3,
+                ),
               ),
           ],
         );
@@ -383,7 +563,7 @@ class _Features extends StatelessWidget {
   }
 }
 
-class _Feature extends StatelessWidget {
+class _Feature extends StatefulWidget {
   const _Feature({
     required this.width,
     required this.icon,
@@ -397,42 +577,58 @@ class _Feature extends StatelessWidget {
   final String body;
 
   @override
+  State<_Feature> createState() => _FeatureState();
+}
+
+class _FeatureState extends State<_Feature> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111E31).withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF24364E)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1677C8).withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(11),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        width: widget.width,
+        duration: const Duration(milliseconds: 200),
+        transform: Matrix4.translationValues(0, _hover ? -4 : 0, 0),
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111E31).withValues(alpha: 0.88),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: _hover ? const Color(0xFF38BDF8) : const Color(0xFF24364E),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1677C8).withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child:
+                  Icon(widget.icon, color: const Color(0xFF5CC8FF), size: 22),
             ),
-            child: Icon(icon, color: const Color(0xFF5CC8FF), size: 22),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
+            const SizedBox(height: 18),
+            Text(
+              widget.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            style: const TextStyle(color: Color(0xFF94A3B8), height: 1.55),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              widget.body,
+              style: const TextStyle(color: Color(0xFF94A3B8), height: 1.55),
+            ),
+          ],
+        ),
       ),
     );
   }
