@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/app_state.dart';
@@ -69,6 +70,8 @@ enum _Gate { intro, login, signUp }
 
 _Gate _gateFromLocation() {
   if (_locationWantsSignUp()) return _Gate.signUp;
+  // The installed app opens on login. The product intro stays on the public website.
+  if (!kIsWeb) return _Gate.login;
   if (_locationWantsLogin()) return _Gate.login;
   // A company address is that company's app. Stay on the login page at /.
   if (AppConfig.tenantCodeFromHost != null) return _Gate.login;
@@ -114,7 +117,7 @@ class HR360App extends StatelessWidget {
       initialRoute: switch (_gateFromLocation()) {
         _Gate.signUp => '/sign-up',
         // Keep https://{code}.hr360techx.com/ as the login address.
-        _Gate.login => _locationWantsLogin() ? '/login' : '/',
+        _Gate.login => (!kIsWeb || _locationWantsLogin()) ? '/login' : '/',
         _Gate.intro => '/',
       },
       onGenerateRoute: (settings) {
@@ -127,7 +130,11 @@ class HR360App extends StatelessWidget {
             AppConfig.tenantCodeFromHost != null &&
             (name.isEmpty || name == '/' || name == '/login' || name.endsWith('/login'));
         final login = !signUp &&
-            (tenantHome || browserWantsLogin() || name == '/login' || name.endsWith('/login'));
+            (!kIsWeb ||
+                tenantHome ||
+                browserWantsLogin() ||
+                name == '/login' ||
+                name.endsWith('/login'));
         final gate = signUp
             ? _Gate.signUp
             : (login ? _Gate.login : _Gate.intro);
@@ -404,6 +411,7 @@ class _MainShellState extends State<MainShell> {
       entity: sub.entity,
     );
 
+    final system = MediaQuery.paddingOf(context);
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: isDark ? AppTheme.darkBg : AppTheme.lightBg,
@@ -413,7 +421,12 @@ class _MainShellState extends State<MainShell> {
               child: SafeArea(child: WebHrNavRail(layout: HrNavLayout.drawer)),
             )
           : null,
-      body: Row(
+      body: Padding(
+        padding: EdgeInsets.only(
+          top: system.top + (phone ? 8 : 0),
+          bottom: system.bottom + (phone ? 12 : 0),
+        ),
+        child: Row(
         children: [
           if (!phone && !medium) const WebHrNavRail(),
           if (medium)
@@ -472,6 +485,7 @@ class _MainShellState extends State<MainShell> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

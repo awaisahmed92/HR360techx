@@ -112,55 +112,79 @@ class _ProfileViewState extends State<ProfileView> {
                 end: Alignment.bottomRight,
               ),
             ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                  child: photo.isEmpty
-                      ? const Icon(Icons.person, size: 42, color: Colors.white)
-                      : null,
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name.isEmpty ? 'My Info' : name,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final narrow = constraints.maxWidth < 520;
+                final identity = Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                      child: photo.isEmpty
+                          ? const Icon(Icons.person, size: 42, color: Colors.white)
+                          : null,
+                    ),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name.isEmpty ? 'My Info' : name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (title.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      if (title.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            title,
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                TextButton.icon(
+                    ),
+                  ],
+                );
+                final settings = TextButton.icon(
                   onPressed: () => context.read<AppState>().openScreen(
                         moduleId: 'dashboard',
                         subId: 'account_settings',
                       ),
                   icon: const Icon(Icons.settings_outlined, color: Colors.white, size: 18),
                   label: const Text('Account Settings', style: TextStyle(color: Colors.white)),
-                ),
-              ],
+                );
+                if (narrow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      identity,
+                      settings,
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: identity),
+                    settings,
+                  ],
+                );
+              },
             ),
           ),
           const SizedBox(height: 18),
