@@ -54,14 +54,28 @@
       background: transparent; border: 1px solid var(--line); color: var(--text);
     }
     .btn-ghost:hover { background: rgba(255,255,255,.05); filter: none; }
-    .hero { padding: 72px 0 28px; max-width: 740px; }
+    .hero {
+      padding: 72px 0 46px; display: grid;
+      grid-template-columns: .88fr 1.12fr; gap: 52px; align-items: center;
+    }
     .eyebrow {
       color: #c4b5fd; font-size: 13px; font-weight: 700;
       letter-spacing: .08em; text-transform: uppercase; margin-bottom: 14px;
     }
     h1 { font-size: clamp(36px, 5vw, 56px); line-height: 1.08; letter-spacing: -0.04em; }
-    .lead { margin-top: 18px; color: var(--muted); font-size: 18px; line-height: 1.6; max-width: 560px; }
+    .lead { margin-top: 18px; color: var(--muted); font-size: 17px; line-height: 1.65; max-width: 560px; }
     .actions { display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+    .trust { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 22px; color: #cbd5e1; font-size: 12px; font-weight: 600; }
+    .trust span::before { content: "✓"; color: #38bdf8; margin-right: 6px; }
+    .visual {
+      padding: 7px; border: 1px solid rgba(255,255,255,.14);
+      border-radius: 24px; background: rgba(255,255,255,.06);
+      box-shadow: 0 24px 60px rgba(0,0,0,.38);
+    }
+    .visual img { width: 100%; aspect-ratio: 16/9; object-fit: contain; display: block; border-radius: 18px; }
+    .section-title { text-align: center; margin-top: 18px; }
+    .section-title h2 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -.03em; }
+    .section-title p { color: var(--muted); margin-top: 10px; }
     .grid {
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 14px; padding: 36px 0 64px;
@@ -74,8 +88,8 @@
     .card p { color: var(--muted); font-size: 14px; line-height: 1.55; }
     footer { color: var(--muted); font-size: 13px; padding-bottom: 28px; }
     @media (max-width: 800px) {
+      .hero { grid-template-columns: 1fr; padding-top: 42px; gap: 38px; }
       .grid { grid-template-columns: 1fr; }
-      .hero { padding-top: 36px; }
     }
   </style>
 </head>
@@ -93,27 +107,42 @@
     </header>
 
     <section class="hero">
-      <p class="eyebrow">Workforce cloud</p>
-      <h1>People, time, and pay on one desk.</h1>
-      <p class="lead">Run the workforce from hire to payroll: employees, leave, attendance, performance, and Pakistan statutory pay in the same company workspace.</p>
-      <div class="actions">
-        <a class="btn" href="app.html">Try now</a>
-        <a class="btn btn-ghost" href="app.html">Open the workspace</a>
+      <div class="hero-copy">
+        <p class="eyebrow">Global workforce platform</p>
+        <h1>One platform. Every person. Anywhere.</h1>
+        <p class="lead">Bring your people, time, leave, payroll, hiring, and performance together in one secure workspace—built for modern teams across the world.</p>
+        <div class="actions">
+          <a class="btn" href="app.html">Create your workspace</a>
+          <a class="btn btn-ghost" href="app.html">Sign in</a>
+        </div>
+        <div class="trust">
+          <span>Fast onboarding</span>
+          <span>Global-ready</span>
+          <span>One source of truth</span>
+        </div>
       </div>
+      <div class="visual">
+        <img src="assets/hr-banner.jpg" alt="Wherever your team is, we connect everyone" />
+      </div>
+    </section>
+
+    <section class="section-title">
+      <h2>Everything your people need to do their best work</h2>
+      <p>Replace scattered tools with a clear, connected employee experience.</p>
     </section>
 
     <section class="grid">
       <article class="card">
-        <h2>Workforce</h2>
-        <p>Employee records, roles, contracts, and the organization chart your managers already use.</p>
+        <h2>People operations</h2>
+        <p>Employee records, onboarding, documents, roles, and organization structure in one place.</p>
       </article>
       <article class="card">
-        <h2>Time</h2>
-        <p>Leave requests, attendance punches, shifts, and timesheets with the approval path you set.</p>
+        <h2>Time and attendance</h2>
+        <p>Simplify attendance, shifts, timesheets, leave requests, and manager approvals.</p>
       </article>
       <article class="card">
-        <h2>Pay and talent</h2>
-        <p>Salary runs with tax, EOBI, and SESSI, plus hiring and performance reviews beside them.</p>
+        <h2>Pay and performance</h2>
+        <p>Connect compensation, payroll workflows, goals, reviews, and employee growth.</p>
       </article>
     </section>
 
