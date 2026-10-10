@@ -13,6 +13,9 @@ class AppTheme {
   static const Color danger = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
 
+  static const Color ink = Color(0xFF14181F);
+  static const Color sidebarDark = Color(0xFF161B22);
+
   static const Color darkBg = Color(0xFF0B1120);
   static const Color darkSurface = Color(0xFF111827);
   static const Color darkCard = Color(0xFF1E293B);
@@ -22,12 +25,12 @@ class AppTheme {
   static const Color darkTextSecondary = Color(0xFF94A3B8);
   static const Color darkTextMuted = Color(0xFF64748B);
 
-  static const Color lightBg = Color(0xFFF8FAFC);
+  static const Color lightBg = Color(0xFFF3F5F8);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightCard = Color(0xFFFFFFFF);
   static const Color lightCardHover = Color(0xFFF1F5F9);
-  static const Color lightBorder = Color(0xFFE2E8F0);
-  static const Color lightTextPrimary = Color(0xFF0F172A);
+  static const Color lightBorder = Color(0xFFE6E8EE);
+  static const Color lightTextPrimary = Color(0xFF1A1D26);
   static const Color lightTextSecondary = Color(0xFF64748B);
   static const Color lightTextMuted = Color(0xFF94A3B8);
 
@@ -75,6 +78,7 @@ class AppTheme {
       onSurface: lightTextPrimary,
     );
     return ThemeData(
+      useMaterial3: true,
       brightness: Brightness.light,
       scaffoldBackgroundColor: lightBg,
       primaryColor: brand,
@@ -88,14 +92,42 @@ class AppTheme {
         displayColor: lightTextPrimary,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: lightSurface,
+        backgroundColor: ink,
+        foregroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: lightTextPrimary),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: lightCard,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: lightBorder),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: lightBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: lightBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: brand, width: 1.4),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: brand,
           foregroundColor: onBrand,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
     );
@@ -112,6 +144,7 @@ class AppTheme {
       onSurface: darkTextPrimary,
     );
     return ThemeData(
+      useMaterial3: true,
       brightness: Brightness.dark,
       scaffoldBackgroundColor: darkBg,
       primaryColor: brand,
@@ -125,14 +158,42 @@ class AppTheme {
         displayColor: darkTextPrimary,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: darkSurface,
+        backgroundColor: ink,
+        foregroundColor: Colors.white,
         elevation: 0,
-        iconTheme: IconThemeData(color: darkTextPrimary),
+        iconTheme: IconThemeData(color: Colors.white),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: darkCard,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: darkBorder),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: darkCard,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: brand, width: 1.4),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: brand,
           foregroundColor: onBrand,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
     );

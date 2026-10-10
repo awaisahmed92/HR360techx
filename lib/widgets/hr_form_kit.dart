@@ -15,15 +15,15 @@ class HrUi {
   static Color brand(BuildContext c) => HrTheme.brand(c);
 
   static Color pageBg(BuildContext c) =>
-      isDark(c) ? AppTheme.darkBg : const Color(0xFFF3F1EE);
+      isDark(c) ? AppTheme.darkBg : AppTheme.lightBg;
 
   static Color card(BuildContext c) => HrTheme.card(c);
 
   static Color fieldBg(BuildContext c) =>
-      isDark(c) ? AppTheme.darkSurface : const Color(0xFFF5F5F5);
+      isDark(c) ? AppTheme.darkSurface : Colors.white;
 
   static Color border(BuildContext c) =>
-      isDark(c) ? AppTheme.darkBorder : const Color(0xFFE5E0D8);
+      isDark(c) ? AppTheme.darkBorder : AppTheme.lightBorder;
 
   static Color label(BuildContext c) => HrTheme.text(c);
 
@@ -67,7 +67,7 @@ class HrFormShell extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 moduleTitle,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: HrUi.sectionTitle(context),
@@ -198,7 +198,7 @@ class HrFormRow extends StatelessWidget {
                       children: [
                         TextSpan(
                           text: label,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.plusJakartaSans(
                             fontSize: 13,
                             color: HrUi.label(context),
                             fontWeight: FontWeight.w500,
@@ -277,7 +277,7 @@ InputDecoration hrFieldDecoration(
   );
 }
 
-TextStyle hrFieldTextStyle(BuildContext context) => GoogleFonts.inter(
+TextStyle hrFieldTextStyle(BuildContext context) => GoogleFonts.plusJakartaSans(
       color: HrUi.label(context),
       fontSize: 14,
       fontWeight: FontWeight.w500,
@@ -309,7 +309,7 @@ class HrDropdown<T> extends StatelessWidget {
       isExpanded: true,
       dropdownColor: HrUi.card(context),
       iconEnabledColor: HrUi.muted(context),
-      style: GoogleFonts.inter(color: textColor, fontSize: 14),
+      style: GoogleFonts.plusJakartaSans(color: textColor, fontSize: 14),
       decoration: hrFieldDecoration(context, hint: hint),
       hint: hint == null
           ? null
@@ -319,7 +319,7 @@ class HrDropdown<T> extends StatelessWidget {
           return Align(
             alignment: Alignment.centerLeft,
             child: DefaultTextStyle(
-              style: GoogleFonts.inter(
+              style: GoogleFonts.plusJakartaSans(
                 color: textColor,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -383,7 +383,7 @@ class HrDataGridPage extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: textPrimary,
@@ -448,7 +448,7 @@ class HrDataGridPage extends StatelessWidget {
               child: Theme(
                 data: Theme.of(context).copyWith(
                   dataTableTheme: DataTableThemeData(
-                    dataTextStyle: GoogleFonts.inter(
+                    dataTextStyle: GoogleFonts.plusJakartaSans(
                       fontSize: columns.length > 6 ? 12 : 13,
                       color: textPrimary,
                     ),
@@ -456,12 +456,12 @@ class HrDataGridPage extends StatelessWidget {
                 ),
                 child: DataTable(
                   headingRowColor: WidgetStateProperty.all(header),
-                  headingTextStyle: GoogleFonts.inter(
+                  headingTextStyle: GoogleFonts.plusJakartaSans(
                     color: HrUi.onHeader(context),
                     fontWeight: FontWeight.w700,
                     fontSize: columns.length > 6 ? 11 : 12,
                   ),
-                  dataTextStyle: GoogleFonts.inter(
+                  dataTextStyle: GoogleFonts.plusJakartaSans(
                     fontSize: columns.length > 6 ? 12 : 13,
                     color: textPrimary,
                   ),
@@ -556,7 +556,7 @@ class HrStatusPill extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.plusJakartaSans(
               color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.w700,

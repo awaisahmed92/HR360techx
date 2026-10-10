@@ -241,6 +241,7 @@ class _MainShellState extends State<MainShell> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _notifsBootstrapped = false;
   bool _themeBootstrapped = false;
+  bool _subsOpen = false;
   UiPrefsRepository? _uiPrefs;
 
   bool _isAdminShell(AuthState auth) {
@@ -380,7 +381,9 @@ class _MainShellState extends State<MainShell> {
     final appState = context.watch<AppState>();
     final auth = context.watch<AuthState>();
     final isDark = appState.isDarkMode;
-    final isMobile = MediaQuery.of(context).size.width < 900;
+    final width = MediaQuery.sizeOf(context).width;
+    final phone = width < 720;
+    final medium = width >= 720 && width < 1100;
     final adminShell = _isAdminShell(auth);
     appState.adminShell = adminShell;
 
@@ -396,20 +399,27 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: isDark ? AppTheme.darkBg : AppTheme.lightBg,
-      drawer: isMobile
+      drawer: phone
           ? const Drawer(
-              width: 290,
-              child: SafeArea(child: WebHrNavRail()),
+              width: 300,
+              child: SafeArea(child: WebHrNavRail(layout: HrNavLayout.drawer)),
             )
           : null,
       body: Row(
         children: [
-          if (!isMobile) const WebHrNavRail(),
+          if (!phone && !medium) const WebHrNavRail(),
+          if (medium)
+            WebHrNavRail(
+              layout: HrNavLayout.icons,
+              onModuleSelected: () => setState(() => _subsOpen = true),
+            ),
           Expanded(
-            child: Column(
+            child: Stack(
+              children: [
+                Column(
               children: [
                 WebHrTopBar(
-                  onMenu: isMobile
+                  onMenu: phone
                       ? () => _scaffoldKey.currentState?.openDrawer()
                       : null,
                 ),
@@ -432,6 +442,24 @@ class _MainShellState extends State<MainShell> {
                     ),
                   ),
                 ),
+              ],
+            ),
+                if (medium && _subsOpen)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _subsOpen = false),
+                      child: const ColoredBox(color: Color(0x3314181F)),
+                    ),
+                  ),
+                if (medium && _subsOpen)
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    child: WebHrSubmenuPanel(
+                      onPicked: () => setState(() => _subsOpen = false),
+                    ),
+                  ),
               ],
             ),
           ),

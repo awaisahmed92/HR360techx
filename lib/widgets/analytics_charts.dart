@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../theme/hr_theme.dart';
 import 'hr_form_kit.dart';
 
 class ChartSlice {
@@ -55,15 +54,8 @@ class AnalyticsChartCard extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: HrUi.card(context),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: HrUi.border(context)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
