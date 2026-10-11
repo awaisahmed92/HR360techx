@@ -44,7 +44,7 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
   final _confirmCtrl = TextEditingController();
   final _captchaCtrl = TextEditingController();
 
-  String? _country = 'Pakistan';
+  String? _country = 'United States';
   String? _captchaToken;
   Uint8List? _captchaBytes;
   bool _captchaLoading = true;
