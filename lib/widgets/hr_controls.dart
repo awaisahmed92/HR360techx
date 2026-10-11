@@ -318,7 +318,7 @@ class HrToggleRow extends StatelessWidget {
   }
 }
 
-/// Settings shell matching WebHR Approvals / Notifications layout.
+/// Settings shell matching HR360tech Approvals / Notifications layout.
 class HrSettingsShell extends StatelessWidget {
   const HrSettingsShell({
     super.key,

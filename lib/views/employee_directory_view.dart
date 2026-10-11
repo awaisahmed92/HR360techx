@@ -7,7 +7,7 @@ import '../core/employees/employee_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// Searchable employee directory cards (WebHR-style).
+/// Searchable employee directory cards (HR360tech-style).
 class EmployeeDirectoryView extends StatefulWidget {
   const EmployeeDirectoryView({super.key});
 

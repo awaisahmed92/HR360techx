@@ -1,4 +1,4 @@
--- Extended employee fields (WebHR / PHP form parity) — safe to re-run
+-- Extended employee fields (HR360tech / PHP form parity) — safe to re-run
 USE `hr360_demo`;
 
 SET @db := DATABASE();

@@ -3,8 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/app_state.dart';
+import '../core/auth/auth_state.dart';
 import '../core/config/app_config.dart';
+import '../core/network/api_client.dart';
 import '../core/self_service/self_service_state.dart';
+import '../core/util/json_maps.dart';
 import '../core/util/person_name.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
@@ -21,6 +24,7 @@ class _ProfileViewState extends State<ProfileView> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   bool _loaded = false;
+  Map<String, dynamic> _chain = {};
 
   @override
   void initState() {
@@ -28,6 +32,7 @@ class _ProfileViewState extends State<ProfileView> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final ss = context.read<SelfServiceState>();
       await ss.loadProfile();
+      await _loadChain();
       final p = ss.profile;
       if (p != null && mounted) {
         _email.text = (p['email'] ?? '').toString();
@@ -48,6 +53,37 @@ class _ProfileViewState extends State<ProfileView> {
     final raw = (p?[key] ?? '').toString().trim();
     if (raw.isEmpty || raw == '-' || raw == '0') return '';
     return raw;
+  }
+
+  Future<void> _loadChain() async {
+    if (!mounted) return;
+    try {
+      final api = ApiClient(tokenProvider: () async => context.read<AuthState>().session?.token);
+      final res = await api.dio.get('/insights/chain');
+      final data = res.data;
+      if (data is Map && data['success'] == true && mounted) {
+        setState(() => _chain = asStringKeyedMap(data));
+      }
+    } catch (_) {}
+  }
+
+  String _tenure(String raw) {
+    final start = DateTime.tryParse(raw);
+    if (start == null) return '';
+    final now = DateTime.now();
+    var years = now.year - start.year;
+    var months = now.month - start.month;
+    var days = now.day - start.day;
+    if (days < 0) {
+      months -= 1;
+      days += 30;
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+    if (years < 0) return '';
+    return '$years Year · $months Months · $days Days';
   }
 
   String _gender(dynamic g) {
@@ -188,6 +224,10 @@ class _ProfileViewState extends State<ProfileView> {
             ),
           ),
           const SizedBox(height: 18),
+          _insightCards(context, name, title, photo),
+          const SizedBox(height: 14),
+          _chainCard(context),
+          const SizedBox(height: 18),
           LayoutBuilder(
             builder: (context, c) {
               final wide = c.maxWidth > 820;
@@ -270,6 +310,159 @@ class _ProfileViewState extends State<ProfileView> {
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _insightCards(BuildContext context, String name, String title, String photo) {
+    final managers = ((_chain['managers'] as List?) ?? []).map(asStringKeyedMap).toList();
+    final team = ((_chain['team'] as List?) ?? []).map(asStringKeyedMap).toList();
+    final joined = _v(context.read<SelfServiceState>().profile, 'joining_date');
+    final tenure = _tenure(joined);
+    return LayoutBuilder(
+      builder: (context, c) {
+        final wide = c.maxWidth > 900;
+        final cards = [
+          _mini(
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 36,
+                  backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                  child: photo.isEmpty ? const Icon(Icons.person, size: 36) : null,
+                ),
+                const SizedBox(height: 8),
+                Text(name.isEmpty ? 'My Info' : name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
+                if (title.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    color: const Color(0xFF8D6E63),
+                    child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                  ),
+                TextButton.icon(
+                  onPressed: () => context.read<AppState>().openScreen(moduleId: 'dashboard', subId: 'org_chart'),
+                  icon: const Icon(Icons.account_tree_outlined, size: 16),
+                  label: const Text('Org Chart'),
+                ),
+              ],
+            ),
+          ),
+          _mini(
+            title: 'My Manager And Supervisor',
+            child: managers.isEmpty
+                ? _emptyHint('No manager is assigned.')
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < managers.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            '${i == managers.length - 1 ? 'Reports to' : 'Then'} ${managers[i]['name']} · ${managers[i]['designation_name'] ?? ''}',
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+          _mini(
+            title: 'My Team',
+            child: team.isEmpty
+                ? _emptyHint('Nobody reports directly to you yet.')
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final person in team.take(8))
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text('${person['name']} · ${person['designation_name'] ?? ''}',
+                              style: const TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                      if (team.length > 8) Text('+ ${team.length - 8} more'),
+                    ],
+                  ),
+          ),
+          _mini(
+            title: 'My Facts',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('My journey with the organization spans'),
+                const SizedBox(height: 6),
+                Text(tenure.isEmpty ? 'Join date is not set' : tenure, style: const TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 10),
+                const Text('The day I came onboard'),
+                Text(joined.isEmpty ? '—' : joined, style: const TextStyle(fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+        ];
+        if (!wide) return Column(children: [for (final card in cards) Padding(padding: const EdgeInsets.only(bottom: 10), child: card)]);
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [for (final card in cards) Expanded(child: Padding(padding: const EdgeInsets.only(right: 10), child: card))],
+        );
+      },
+    );
+  }
+
+  Widget _chainCard(BuildContext context) {
+    final reports = ((_chain['reports'] as List?) ?? []).map(asStringKeyedMap).toList();
+    return _sectionCard(
+      context,
+      title: 'Reporting Chain',
+      icon: Icons.account_tree_outlined,
+      child: reports.isEmpty
+          ? _emptyHint('No one reports to you. Your manager chain is in the card above.')
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Everyone in your tree, including people who report to your team.'),
+                const SizedBox(height: 8),
+                for (final node in reports) _reportNode(node, 0),
+              ],
+            ),
+    );
+  }
+
+  Widget _reportNode(Map<String, dynamic> node, int depth) {
+    final kids = ((node['children'] as List?) ?? []).map(asStringKeyedMap).toList();
+    return Padding(
+      padding: EdgeInsets.only(left: depth * 16.0, bottom: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${node['name']} · ${node['designation_name'] ?? ''} · ${node['station_name'] ?? ''}',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          for (final kid in kids) _reportNode(kid, depth + 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _mini({String? title, required Widget child}) {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 180),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null) ...[
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 10),
+          ],
+          child,
         ],
       ),
     );

@@ -14,7 +14,7 @@ class ClockFaceOption {
   final IconData icon;
 }
 
-/// Visual clock themes (WebHR-style circular faces).
+/// Visual clock themes (HR360tech-style circular faces).
 class ClockFaces {
   ClockFaces._();
 

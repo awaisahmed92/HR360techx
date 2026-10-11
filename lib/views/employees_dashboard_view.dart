@@ -8,7 +8,7 @@ import '../theme/hr_theme.dart';
 import '../widgets/analytics_charts.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// WebHR-style Employees module dashboard.
+/// HR360tech-style Employees module dashboard.
 class EmployeesDashboardView extends StatefulWidget {
   const EmployeesDashboardView({super.key});
 
@@ -99,9 +99,8 @@ class _EmployeesDashboardViewState extends State<EmployeesDashboardView> {
                   final divisions = AnalyticsChartCard(
                     title: 'Departments By Divisions',
                     height: 320,
-                    child: DonutChart(
-                      slices: slicesFromMaps(_state.charts['divisions'] ?? []),
-                    ),
+                    slices: slicesFromMaps(_state.charts['divisions'] ?? []),
+                    initialType: AnalyticsChartType.bar,
                   );
                   if (!wide) {
                     return Column(
@@ -132,11 +131,13 @@ class _EmployeesDashboardViewState extends State<EmployeesDashboardView> {
                   final half = c.maxWidth >= 760;
                   final gender = AnalyticsChartCard(
                     title: 'Employees By Gender',
-                    child: DonutChart(slices: slicesFromMaps(_state.charts['gender'] ?? [])),
+                    slices: slicesFromMaps(_state.charts['gender'] ?? []),
+                    initialType: AnalyticsChartType.donut,
                   );
                   final depts = AnalyticsChartCard(
                     title: 'Employees By Departments',
-                    child: ColumnBarChart(slices: slicesFromMaps(_state.charts['departments'] ?? [])),
+                    slices: slicesFromMaps(_state.charts['departments'] ?? []),
+                    initialType: AnalyticsChartType.column,
                   );
                   if (!half) return gender;
                   return Row(

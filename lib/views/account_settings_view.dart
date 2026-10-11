@@ -10,7 +10,7 @@ import '../widgets/hr_controls.dart';
 import '../widgets/hr_form_kit.dart';
 import 'themes_view.dart' show ThemesPanel;
 
-/// Account Settings hub: Themes · Approvals · Notifications (WebHR-style).
+/// Account Settings hub: Themes · Approvals · Notifications (HR360tech-style).
 class AccountSettingsView extends StatefulWidget {
   const AccountSettingsView({super.key});
 

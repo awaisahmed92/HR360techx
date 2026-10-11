@@ -350,42 +350,54 @@ class _HrHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
+    return const ColoredBox(
       color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(36, 30, 36, 30),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'People, payroll,\nand attendance\nmade simple',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 50, height: 1.15, fontWeight: FontWeight.w700, color: Color(0xFF1F2937)),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'HR360 helps companies manage employees, leave, payroll, and approvals in one place.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 20),
-            ),
-            const SizedBox(height: 34),
-            Container(
-              constraints: const BoxConstraints(maxWidth: 520, maxHeight: 290),
-              padding: const EdgeInsets.all(28),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF4F7FB), Color(0xFFE7EEF6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFF1E4B8C).withValues(alpha: 0.15)),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(
+            width: 620,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 36, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'People, payroll,\nand attendance\nmade simple',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 44,
+                      height: 1.12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  SizedBox(height: 14),
+                  Text(
+                    'HR360 helps companies manage employees, leave, payroll, and approvals in one place.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 18, height: 1.35),
+                  ),
+                  SizedBox(height: 22),
+                  SizedBox(
+                    width: 460,
+                    height: 200,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFF4F7FB), Color(0xFFE7EEF6)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(24)),
+                      ),
+                      child: Icon(Icons.groups_outlined, size: 112, color: Color(0xFF1E4B8C)),
+                    ),
+                  ),
+                ],
               ),
-              child: const Center(
-                child: Icon(Icons.groups_outlined, size: 160, color: Color(0xFF1E4B8C)),
-              ),
             ),
-          ],
+          ),
         ),
       ),
     );

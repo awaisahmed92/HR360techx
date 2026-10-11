@@ -10,7 +10,7 @@ import '../core/util/json_maps.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// WebHR Payroll Setup — Options, Payslip, Items, Calendar, Banks (API-backed).
+/// HR360tech Payroll Setup — Options, Payslip, Items, Calendar, Banks (API-backed).
 class PayrollSetupView extends StatefulWidget {
   const PayrollSetupView({super.key});
 

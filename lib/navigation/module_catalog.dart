@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// WebHR-style primary modules + secondary submenu items.
+/// HR360tech-style primary modules + secondary submenu items.
 class HrSubNav {
   const HrSubNav({
     required this.id,
@@ -47,6 +47,11 @@ class ModuleCatalog {
         HrSubNav(id: 'home', label: 'Home', icon: Icons.dashboard_outlined, screen: 'my_dashboard'),
         HrSubNav(id: 'my_info', label: 'My Info', icon: Icons.person_outline, screen: 'profile'),
         HrSubNav(id: 'hr_dashboard', label: 'HR Dashboard', icon: Icons.analytics_outlined, screen: 'hr_dashboard'),
+        HrSubNav(id: 'hr_data', label: 'HR Data', icon: Icons.table_chart_outlined, screen: 'hr_data'),
+        HrSubNav(id: 'wall_of_fame', label: 'Wall Of Fame', icon: Icons.emoji_events_outlined, screen: 'wall_of_fame'),
+        HrSubNav(id: 'org_chart', label: 'Org Chart', icon: Icons.account_tree_outlined, screen: 'org_chart'),
+        HrSubNav(id: 'hr_globe', label: 'HR Globe', icon: Icons.public_outlined, screen: 'hr_globe'),
+        HrSubNav(id: 'play_space', label: 'Play Space', icon: Icons.sports_esports_outlined, screen: 'play_space'),
         HrSubNav(id: 'approvals', label: 'Approvals', icon: Icons.inbox_outlined, screen: 'approvals'),
         HrSubNav(id: 'notifications', label: 'Notifications', icon: Icons.notifications_outlined, screen: 'notifications'),
         HrSubNav(id: 'account_settings', label: 'Account Settings', icon: Icons.settings_outlined, screen: 'settings'),
@@ -117,6 +122,7 @@ class ModuleCatalog {
       icon: Icons.access_time_outlined,
       children: [
         HrSubNav(id: 'ts_dashboard', label: 'Dashboard', icon: Icons.dashboard_outlined, screen: 'timesheet_dashboard'),
+        HrSubNav(id: 'att_summary', label: 'Attendance Summary', icon: Icons.pie_chart_outline, screen: 'attendance_summary'),
         HrSubNav(id: 'attendance', label: 'Attendance', icon: Icons.fingerprint_outlined, screen: 'attendance'),
         HrSubNav(id: 'admin_attendance', label: 'Admin Attendance', icon: Icons.fact_check_outlined, screen: 'admin_attendance'),
         HrSubNav(id: 'schedule', label: 'Schedule', icon: Icons.view_week_outlined, screen: 'schedule'),

@@ -13,7 +13,7 @@ import '../theme/hr_theme.dart';
 import '../widgets/dashboard_clock_face.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// WebHR-style My Dashboard: hero profile, status feed, My Alerts, celebrations.
+/// HR360tech-style My Dashboard: hero profile, status feed, My Alerts, celebrations.
 class MyDashboardView extends StatefulWidget {
   const MyDashboardView({super.key});
 

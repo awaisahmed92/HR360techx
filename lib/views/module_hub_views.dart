@@ -4,10 +4,20 @@ import 'package:provider/provider.dart';
 import '../controllers/app_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import 'attendance_summary_view.dart';
 
-/// Timesheet summary dashboard matching screenshot cards.
-class TimesheetDashboardView extends StatelessWidget {
-  const TimesheetDashboardView({super.key});
+/// Timesheet dashboard with a separate Attendance Summary tab.
+class TimesheetDashboardView extends StatefulWidget {
+  const TimesheetDashboardView({super.key, this.initialTab = 0});
+
+  final int initialTab;
+
+  @override
+  State<TimesheetDashboardView> createState() => _TimesheetDashboardViewState();
+}
+
+class _TimesheetDashboardViewState extends State<TimesheetDashboardView> {
+  late int _tab = widget.initialTab;
 
   @override
   Widget build(BuildContext context) {
@@ -16,42 +26,81 @@ class TimesheetDashboardView extends StatelessWidget {
 
     return ColoredBox(
       color: HrUi.pageBg(context),
-      child: ListView(
-        padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Timesheet Dashboard',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: HrUi.label(context),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Text(
+              'Timesheet Dashboard',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: HrUi.label(context)),
             ),
           ),
-          const SizedBox(height: 8),
-          Text('Timesheet Summary',
-              style: TextStyle(color: HrUi.muted(context), fontWeight: FontWeight.w600)),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _StatCard(label: 'Total Employees', value: '$total', color: const Color(0xFF3B82F6), icon: Icons.groups),
-              _StatCard(label: 'Present', value: '${app.isClockedIn ? 1 : 0}', color: const Color(0xFF22C55E), icon: Icons.how_to_reg),
-              _StatCard(label: 'Absent', value: '25', color: const Color(0xFFEC4899), icon: Icons.person_remove_outlined),
-              _StatCard(label: 'On Leave', value: '${app.leaveRequests.where((l) => l.status == 'Approved').length}', color: const Color(0xFFEAB308), icon: Icons.event_busy),
-              const _StatCard(label: 'Travel', value: '0', color: Color(0xFF8B5CF6), icon: Icons.flight),
-              const _StatCard(label: 'Holiday', value: '0', color: Color(0xFF14B8A6), icon: Icons.celebration),
-              const _StatCard(label: 'Specific Days Off', value: '0', color: Color(0xFFF97316), icon: Icons.calendar_today),
-              const _StatCard(label: 'Work From Home', value: '0', color: Color(0xFF1E3A8A), icon: Icons.home_work_outlined),
-            ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: Row(
+              children: [
+                _tabBtn('Timesheet Summary', 0),
+                _tabBtn('Attendance Summary', 1),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: _tab == 1
+                ? const AttendanceSummaryView()
+                : ListView(
+                    padding: const EdgeInsets.all(20),
+                    children: [
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          _StatCard(label: 'Total Employees', value: '$total', color: const Color(0xFF3B82F6), icon: Icons.groups),
+                          _StatCard(label: 'Present', value: '${app.isClockedIn ? 1 : 0}', color: const Color(0xFF22C55E), icon: Icons.how_to_reg),
+                          _StatCard(label: 'Absent', value: '—', color: const Color(0xFFEC4899), icon: Icons.person_remove_outlined),
+                          _StatCard(
+                            label: 'On Leave',
+                            value: '${app.leaveRequests.where((l) => l.status == 'Approved').length}',
+                            color: const Color(0xFFEAB308),
+                            icon: Icons.event_busy,
+                          ),
+                          const _StatCard(label: 'Travel', value: '0', color: Color(0xFF8B5CF6), icon: Icons.flight),
+                          const _StatCard(label: 'Holiday', value: '0', color: Color(0xFF14B8A6), icon: Icons.celebration),
+                          const _StatCard(label: 'Specific Days Off', value: '0', color: Color(0xFFF97316), icon: Icons.calendar_today),
+                          const _StatCard(label: 'Work From Home', value: '0', color: Color(0xFF1E3A8A), icon: Icons.home_work_outlined),
+                        ],
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
     );
   }
+
+  Widget _tabBtn(String label, int index) {
+    final on = _tab == index;
+    return InkWell(
+      onTap: () => setState(() => _tab = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: on ? const Color(0xFF8D6E63) : Colors.transparent, width: 2)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            color: on ? const Color(0xFF8D6E63) : Colors.grey.shade600,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-/// Organizations â†’ Companies grid (WebHR-style).
+/// Organizations â†’ Companies grid (HR360tech-style).
 class CompaniesView extends StatefulWidget {
   const CompaniesView({super.key});
 

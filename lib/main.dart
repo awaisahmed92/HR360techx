@@ -13,6 +13,10 @@ import 'views/master_crud_view.dart';
 import 'views/my_dashboard_view.dart';
 import 'views/module_hub_views.dart';
 import 'views/dashboard_view.dart';
+import 'views/hr_data_view.dart';
+import 'views/org_chart_view.dart';
+import 'views/insight_extra_views.dart';
+import 'widgets/insight_tabs.dart';
 import 'views/employees_dashboard_view.dart';
 import 'views/employee_directory_view.dart';
 import 'views/employees_view.dart';
@@ -47,7 +51,7 @@ import 'core/config/url_strategy_stub.dart'
     if (dart.library.html) 'core/config/url_strategy_web.dart';
 import 'views/account_settings_view.dart';
 import 'views/system_settings_view.dart';
-import 'widgets/webhr_nav.dart';
+import 'widgets/hr360tech_nav.dart';
 
 /// Read once from the real browser address, before Flutter normalizes the route.
 bool _launchOnSignUp = false;
@@ -312,6 +316,16 @@ class _MainShellState extends State<MainShell> {
         return const MyDashboardView();
       case 'hr_dashboard':
         return const DashboardView();
+      case 'hr_data':
+        return const HrDataView();
+      case 'org_chart':
+        return const OrgChartView();
+      case 'wall_of_fame':
+        return const WallOfFameView();
+      case 'hr_globe':
+        return const HrGlobeView();
+      case 'play_space':
+        return const PlaySpaceView();
       case 'profile':
         return const ProfileView();
       case 'settings':
@@ -382,6 +396,8 @@ class _MainShellState extends State<MainShell> {
         return const TimesheetView();
       case 'timesheet_dashboard':
         return const TimesheetDashboardView();
+      case 'attendance_summary':
+        return const TimesheetDashboardView(initialTab: 1);
       case 'companies':
       case 'master':
         return MasterCrudView(entityKey: entity ?? 'companies');
@@ -418,7 +434,7 @@ class _MainShellState extends State<MainShell> {
       drawer: phone
           ? const Drawer(
               width: 300,
-              child: SafeArea(child: WebHrNavRail(layout: HrNavLayout.drawer)),
+              child: SafeArea(child: Hr360techNavRail(layout: HrNavLayout.drawer)),
             )
           : null,
       body: Padding(
@@ -428,9 +444,9 @@ class _MainShellState extends State<MainShell> {
         ),
         child: Row(
         children: [
-          if (!phone && !medium) const WebHrNavRail(),
+          if (!phone && !medium) const Hr360techNavRail(),
           if (medium)
-            WebHrNavRail(
+            Hr360techNavRail(
               layout: HrNavLayout.icons,
               onModuleSelected: () => setState(() => _subsOpen = true),
             ),
@@ -439,11 +455,12 @@ class _MainShellState extends State<MainShell> {
               children: [
                 Column(
               children: [
-                WebHrTopBar(
+                Hr360techTopBar(
                   onMenu: phone
                       ? () => _scaffoldKey.currentState?.openDrawer()
                       : null,
                 ),
+                const InsightTabBar(),
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 220),
@@ -477,7 +494,7 @@ class _MainShellState extends State<MainShell> {
                     left: 0,
                     top: 0,
                     bottom: 0,
-                    child: WebHrSubmenuPanel(
+                    child: Hr360techSubmenuPanel(
                       onPicked: () => setState(() => _subsOpen = false),
                     ),
                   ),

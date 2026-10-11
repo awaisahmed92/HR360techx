@@ -7,7 +7,7 @@ import '../theme/app_theme.dart';
 import '../theme/brand_themes.dart';
 import '../theme/hr_theme.dart';
 
-/// Account Settings → Themes (WebHR-style color circles).
+/// Account Settings → Themes (HR360tech-style color circles).
 class ThemesView extends StatelessWidget {
   const ThemesView({super.key});
 

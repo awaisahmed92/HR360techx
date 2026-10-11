@@ -12,7 +12,7 @@ import '../theme/hr_theme.dart';
 import '../widgets/hr_controls.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// System Settings hub (WebHR-style): organization, general, clock faces, etc.
+/// System Settings hub (HR360tech-style): organization, general, clock faces, etc.
 class SystemSettingsView extends StatefulWidget {
   const SystemSettingsView({super.key});
 

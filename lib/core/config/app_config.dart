@@ -17,7 +17,7 @@ class AppConfig {
     defaultValue: 'https://hr360techx.com/api',
   );
   static const String _localXamppApi =
-      'http://localhost/HR360techx/backend/public/api';
+      'http://localhost/360tech/HR360techx/backend/public/api';
 
   /// Apex host. A company site is https://{code}.[baseDomain].
   static const String baseDomain = String.fromEnvironment(
@@ -95,7 +95,7 @@ class AppConfig {
 
   static String _resolveMobileDebugApi() {
     // Override for a physical device on LAN:
-    // --dart-define=API_BASE_URL=http://192.168.x.x/HR360techx/backend/public/api
+    // --dart-define=API_BASE_URL=http://192.168.x.x/360tech/HR360techx/backend/public/api
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         // Android emulator → host machine loopback

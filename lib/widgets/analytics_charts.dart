@@ -36,22 +36,52 @@ List<ChartSlice> slicesFromMaps(List<Map<String, dynamic>> rows) {
   ];
 }
 
-class AnalyticsChartCard extends StatelessWidget {
+enum AnalyticsChartType { donut, pie, column, bar }
+
+class AnalyticsChartCard extends StatefulWidget {
   const AnalyticsChartCard({
     super.key,
     required this.title,
-    required this.child,
-    this.height = 280,
-  });
+    this.child,
+    this.slices,
+    this.initialType = AnalyticsChartType.donut,
+    this.height = 300,
+  }) : assert(child != null || slices != null);
 
   final String title;
-  final Widget child;
+  final Widget? child;
+  final List<ChartSlice>? slices;
+  final AnalyticsChartType initialType;
   final double height;
 
   @override
+  State<AnalyticsChartCard> createState() => _AnalyticsChartCardState();
+}
+
+class _AnalyticsChartCardState extends State<AnalyticsChartCard> {
+  late AnalyticsChartType _type = widget.initialType;
+
+  static const _labels = {
+    AnalyticsChartType.donut: 'Donut',
+    AnalyticsChartType.pie: 'Pie',
+    AnalyticsChartType.column: 'Column',
+    AnalyticsChartType.bar: 'Bar',
+  };
+
+  @override
   Widget build(BuildContext context) {
+    final slices = widget.slices;
+    final body = slices == null
+        ? widget.child!
+        : switch (_type) {
+            AnalyticsChartType.donut => DonutChart(slices: slices),
+            AnalyticsChartType.pie => DonutChart(slices: slices, hole: 0),
+            AnalyticsChartType.column => ColumnBarChart(slices: slices),
+            AnalyticsChartType.bar => HorizontalBarChart(slices: slices),
+          };
+
     return Container(
-      height: height,
+      height: widget.height,
       decoration: BoxDecoration(
         color: HrUi.card(context),
         borderRadius: BorderRadius.circular(14),
@@ -61,12 +91,13 @@ class AnalyticsChartCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+            padding: const EdgeInsets.fromLTRB(16, 8, 4, 0),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    title,
+                    widget.title,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -74,12 +105,37 @@ class AnalyticsChartCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(Icons.open_in_full, size: 14, color: HrUi.muted(context)),
-                const SizedBox(width: 8),
+                if (slices != null)
+                  PopupMenuButton<AnalyticsChartType>(
+                    tooltip: 'Chart type',
+                    initialValue: _type,
+                    onSelected: (value) => setState(() => _type = value),
+                    itemBuilder: (_) => [
+                      for (final type in AnalyticsChartType.values)
+                        PopupMenuItem(
+                          value: type,
+                          child: Text(_labels[type]!),
+                        ),
+                    ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.insert_chart_outlined, size: 16, color: HrUi.muted(context)),
+                          const SizedBox(width: 4),
+                          Text(
+                            _labels[_type]!,
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: HrUi.muted(context)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-          Expanded(child: child),
+          Expanded(child: body),
         ],
       ),
     );
@@ -113,53 +169,58 @@ class DonutChart extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
       child: Column(
         children: [
           Expanded(
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: sweep < math.pi * 1.6 ? 1.6 : 1,
-                child: CustomPaint(
-                  painter: _DonutPainter(
-                    slices: data,
-                    total: total.toDouble(),
-                    hole: hole,
-                    sweep: sweep,
-                    startAngle: startAngle,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final side = math.min(constraints.maxWidth, constraints.maxHeight);
+                return Center(
+                  child: CustomPaint(
+                    size: Size(side, side),
+                    painter: _DonutPainter(
+                      slices: data,
+                      total: total.toDouble(),
+                      hole: hole,
+                      sweep: sweep,
+                      startAngle: startAngle,
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
-          if (showLegend) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              runSpacing: 4,
-              children: [
-                for (final s in data)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: s.color ?? kChartPalette[0],
-                          shape: BoxShape.circle,
+          if (showLegend)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 4,
+                alignment: WrapAlignment.center,
+                children: [
+                  for (final s in data)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: s.color ?? kChartPalette[0],
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${s.label} · ${((s.value / total) * 100).toStringAsFixed(1)}%',
-                        style: TextStyle(fontSize: 10.5, color: HrUi.muted(context)),
-                      ),
-                    ],
-                  ),
-              ],
+                        const SizedBox(width: 4),
+                        Text(
+                          '${s.label} · ${((s.value / total) * 100).toStringAsFixed(1)}%',
+                          style: TextStyle(fontSize: 10.5, color: HrUi.muted(context)),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             ),
-          ],
         ],
       ),
     );
@@ -195,90 +256,164 @@ class ColumnBarChart extends StatelessWidget {
         child: Text('No data', style: TextStyle(color: HrUi.muted(context))),
       );
     }
-    final maxV = data.fold<num>(0, (a, b) => math.max(a, b.value));
+    final maxV = data.fold<num>(0, (a, b) => math.max(a, b.value)).toDouble();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _YAxis(max: maxV.toDouble()),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (final s in data)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${s.value.round()}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: HrUi.muted(context),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: FractionallySizedBox(
-                                heightFactor: maxV <= 0 ? 0 : (s.value / maxV).clamp(0.04, 1),
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: s.color ?? const Color(0xFF3B6FA8),
-                                    borderRadius: const BorderRadius.vertical(
-                                      top: Radius.circular(3),
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const labelH = 32.0;
+          const valueH = 16.0;
+          final plotH = math.max(12.0, constraints.maxHeight - labelH - valueH - 8);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _YAxis(max: maxV, plotHeight: plotH),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (final s in data)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              SizedBox(
+                                height: valueH,
+                                child: Text(
+                                  '${s.value.round()}',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: HrUi.muted(context),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                height: plotH,
+                                width: double.infinity,
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Container(
+                                    height: math.max(4, plotH * (maxV <= 0 ? 0 : (s.value / maxV).clamp(0.06, 1))),
+                                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                                    decoration: BoxDecoration(
+                                      color: s.color ?? const Color(0xFF3B6FA8),
+                                      borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
+                              SizedBox(
+                                height: labelH,
+                                child: Text(
+                                  s.label,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 9.5, color: HrUi.muted(context)),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            s.label,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 9.5, color: HrUi.muted(context)),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class _YAxis extends StatelessWidget {
-  const _YAxis({required this.max});
-  final double max;
+class HorizontalBarChart extends StatelessWidget {
+  const HorizontalBarChart({super.key, required this.slices});
+
+  final List<ChartSlice> slices;
 
   @override
   Widget build(BuildContext context) {
-    final top = max <= 0 ? 1 : max.ceilToDouble();
+    final data = slices.where((s) => s.value > 0).toList();
+    if (data.isEmpty) {
+      return Center(child: Text('No data', style: TextStyle(color: HrUi.muted(context))));
+    }
+    final maxV = data.fold<num>(0, (a, b) => math.max(a, b.value));
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+      children: [
+        for (final s in data)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 92,
+                  child: Text(
+                    s.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: HrUi.label(context)),
+                  ),
+                ),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: maxV <= 0 ? 0 : (s.value / maxV).clamp(0.0, 1.0).toDouble(),
+                      minHeight: 12,
+                      backgroundColor: (s.color ?? const Color(0xFF3B6FA8)).withValues(alpha: 0.12),
+                      color: s.color ?? const Color(0xFF3B6FA8),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 28,
+                  child: Text(
+                    '${s.value.round()}',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: HrUi.muted(context)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _YAxis extends StatelessWidget {
+  const _YAxis({required this.max, required this.plotHeight});
+  final double max;
+  final double plotHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = max <= 0 ? 1.0 : max.ceilToDouble();
+    final style = TextStyle(fontSize: 9, color: HrUi.muted(context));
     return SizedBox(
-      width: 28,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text('${top.round()}', style: TextStyle(fontSize: 9, color: HrUi.muted(context))),
-          Text('${(top / 2).round()}', style: TextStyle(fontSize: 9, color: HrUi.muted(context))),
-          Text('0', style: TextStyle(fontSize: 9, color: HrUi.muted(context))),
-          const SizedBox(height: 22),
-        ],
+      width: 26,
+      height: plotHeight + 16,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text('${top.round()}', style: style),
+            Text('${(top / 2).round()}', style: style),
+            Text('0', style: style),
+          ],
+        ),
       ),
     );
   }
@@ -304,16 +439,17 @@ class _DonutPainter extends CustomPainter {
     final c = Offset(size.width / 2, sweep < math.pi * 1.6 ? size.height * 0.78 : size.height / 2);
     final r = math.min(size.width / 2, size.height / (sweep < math.pi * 1.6 ? 1.15 : 2)) - 4;
     final rect = Rect.fromCircle(center: c, radius: r);
+    final filled = hole <= 0;
     final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = r * (1 - hole)
+      ..style = filled ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = filled ? 0 : r * (1 - hole)
       ..strokeCap = StrokeCap.butt;
 
     var angle = startAngle;
     for (final s in slices) {
       final span = sweep * (s.value / total);
       paint.color = s.color ?? kChartPalette[0];
-      canvas.drawArc(rect, angle, span, false, paint);
+      canvas.drawArc(rect, angle, math.max(span - (filled ? 0.012 : 0), 0.001), filled, paint);
       angle += span;
     }
   }

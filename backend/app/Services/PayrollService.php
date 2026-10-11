@@ -1320,12 +1320,22 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
         $currency = $h($c['currency'] ?? 'USD');
         $start = $h($this->prettyDate((string) ($slip['period_start'] ?? '')));
         $end = $h($this->prettyDate((string) ($slip['period_end'] ?? $slip['period_date'] ?? '')));
-        $logoHtml = '';
         $logoPath = (string) ($c['logo'] ?? '');
+        $clientLogo = '<div class="logo-fallback">'.$company.'</div>';
         if ($logoPath !== '' && $publicBase) {
             $url = rtrim($publicBase, '/').'/'.ltrim($logoPath, '/');
-            $logoHtml = '<img src="'.$h($url).'" alt="" style="max-height:48px"/>';
+            $clientLogo = '<img src="'.$h($url).'" alt="Client logo"/>';
         }
+        $hrLogo = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="52" height="52" fill="none">'
+            .'<defs><linearGradient id="hr360g" x1="20" y1="24" x2="180" y2="180" gradientUnits="userSpaceOnUse">'
+            .'<stop stop-color="#67e8f9"/><stop offset="0.45" stop-color="#2563eb"/><stop offset="1" stop-color="#1e3a8a"/>'
+            .'</linearGradient></defs>'
+            .'<path d="M58 46c-28 8-40 48-28 78 14 34 58 48 96 32 22-10 34-32 28-52" stroke="url(#hr360g)" stroke-width="18" stroke-linecap="round"/>'
+            .'<path d="M46 118c6-36 28-62 62-70 30-8 58 6 70 28" stroke="url(#hr360g)" stroke-width="18" stroke-linecap="round"/>'
+            .'<path d="M72 78c18 10 28 28 28 28s10 16 28 26" stroke="#1e40af" stroke-width="16" stroke-linecap="round"/>'
+            .'<path d="M128 74c-16 8-28 22-28 22s-8 16-22 30" stroke="#38bdf8" stroke-width="16" stroke-linecap="round"/>'
+            .'<path d="M34 96l-6-28 26 8z" fill="#22d3ee"/>'
+            .'</svg>';
 
         $earn = '';
         $extra = '';
@@ -1392,8 +1402,11 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
 body{font-family:Segoe UI,Arial,sans-serif;color:#1f2937;margin:28px;background:#fff}
 h1{text-align:center;font-size:22px;font-weight:600;margin:0}
 .sub{text-align:center;color:#4b5563;margin:4px 0 18px;font-size:13px}
-.top{display:flex;justify-content:space-between;gap:24px;border:1px solid #d1d5db;padding:12px 14px;margin-bottom:16px}
-.co{font-size:13px;line-height:1.5}
+.logos{display:flex;justify-content:space-between;align-items:center;gap:24px;border:1px solid #d1d5db;padding:12px 16px;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.35}
+.brand img{max-height:56px;max-width:160px;object-fit:contain}
+.logo-fallback{font-weight:700;font-size:15px}
+.tag{color:#6b7280;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
 .grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e7eb}
 .col{display:grid;grid-template-columns:180px 1fr}
 .k,.v{border-bottom:1px solid #e5e7eb;padding:6px 10px;font-size:12px}
@@ -1413,7 +1426,10 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
 <button onclick="window.print()">Print / Save PDF</button>
 <h1>'.$title.'</h1>
 <div class="sub">Payslip for '.$start.' – '.$end.'</div>
-<div class="top"><div class="co"><b>'.$company.'</b><br>'.($c['email'] ? $h($c['email']) : '').'</div><div>'.$logoHtml.'</div></div>
+<div class="logos">
+<div class="brand">'.$hrLogo.'<div><b>HR360</b><br><span class="tag">Company</span></div></div>
+<div class="brand">'.$clientLogo.'<div><b>'.$company.'</b><br><span class="tag">Client</span>'.($c['email'] ? '<br>'.$h($c['email']) : '').'</div></div>
+</div>
 <div class="grid"><div class="col">'.$left.'</div><div class="col">'.$right.'</div></div>
 <div class="cols">
 <table><thead><tr><th>GROSS EARNING</th><th class="num">AMOUNT</th></tr></thead><tbody>'.$earn.'

@@ -97,7 +97,7 @@ class NotificationsBellButton extends StatelessWidget {
                   ),
                 ),
               ),
-            // Always show a tiny badge like WebHR when zero (optional) — only when >0 above.
+            // Always show a tiny badge like HR360tech when zero (optional) — only when >0 above.
             if (badge == 0)
               Positioned(
                 top: 6,
@@ -230,7 +230,7 @@ class _NotificationsPanelState extends State<_NotificationsPanel> {
 
     final approvals = ss.approvals;
 
-    // Pending module approvals also appear under Read Alerts (WebHR style).
+    // Pending module approvals also appear under Read Alerts (HR360tech style).
     final approvalAlerts = approvals.map((a) {
       final module = _moduleLabel(
         (a['module'] ?? a['kind'] ?? a['type'] ?? 'Request').toString(),

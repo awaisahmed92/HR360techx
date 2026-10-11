@@ -91,7 +91,7 @@ class AppState extends ChangeNotifier {
     await saveOrgSettings();
   }
 
-  // ── WebHR module navigation ──
+  // ── HR360tech module navigation ──
   String _moduleId = 'dashboard';
   String _subId = 'home';
   String get moduleId => _moduleId;
@@ -144,6 +144,7 @@ class AppState extends ChangeNotifier {
         return 7;
       case 'timesheet':
       case 'timesheet_dashboard':
+      case 'attendance_summary':
         return 8;
       case 'approvals':
         return 9;
@@ -181,7 +182,7 @@ class AppState extends ChangeNotifier {
   bool _isDarkMode = false;
   bool get isDarkMode => _isDarkMode;
 
-  // Brand accent (WebHR-style theme colors)
+  // Brand accent (HR360tech-style theme colors)
   String _brandThemeId = BrandThemes.defaultId;
   String get brandThemeId => _brandThemeId;
   BrandThemeOption get brandTheme => BrandThemes.byId(_brandThemeId);

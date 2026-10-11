@@ -136,6 +136,10 @@ class AttendanceAdminController extends Controller
             'date' => 'required|date',
             'punch_in' => 'nullable|string',
             'punch_out' => 'nullable|string',
+            'lunch_out' => 'nullable|string',
+            'lunch_in' => 'nullable|string',
+            'extra_out' => 'nullable|string',
+            'extra_in' => 'nullable|string',
             'status' => 'nullable|integer',
             'notes' => 'nullable|string|max:255',
         ]);
@@ -163,6 +167,18 @@ class AttendanceAdminController extends Controller
         if (Schema::hasColumn('attendance', 'late_minutes') && $punchIn) {
             $payload['late_minutes'] = $this->calcLateMinutes($date, $punchIn);
         }
+        $this->ensureBreakColumns();
+        foreach ([
+            'lunch_out' => 'lunch_out',
+            'lunch_in' => 'lunch_in',
+            'extra_out' => 'extra_out',
+            'extra_in' => 'extra_in',
+        ] as $input => $col) {
+            if (!Schema::hasColumn('attendance', $col)) {
+                continue;
+            }
+            $payload[$col] = !empty($data[$input]) ? $date.' '.$this->normalizeTime($data[$input]) : null;
+        }
 
         $id = $data['id'] ?? null;
         if ($id) {
@@ -184,6 +200,109 @@ class AttendanceAdminController extends Controller
         }
 
         return response()->json(['success' => true, 'id' => $id]);
+    }
+
+    /** Month summary for the Attendance Summary tab. */
+    public function summary(Request $request)
+    {
+        $claims = $request->attributes->get('hr_claims') ?? [];
+        $isAdmin = (int) ($claims['user_status'] ?? 0) === 2 || !empty($claims['is_superuser']);
+        $month = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('month', ''))
+            ? (string) $request->query('month')
+            : now()->format('Y-m');
+        $employeeId = $request->query('employee_id');
+        if (!$isAdmin) {
+            $employeeId = (int) ($claims['employee_id'] ?? 0);
+        }
+
+        $q = DB::table('attendance as a')
+            ->leftJoin('employee as e', 'e.employee_id', '=', 'a.employee_id')
+            ->where('a.date', 'like', $month.'%')
+            ->orderBy('a.date')
+            ->select('a.*', 'e.name as employee_name');
+        if ($employeeId) {
+            $q->where('a.employee_id', (int) $employeeId);
+        }
+        $rows = $q->limit(500)->get();
+
+        $present = 0;
+        $late = 0;
+        $absent = 0;
+        $minutes = 0;
+        $minuteRows = 0;
+        $under = 0;
+        $mid = 0;
+        $over = 0;
+        $out = [];
+        foreach ($rows as $r) {
+            $st = isset($r->status) ? (int) $r->status : (!empty($r->punch_in) ? 1 : 0);
+            $mins = (int) ($r->total_minutes ?? 0);
+            $lateMins = isset($r->late_minutes) ? (int) $r->late_minutes : 0;
+            if ($st === 1) {
+                $present++;
+            } elseif ($st === 0) {
+                $absent++;
+            }
+            if ($lateMins > 0) {
+                $late++;
+            }
+            if ($mins > 0) {
+                $minutes += $mins;
+                $minuteRows++;
+                $hours = $mins / 60;
+                if ($hours < 9) {
+                    $under++;
+                } elseif ($hours <= 10.5) {
+                    $mid++;
+                } else {
+                    $over++;
+                }
+            }
+            $out[] = [
+                'id' => (int) $r->id,
+                'employee_name' => (string) ($r->employee_name ?? ''),
+                'date' => (string) $r->date,
+                'punch_in' => $r->punch_in,
+                'punch_out' => $r->punch_out,
+                'status' => $st,
+                'status_label' => $st === 1 ? ($lateMins > 0 ? 'Late' : 'Present') : ($st === 2 ? 'Leave' : 'Absent'),
+                'late_minutes' => $lateMins,
+                'total_minutes' => $mins,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'month' => $month,
+            'summary' => [
+                'present' => $present,
+                'late' => $late,
+                'absent' => $absent,
+                'avg_hours' => $minuteRows > 0 ? round($minutes / $minuteRows / 60, 2) : 0,
+                'under_9' => $under,
+                'between' => $mid,
+                'over' => $over,
+                'timed' => $minuteRows,
+            ],
+            'rows' => $out,
+        ]);
+    }
+
+    protected function ensureBreakColumns(): void
+    {
+        if (!Schema::hasTable('attendance')) {
+            return;
+        }
+        foreach (['lunch_out', 'lunch_in', 'extra_out', 'extra_in'] as $col) {
+            if (Schema::hasColumn('attendance', $col)) {
+                continue;
+            }
+            try {
+                DB::statement("ALTER TABLE `attendance` ADD COLUMN `$col` DATETIME NULL");
+            } catch (\Throwable $e) {
+                // Applied by database/32_attendance_breaks.sql on the next schema boot.
+            }
+        }
     }
 
     public function destroy(int $id)

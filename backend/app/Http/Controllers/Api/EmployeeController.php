@@ -22,7 +22,7 @@ class EmployeeController extends Controller
         'emg_name', 'emg_relationship', 'emg_phone', 'emg_phone2', 'emg_email',
         'fam_name', 'fam_relationship', 'fam_date_of_birth', 'fam_phone',
         'total_experience', 'profile_picture',
-        // Extended WebHR parity
+        // Extended HR360tech parity
         'personal_email', 'salutation', 'preferred_name', 'nickname', 'pronoun',
         'nationality', 'race', 'home_phone', 'office_phone', 'mobile_number',
         'passport_number', 'passport_expiry', 'passport_country',
@@ -174,6 +174,15 @@ class EmployeeController extends Controller
                 'age_groups' => $this->ageGroups(),
                 'categories' => $this->countByLookup('employee_category', 'employee_category', 'id', 'name'),
                 'divisions' => $this->countByLookup('division_id', 'hr_org_division', 'id', 'name'),
+                'stations' => $this->countByLookup('station', 'station', 'station_id', 'name'),
+                'designations' => $this->countByLookup('designation', 'designation', 'designation_id', 'name'),
+                'types' => $this->countByLookup('employee_type', 'employee_type', 'id', 'name'),
+                'nationalities' => $this->countByText('nationality'),
+                'growth' => $this->growthByYear(),
+                'status' => [
+                    ['name' => 'Active', 'count' => $active],
+                    ['name' => 'Inactive', 'count' => $inactive],
+                ],
             ],
         ]);
     }
@@ -266,6 +275,39 @@ class EmployeeController extends Controller
             ->map(fn ($count, $name) => ['name' => (string) $name, 'count' => (int) $count])
             ->values()
             ->all();
+    }
+
+    /** @return list<array{name: string, count: int}> */
+    protected function countByText(string $col): array
+    {
+        if (!Schema::hasTable('employee') || !Schema::hasColumn('employee', $col)) {
+            return [];
+        }
+        $rows = DB::table('employee')
+            ->selectRaw("COALESCE(NULLIF(TRIM($col), ''), 'Unspecified') as name, COUNT(*) as cnt")
+            ->groupByRaw("COALESCE(NULLIF(TRIM($col), ''), 'Unspecified')")
+            ->orderByDesc('cnt')
+            ->limit(16)
+            ->get();
+
+        return $rows->map(fn ($r) => ['name' => (string) $r->name, 'count' => (int) $r->cnt])->all();
+    }
+
+    /** @return list<array{name: string, count: int}> */
+    protected function growthByYear(): array
+    {
+        if (!Schema::hasTable('employee') || !Schema::hasColumn('employee', 'joining_date')) {
+            return [];
+        }
+        $rows = DB::table('employee')
+            ->whereNotNull('joining_date')
+            ->where('joining_date', '<>', '0000-00-00')
+            ->selectRaw('YEAR(joining_date) as yr, COUNT(*) as cnt')
+            ->groupByRaw('YEAR(joining_date)')
+            ->orderBy('yr')
+            ->get();
+
+        return $rows->map(fn ($r) => ['name' => (string) $r->yr, 'count' => (int) $r->cnt])->all();
     }
 
     public function meta()

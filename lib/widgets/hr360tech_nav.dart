@@ -8,12 +8,13 @@ import '../core/util/person_name.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
 import 'company_logo.dart';
+import 'dashboard_punch.dart';
 
 enum HrNavLayout { full, icons, drawer }
 
 /// Dual rail on wide screens, icon rail on tablet, single list in the phone drawer.
-class WebHrNavRail extends StatelessWidget {
-  const WebHrNavRail({
+class Hr360techNavRail extends StatelessWidget {
+  const Hr360techNavRail({
     super.key,
     this.layout = HrNavLayout.full,
     this.onModuleSelected,
@@ -40,14 +41,14 @@ class WebHrNavRail extends StatelessWidget {
     return Row(
       children: [
         _IconRail(onModuleSelected: onModuleSelected),
-        if (showSubs) const WebHrSubmenuPanel(),
+        if (showSubs) const Hr360techSubmenuPanel(),
       ],
     );
   }
 }
 
-class WebHrSubmenuPanel extends StatelessWidget {
-  const WebHrSubmenuPanel({super.key, this.onPicked});
+class Hr360techSubmenuPanel extends StatelessWidget {
+  const Hr360techSubmenuPanel({super.key, this.onPicked});
 
   final VoidCallback? onPicked;
 
@@ -364,8 +365,8 @@ class _DrawerNav extends StatelessWidget {
 }
 
 /// Ink top bar: product mark, search, and the existing account controls.
-class WebHrTopBar extends StatelessWidget {
-  const WebHrTopBar({super.key, this.onMenu});
+class Hr360techTopBar extends StatelessWidget {
+  const Hr360techTopBar({super.key, this.onMenu});
 
   final VoidCallback? onMenu;
 
@@ -516,6 +517,7 @@ class WebHrTopBar extends StatelessWidget {
               ),
             ),
           ),
+          const DashboardPunchButton(),
           IconButton(
             tooltip: 'Theme',
             onPressed: () => app.openScreen(moduleId: 'dashboard', subId: 'account_settings'),

@@ -8,7 +8,7 @@ import '../core/util/json_maps.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// WebHR-style Employee Salary: Salary / Tax / Payment / Allocation / Banks.
+/// HR360tech-style Employee Salary: Salary / Tax / Payment / Allocation / Banks.
 class EmployeePayView extends StatefulWidget {
   const EmployeePayView({super.key});
 

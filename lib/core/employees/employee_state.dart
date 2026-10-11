@@ -29,6 +29,12 @@ class EmployeeState extends ChangeNotifier {
     'age_groups': [],
     'categories': [],
     'divisions': [],
+    'stations': [],
+    'designations': [],
+    'types': [],
+    'nationalities': [],
+    'growth': [],
+    'status': [],
   };
   Map<String, dynamic> options = {};
   List<Map<String, dynamic>> roleCatalog = [];
@@ -77,6 +83,12 @@ class EmployeeState extends ChangeNotifier {
               'age_groups',
               'categories',
               'divisions',
+              'stations',
+              'designations',
+              'types',
+              'nationalities',
+              'growth',
+              'status',
             ])
               key: ((rawCharts[key] as List?) ?? [])
                   .whereType<Map>()

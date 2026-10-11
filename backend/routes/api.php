@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\LeaveThresholdController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\HrReportController;
+use App\Http\Controllers\Api\InsightsController;
 use App\Http\Controllers\Api\PerformanceController;
 use App\Http\Controllers\Api\RecruitmentController;
 use App\Http\Controllers\Api\SelfServiceController;
@@ -65,6 +66,7 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::get('/attendance/admin', [AttendanceAdminController::class, 'grid']);
     Route::post('/attendance/admin/mark', [AttendanceAdminController::class, 'mark']);
     Route::post('/attendance/admin/save', [AttendanceAdminController::class, 'save']);
+    Route::get('/attendance/summary', [AttendanceAdminController::class, 'summary']);
     Route::post('/attendance/admin/{id}/delete', [AttendanceAdminController::class, 'destroy'])->whereNumber('id');
     Route::get('/schedule', [AttendanceAdminController::class, 'scheduleIndex']);
     Route::post('/schedule', [AttendanceAdminController::class, 'scheduleSave']);
@@ -108,6 +110,9 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/feed/{id}/comment', [StatusFeedController::class, 'comment'])->whereNumber('id');
     Route::get('/notifications', [WorkflowSettingsController::class, 'listNotifications']);
     Route::post('/notifications/read', [WorkflowSettingsController::class, 'markRead']);
+    Route::get('/insights/people', [InsightsController::class, 'people']);
+    Route::get('/insights/chain', [InsightsController::class, 'chain']);
+    Route::get('/insights/accolades', [InsightsController::class, 'accolades']);
     Route::get('/employees/stats', [EmployeeController::class, 'stats']);
     Route::get('/employees/meta', [EmployeeController::class, 'meta']);
     Route::get('/employees/next-code', [EmployeeController::class, 'nextCode']);

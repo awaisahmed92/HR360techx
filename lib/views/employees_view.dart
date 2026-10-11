@@ -9,7 +9,7 @@ import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 import 'employee_form_view.dart';
 
-/// WebHR-style Employees grid + Personal/Job/History add/edit form.
+/// HR360tech-style Employees grid + Personal/Job/History add/edit form.
 class EmployeesView extends StatefulWidget {
   const EmployeesView({super.key});
 

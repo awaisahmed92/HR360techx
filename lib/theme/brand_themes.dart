@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// WebHR-style accent presets — drives menu, headings, and form accents.
+/// HR360tech-style accent presets — drives menu, headings, and form accents.
 class BrandThemeOption {
   const BrandThemeOption({
     required this.id,

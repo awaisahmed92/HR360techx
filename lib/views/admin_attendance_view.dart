@@ -5,6 +5,7 @@ import '../core/attendance/attendance_admin_state.dart';
 import '../core/auth/auth_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import 'attendance_form_view.dart';
 
 /// Admin day grid — mark Present / Absent (PHP Admin Attendance parity).
 class AdminAttendanceView extends StatefulWidget {
@@ -16,6 +17,7 @@ class AdminAttendanceView extends StatefulWidget {
 
 class _AdminAttendanceViewState extends State<AdminAttendanceView> {
   late final AttendanceAdminState _state;
+  bool _adding = false;
 
   @override
   void initState() {
@@ -55,6 +57,12 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
     return AnimatedBuilder(
       animation: _state,
       builder: (context, _) {
+        if (_adding) {
+          return AttendanceFormView(onBack: () {
+            setState(() => _adding = false);
+            _state.loadGrid();
+          });
+        }
         return ColoredBox(
           color: HrUi.pageBg(context),
           child: ListView(
@@ -69,6 +77,12 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
                         color: HrUi.label(context),
                       )),
                   const Spacer(),
+                  FilledButton.icon(
+                    onPressed: () => setState(() => _adding = true),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Add Attendance'),
+                  ),
+                  const SizedBox(width: 8),
                   TextButton.icon(
                     onPressed: _pickDate,
                     icon: const Icon(Icons.calendar_month),
