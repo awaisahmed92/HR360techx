@@ -144,6 +144,8 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/payroll/define/{id}/delete', [PayrollController::class, 'defineDelete'])->whereNumber('id');
     Route::get('/payroll/process', [PayrollController::class, 'processIndex']);
     Route::post('/payroll/process', [PayrollController::class, 'processRun']);
+    Route::post('/payroll/run/preview', [PayrollController::class, 'runPreview']);
+    Route::post('/payroll/run/generate', [PayrollController::class, 'runGenerate']);
     Route::get('/payroll/my-payslips', [PayrollController::class, 'myPayslips']);
     Route::get('/payroll/payslip/{id}', [PayrollController::class, 'payslip'])->whereNumber('id');
 

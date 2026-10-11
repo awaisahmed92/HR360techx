@@ -156,7 +156,7 @@ class _EmployeeRolesViewState extends State<EmployeeRolesView> {
                   const SizedBox(width: 10),
                   SizedBox(
                     width: 260,
-                    child: DropdownButtonFormField<int>(
+                    child: HrDropdown<int>(
                       value: _selectedId,
                       isExpanded: true,
                       decoration: InputDecoration(

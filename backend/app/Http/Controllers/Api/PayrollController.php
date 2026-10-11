@@ -120,6 +120,75 @@ class PayrollController extends Controller
         ]);
     }
 
+    public function runPreview(Request $request)
+    {
+        $filters = $this->runFilters($request);
+
+        return response()->json([
+            'success' => true,
+            'currency' => $this->payroll->companyCurrency(),
+            'rows' => $this->payroll->previewRun($filters),
+        ]);
+    }
+
+    public function runGenerate(Request $request)
+    {
+        $data = $request->validate([
+            'date' => 'required|date',
+            'days' => 'nullable|integer|min:1|max:31',
+            'country' => 'nullable|string|max:20',
+            'station_ids' => 'nullable|array',
+            'station_ids.*' => 'integer',
+            'department_ids' => 'nullable|array',
+            'department_ids.*' => 'integer',
+            'employee_ids' => 'nullable|array',
+            'employee_ids.*' => 'integer',
+            'exclude_ids' => 'nullable|array',
+            'exclude_ids.*' => 'integer',
+            'designation_ids' => 'nullable|array',
+            'designation_ids.*' => 'integer',
+            'project_ids' => 'nullable|array',
+            'project_ids.*' => 'integer',
+            'embassy_codes' => 'nullable|array',
+            'embassy_codes.*' => 'string|max:20',
+        ]);
+        $actor = (int) ($request->attributes->get('hr_claims')['employee_id'] ?? 0);
+        $result = $this->payroll->processFiltered(
+            $data,
+            $data['date'],
+            (int) ($data['days'] ?? 30),
+            $actor
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Generated '.$result['count'].' payslip(s).',
+            'result' => $result,
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    protected function runFilters(Request $request): array
+    {
+        return $request->validate([
+            'country' => 'nullable|string|max:20',
+            'station_ids' => 'nullable|array',
+            'station_ids.*' => 'integer',
+            'department_ids' => 'nullable|array',
+            'department_ids.*' => 'integer',
+            'employee_ids' => 'nullable|array',
+            'employee_ids.*' => 'integer',
+            'exclude_ids' => 'nullable|array',
+            'exclude_ids.*' => 'integer',
+            'designation_ids' => 'nullable|array',
+            'designation_ids.*' => 'integer',
+            'project_ids' => 'nullable|array',
+            'project_ids.*' => 'integer',
+            'embassy_codes' => 'nullable|array',
+            'embassy_codes.*' => 'string|max:20',
+        ]);
+    }
+
     public function processRun(Request $request)
     {
         $data = $request->validate([
@@ -195,6 +264,14 @@ class PayrollController extends Controller
             'enable_sessi' => 'nullable|boolean',
             'enable_pf' => 'nullable|boolean',
             'enable_auto_late' => 'nullable|boolean',
+            'payroll_currencies' => 'nullable|string|max:10',
+            'cutoff_days' => 'nullable|string|max:10',
+            'merge_previous' => 'nullable|boolean',
+            'salaried_hours_method' => 'nullable|string|max:40',
+            'hourly_salary_method' => 'nullable|string|max:40',
+            'decimal_places' => 'nullable|integer',
+            'round_off_places' => 'nullable|integer',
+            'hourly_decimal_places' => 'nullable|integer',
             'work_start_time' => 'nullable|string|max:8',
             'late_grace_minutes' => 'nullable|integer',
         ]);

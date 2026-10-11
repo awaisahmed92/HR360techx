@@ -990,7 +990,7 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
     final safe = value != null && items.any((e) => (e['id'] as num?)?.toInt() == value) ? value : null;
     return HrFormRow(
       label: label,
-      child: DropdownButtonFormField<int>(
+      child: HrDropdown<int>(
         value: safe,
         isExpanded: true,
         decoration: _deco(),
@@ -1009,7 +1009,7 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
   Widget _strDd(String label, String? value, List<String> items, ValueChanged<String?> onChanged) {
     return HrFormRow(
       label: label,
-      child: DropdownButtonFormField<String>(
+      child: HrDropdown<String>(
         value: value != null && items.contains(value) ? value : null,
         isExpanded: true,
         decoration: _deco(),

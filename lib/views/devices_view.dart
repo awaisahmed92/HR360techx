@@ -245,7 +245,7 @@ class _DevicesViewState extends State<DevicesView> {
                   TextField(controller: ip, decoration: const InputDecoration(labelText: 'IP address *')),
                   TextField(controller: port, decoration: const InputDecoration(labelText: 'Port'), keyboardType: TextInputType.number),
                   TextField(controller: type, decoration: const InputDecoration(labelText: 'Type')),
-                  DropdownButtonFormField<String>(
+                  HrDropdown<String>(
                     value: status,
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: const [

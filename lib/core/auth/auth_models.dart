@@ -78,7 +78,7 @@ class AuthCompany {
       name: (json['name'] ?? '').toString(),
       code: (json['code'] ?? '').toString(),
       logo: json['logo']?.toString(),
-      currency: (json['currency'] ?? 'PKR').toString(),
+      currency: (json['currency'] ?? 'USD').toString(),
       dateFormat: (json['date_format'] ?? 'd-m-Y').toString(),
       subdomain: (json['subdomain'] ?? '').toString(),
     );

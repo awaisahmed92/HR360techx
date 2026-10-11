@@ -6,6 +6,7 @@ import '../core/auth/auth_state.dart';
 import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
 import '../theme/hr_theme.dart';
+import '../widgets/hr_form_kit.dart';
 
 /// Add New Attendance — user, date, sign in/out, lunch, and extra break.
 class AttendanceFormView extends StatefulWidget {
@@ -157,7 +158,7 @@ class _AttendanceFormViewState extends State<AttendanceFormView> {
           _row(
             'User Name:',
             required: true,
-            child: DropdownButtonFormField<int>(
+            child: HrDropdown<int>(
               value: _employeeId,
               decoration: _deco(),
               items: [

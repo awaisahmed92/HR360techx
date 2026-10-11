@@ -240,7 +240,7 @@ class _LeaveThresholdsPanelState extends State<_LeaveThresholdsPanel> {
         Text('Max days by designation & leave type (blocks apply when exceeded).',
             style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
         const SizedBox(height: 16),
-        DropdownButtonFormField<int>(
+        HrDropdown<int>(
           value: _designationId,
           decoration: const InputDecoration(labelText: 'Designation', isDense: true),
           items: [
@@ -471,10 +471,12 @@ class _LeaveNotificationsPanel extends StatelessWidget {
         HrFormRow(
           label: 'Notify upon Submission',
           child: HrMultiSelect<Map<String, dynamic>>(
-            hint: 'Select Employees',
+            hint: 'Select Users',
+            person: true,
             items: employees,
             values: selected('notify_on_submission'),
             labelOf: (e) => (e['name'] ?? '').toString(),
+            subtitleOf: (e) => '${e['code'] ?? e['employee_code'] ?? e['id'] ?? ''}',
             onChanged: (list) => ss.patchNotificationLocal({
               'notify_on_submission': list.map((e) => (e['id'] as num).toInt()).toList(),
             }),
@@ -483,10 +485,12 @@ class _LeaveNotificationsPanel extends StatelessWidget {
         HrFormRow(
           label: 'Notify upon Approval',
           child: HrMultiSelect<Map<String, dynamic>>(
-            hint: 'Select Employees',
+            hint: 'Select Users',
+            person: true,
             items: employees,
             values: selected('notify_on_approval'),
             labelOf: (e) => (e['name'] ?? '').toString(),
+            subtitleOf: (e) => '${e['code'] ?? e['employee_code'] ?? e['id'] ?? ''}',
             onChanged: (list) => ss.patchNotificationLocal({
               'notify_on_approval': list.map((e) => (e['id'] as num).toInt()).toList(),
             }),

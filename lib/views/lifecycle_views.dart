@@ -118,7 +118,7 @@ class _TerminationViewState extends State<TerminationView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<int>(
+                HrDropdown<int>(
                   value: empId,
                   decoration: const InputDecoration(labelText: 'Employee *'),
                   items: employees.whereType<Map>().map((e) {
@@ -127,7 +127,7 @@ class _TerminationViewState extends State<TerminationView> {
                   }).toList(),
                   onChanged: (v) => setLocal(() => empId = v),
                 ),
-                DropdownButtonFormField<String>(
+                HrDropdown<String>(
                   value: termType,
                   decoration: const InputDecoration(labelText: 'Type'),
                   items: types.whereType<Map>().map((e) {
@@ -309,7 +309,7 @@ class _LoanApplicationViewState extends State<LoanApplicationView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<int>(
+                HrDropdown<int>(
                   value: empId,
                   decoration: const InputDecoration(labelText: 'Employee *'),
                   items: employees.whereType<Map>().map((e) {

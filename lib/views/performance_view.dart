@@ -262,7 +262,7 @@ class _PerformanceViewState extends State<PerformanceView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<int>(
+                HrDropdown<int>(
                   value: empId,
                   decoration: const InputDecoration(labelText: 'Employee *'),
                   items: employees.whereType<Map>().map((e) {
@@ -271,7 +271,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                   }).toList(),
                   onChanged: (v) => setLocal(() => empId = v),
                 ),
-                DropdownButtonFormField<int>(
+                HrDropdown<int>(
                   value: indId,
                   decoration: const InputDecoration(labelText: 'Indicator'),
                   items: [
@@ -357,7 +357,7 @@ class _PerformanceViewState extends State<PerformanceView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<int>(
+                HrDropdown<int>(
                   value: empId,
                   decoration: const InputDecoration(labelText: 'Employee *'),
                   items: employees.whereType<Map>().map((e) {
@@ -366,7 +366,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                   }).toList(),
                   onChanged: (v) => setLocal(() => empId = v),
                 ),
-                DropdownButtonFormField<int?>(
+                HrDropdown<int?>(
                   value: cycleId,
                   decoration: const InputDecoration(labelText: 'Cycle'),
                   items: [
@@ -428,7 +428,7 @@ class _PerformanceViewState extends State<PerformanceView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButtonFormField<int>(
+                  HrDropdown<int>(
                     value: empId,
                     decoration: const InputDecoration(labelText: 'Employee *'),
                     items: employees.whereType<Map>().map((e) {
@@ -437,7 +437,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                     }).toList(),
                     onChanged: (v) => setLocal(() => empId = v),
                   ),
-                  DropdownButtonFormField<int?>(
+                  HrDropdown<int?>(
                     value: typeId,
                     decoration: const InputDecoration(labelText: 'Goal type'),
                     items: [
@@ -449,7 +449,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                     ],
                     onChanged: (v) => setLocal(() => typeId = v),
                   ),
-                  DropdownButtonFormField<int?>(
+                  HrDropdown<int?>(
                     value: appraisalId,
                     decoration: const InputDecoration(labelText: 'Link to appraisal'),
                     items: [
@@ -541,7 +541,7 @@ class _PerformanceViewState extends State<PerformanceView> {
                 TextField(controller: name, decoration: const InputDecoration(labelText: 'Name *')),
                 TextField(controller: start, decoration: const InputDecoration(labelText: 'Period start (YYYY-MM-DD)')),
                 TextField(controller: end, decoration: const InputDecoration(labelText: 'Period end (YYYY-MM-DD)')),
-                DropdownButtonFormField<int>(
+                HrDropdown<int>(
                   value: status,
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: const [

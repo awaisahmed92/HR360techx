@@ -10,6 +10,7 @@ import '../core/auth/signup_service.dart';
 import '../core/config/app_config.dart';
 import '../core/config/countries.dart';
 import '../widgets/company_logo.dart';
+import '../widgets/hr_form_kit.dart';
 import '../widgets/phone_field.dart';
 
 /// Public self sign-up. Creates an organization with its own tenant database
@@ -690,7 +691,7 @@ class _SignUpViewState extends State<SignUpView> {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField<T>(
+      child: HrDropdown<T>(
         initialValue: value,
         items: items,
         onChanged: onChanged,

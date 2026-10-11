@@ -143,7 +143,7 @@ class _LettersViewState extends State<LettersView> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   TextField(controller: name, decoration: const InputDecoration(labelText: 'Name *')),
-                  DropdownButtonFormField<String>(
+                  HrDropdown<String>(
                     value: pageSize,
                     decoration: const InputDecoration(labelText: 'Page size'),
                     items: sizes
@@ -221,7 +221,7 @@ class _LettersViewState extends State<LettersView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButtonFormField<int?>(
+                  HrDropdown<int?>(
                     value: empId,
                     decoration: const InputDecoration(labelText: 'Employee'),
                     items: [

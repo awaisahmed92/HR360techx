@@ -9,7 +9,10 @@ import '../core/payroll/payroll_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
-final _pkr = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 0);
+String _money(String currency, num? value) {
+  final code = currency.trim().isEmpty ? 'USD' : currency.trim();
+  return NumberFormat.currency(symbol: '$code ', decimalDigits: 0).format(value ?? 0);
+}
 
 /// Opens the generated payslip. Print shows the page (browser Print / Save PDF).
 /// Download saves the same payslip as an HTML file.
@@ -62,6 +65,12 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
     super.dispose();
   }
 
+  String _m(num? value) {
+    final code = context.read<AuthState>().company?.currency ??
+        (_ps.stats['currency'] ?? 'USD').toString();
+    return _money(code, value);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -90,9 +99,9 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                 children: [
                   _stat('Defined structures', '${s['defined_structures'] ?? 0}', Icons.account_tree),
                   _stat('Processed this month', '${s['processed_this_month'] ?? 0}', Icons.done_all),
-                  _stat('Month gross', _pkr.format((s['month_gross'] as num?)?.toDouble() ?? 0), Icons.payments),
-                  _stat('Month net', _pkr.format((s['month_net'] as num?)?.toDouble() ?? 0), Icons.account_balance_wallet),
-                  _stat('Month tax', _pkr.format((s['month_tax'] as num?)?.toDouble() ?? 0), Icons.receipt_long),
+                  _stat('Month gross', _m((s['month_gross'] as num?)?.toDouble() ?? 0), Icons.payments),
+                  _stat('Month net', _m((s['month_net'] as num?)?.toDouble() ?? 0), Icons.account_balance_wallet),
+                  _stat('Month tax', _m((s['month_tax'] as num?)?.toDouble() ?? 0), Icons.receipt_long),
                 ],
               ),
               const SizedBox(height: 24),
@@ -110,7 +119,7 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                   children: [
                     HrFormRow(
                       label: 'Project',
-                      child: DropdownButtonFormField<int>(
+                      child: HrDropdown<int>(
                         value: _projectId,
                         items: [
                           for (final p in _ps.projects)
@@ -185,8 +194,8 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                     tileColor: HrUi.card(context),
                     title: Text('${r['employee_name']} · ${r['project_name']}'),
                     subtitle: Text(
-                      '${r['date']} · Net ${_pkr.format((r['net_salary'] as num?)?.toDouble() ?? 0)}'
-                      ' · Tax ${_pkr.format((r['tax_amount'] as num?)?.toDouble() ?? 0)}',
+                      '${r['date']} · Net ${_m((r['net_salary'] as num?)?.toDouble() ?? 0)}'
+                      ' · Tax ${_m((r['tax_amount'] as num?)?.toDouble() ?? 0)}',
                     ),
                     trailing: TextButton(
                       onPressed: () => _showPayslip((r['id'] as num).toInt()),
@@ -271,9 +280,9 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                           DataRow(cells: [
                             DataCell(Text('${r['employee_name'] ?? ''}')),
                             DataCell(Text('${r['project_name'] ?? ''}')),
-                            DataCell(Text(_pkr.format((r['basic_salary'] as num?)?.toDouble() ?? 0))),
-                            DataCell(Text(_pkr.format((r['total_allowance'] as num?)?.toDouble() ?? 0))),
-                            DataCell(Text(_pkr.format((r['net_salary'] as num?)?.toDouble() ?? 0))),
+                            DataCell(Text(_m((r['basic_salary'] as num?)?.toDouble() ?? 0))),
+                            DataCell(Text(_m((r['total_allowance'] as num?)?.toDouble() ?? 0))),
+                            DataCell(Text(_m((r['net_salary'] as num?)?.toDouble() ?? 0))),
                           ]),
                       ],
                     ),
@@ -316,8 +325,8 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Employees: ${totals['count'] ?? 0} · Gross ${_pkr.format((totals['gross'] as num?)?.toDouble() ?? 0)} · '
-                'Net ${_pkr.format((totals['net'] as num?)?.toDouble() ?? 0)}',
+                'Employees: ${totals['count'] ?? 0} · Gross ${_m((totals['gross'] as num?)?.toDouble() ?? 0)} · '
+                'Net ${_m((totals['net'] as num?)?.toDouble() ?? 0)}',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
@@ -334,9 +343,9 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                       for (final r in rows)
                         DataRow(cells: [
                           DataCell(Text('${r['employee_name'] ?? ''}')),
-                          DataCell(Text(_pkr.format((r['total_allowance'] as num?)?.toDouble() ?? 0))),
-                          DataCell(Text(_pkr.format((r['tax_amount'] as num?)?.toDouble() ?? 0))),
-                          DataCell(Text(_pkr.format((r['net_salary'] as num?)?.toDouble() ?? 0))),
+                          DataCell(Text(_m((r['total_allowance'] as num?)?.toDouble() ?? 0))),
+                          DataCell(Text(_m((r['tax_amount'] as num?)?.toDouble() ?? 0))),
+                          DataCell(Text(_m((r['net_salary'] as num?)?.toDouble() ?? 0))),
                         ]),
                     ],
                   ),
@@ -375,11 +384,11 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                 Text('Designation: ${p['employee']?['designation'] ?? '—'}'),
                 Text('Project: ${p['project']}'),
                 const Divider(),
-                Text('Gross: ${_pkr.format((p['total_allowance'] as num?)?.toDouble() ?? 0)}'),
-                Text('Tax: ${_pkr.format((p['tax_amount'] as num?)?.toDouble() ?? 0)}'),
-                Text('EOBI: ${_pkr.format((p['eobi_amount'] as num?)?.toDouble() ?? 0)}'),
-                Text('Deductions: ${_pkr.format((p['total_deduction'] as num?)?.toDouble() ?? 0)}'),
-                Text('Net: ${_pkr.format((p['net_salary'] as num?)?.toDouble() ?? 0)}',
+                Text('Gross: ${_m((p['total_allowance'] as num?)?.toDouble() ?? 0)}'),
+                Text('Tax: ${_m((p['tax_amount'] as num?)?.toDouble() ?? 0)}'),
+                Text('EOBI: ${_m((p['eobi_amount'] as num?)?.toDouble() ?? 0)}'),
+                Text('Deductions: ${_m((p['total_deduction'] as num?)?.toDouble() ?? 0)}'),
+                Text('Net: ${_m((p['net_salary'] as num?)?.toDouble() ?? 0)}',
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                 const Divider(),
                 for (final line in ((p['lines'] as List?) ?? []))
@@ -417,6 +426,12 @@ class PayrollDefineView extends StatefulWidget {
 
 class _PayrollDefineViewState extends State<PayrollDefineView> {
   late final PayrollState _ps;
+
+  String _m(num? value) {
+    final code = context.read<AuthState>().company?.currency ??
+        (_ps.stats['currency'] ?? 'USD').toString();
+    return _money(code, value);
+  }
   bool _form = false;
   int? _editId;
   int? _employeeId;
@@ -475,10 +490,10 @@ class _PayrollDefineViewState extends State<PayrollDefineView> {
                 Text('${_ps.defines[i]['employee_name']}'),
                 Text('${_ps.defines[i]['project_name']}'),
                 Text('${_ps.defines[i]['station_name']}'),
-                Text(_pkr.format((_ps.defines[i]['basic_salary'] as num?)?.toDouble() ?? 0)),
-                Text(_pkr.format((_ps.defines[i]['total_allowance'] as num?)?.toDouble() ?? 0)),
-                Text(_pkr.format((_ps.defines[i]['total_deduction'] as num?)?.toDouble() ?? 0)),
-                Text(_pkr.format((_ps.defines[i]['net_salary'] as num?)?.toDouble() ?? 0)),
+                Text(_m((_ps.defines[i]['basic_salary'] as num?)?.toDouble() ?? 0)),
+                Text(_m((_ps.defines[i]['total_allowance'] as num?)?.toDouble() ?? 0)),
+                Text(_m((_ps.defines[i]['total_deduction'] as num?)?.toDouble() ?? 0)),
+                Text(_m((_ps.defines[i]['net_salary'] as num?)?.toDouble() ?? 0)),
                 PopupMenuButton<String>(
                   onSelected: (a) async {
                     final id = (_ps.defines[i]['id'] as num).toInt();
@@ -550,7 +565,7 @@ class _PayrollDefineViewState extends State<PayrollDefineView> {
           const SizedBox(height: 12),
           HrFormRow(
             label: 'Employee',
-            child: DropdownButtonFormField<int>(
+            child: HrDropdown<int>(
               value: _employeeId,
               items: [
                 for (final e in _ps.employees)
@@ -562,7 +577,7 @@ class _PayrollDefineViewState extends State<PayrollDefineView> {
           ),
           HrFormRow(
             label: 'Project',
-            child: DropdownButtonFormField<int>(
+            child: HrDropdown<int>(
               value: _projectId,
               items: [
                 for (final p in _ps.projects)
@@ -574,7 +589,7 @@ class _PayrollDefineViewState extends State<PayrollDefineView> {
           ),
           HrFormRow(
             label: 'Station',
-            child: DropdownButtonFormField<int>(
+            child: HrDropdown<int>(
               value: _stationId,
               items: [
                 for (final s in _ps.stations)

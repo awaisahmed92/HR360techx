@@ -6,6 +6,7 @@ import '../core/auth/auth_state.dart';
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
+import '../widgets/hr_form_kit.dart';
 
 /// Full-width org chart. Cards scroll sideways; filters narrow the tree.
 class OrgChartView extends StatefulWidget {
@@ -131,7 +132,7 @@ class _OrgChartViewState extends State<OrgChartView> {
                 _filter('Department', _department, departments, (v) => setState(() => _department = v)),
                 SizedBox(
                   width: 220,
-                  child: DropdownButtonFormField<int>(
+                  child: HrDropdown<int>(
                     value: _user,
                     isExpanded: true,
                     decoration: _box('User'),
@@ -182,7 +183,7 @@ class _OrgChartViewState extends State<OrgChartView> {
   Widget _filter(String label, int? value, Map<int, String> options, ValueChanged<int?> onChanged) {
     return SizedBox(
       width: 200,
-      child: DropdownButtonFormField<int>(
+      child: HrDropdown<int>(
         value: value,
         isExpanded: true,
         decoration: _box(label),

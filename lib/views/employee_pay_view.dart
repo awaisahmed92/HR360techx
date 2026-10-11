@@ -111,7 +111,7 @@ class _EmployeePayViewState extends State<EmployeePayView> {
                     const Spacer(),
                     SizedBox(
                       width: 280,
-                      child: DropdownButtonFormField<int>(
+                      child: HrDropdown<int>(
                         value: _employeeId,
                         isExpanded: true,
                         decoration: InputDecoration(
@@ -223,7 +223,7 @@ class _EmployeePayViewState extends State<EmployeePayView> {
           'Salary',
           'Hourly',
         ], (v) => setState(() => _pay['salary_type'] = v))),
-        _field('Currency', _dd(_pay['currency']?.toString() ?? 'PKR', ['PKR', 'USD', 'AED'],
+        _field('Currency', _dd(_pay['currency']?.toString() ?? 'USD', ['USD', 'AED', 'EUR', 'GBP', 'CAD'],
             (v) => setState(() => _pay['currency'] = v))),
         _num('Hours Per Week', 'hours_per_week'),
         _num('Annual Salary', 'annual_salary'),
@@ -432,7 +432,7 @@ class _EmployeePayViewState extends State<EmployeePayView> {
 
   Widget _dd(String value, List<String> items, ValueChanged<String> onChanged) {
     final safe = items.contains(value) ? value : items.first;
-    return DropdownButtonFormField<String>(
+    return HrDropdown<String>(
       value: safe,
       items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
       onChanged: (v) {

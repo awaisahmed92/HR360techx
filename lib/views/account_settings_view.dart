@@ -599,10 +599,12 @@ class _NotificationsPanel extends StatelessWidget {
             children: [
               Expanded(
                 child: HrMultiSelect<Map<String, dynamic>>(
-                  hint: 'Select Employees',
+                  hint: 'Select Users',
+                  person: true,
                   items: employees,
                   values: selectedMaps('notify_on_submission'),
                   labelOf: (e) => (e['name'] ?? '').toString(),
+                  subtitleOf: (e) => '${e['code'] ?? e['employee_code'] ?? e['id'] ?? ''}',
                   onChanged: (list) {
                     ss.patchNotificationLocal({
                       'notify_on_submission':
@@ -625,10 +627,12 @@ class _NotificationsPanel extends StatelessWidget {
         HrFormRow(
           label: 'Notify upon Approval',
           child: HrMultiSelect<Map<String, dynamic>>(
-            hint: 'Select Employees',
+            hint: 'Select Users',
+            person: true,
             items: employees,
             values: selectedMaps('notify_on_approval'),
             labelOf: (e) => (e['name'] ?? '').toString(),
+            subtitleOf: (e) => '${e['code'] ?? e['employee_code'] ?? e['id'] ?? ''}',
             onChanged: (list) {
               ss.patchNotificationLocal({
                 'notify_on_approval':
@@ -640,10 +644,12 @@ class _NotificationsPanel extends StatelessWidget {
         HrFormRow(
           label: 'Notify Upon Approval Reassignment',
           child: HrMultiSelect<Map<String, dynamic>>(
-            hint: 'Select Employees',
+            hint: 'Select Users',
+            person: true,
             items: employees,
             values: selectedMaps('notify_on_reassignment'),
             labelOf: (e) => (e['name'] ?? '').toString(),
+            subtitleOf: (e) => '${e['code'] ?? e['employee_code'] ?? e['id'] ?? ''}',
             onChanged: (list) {
               ss.patchNotificationLocal({
                 'notify_on_reassignment':

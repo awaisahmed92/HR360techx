@@ -31,7 +31,7 @@ class PayrollState extends ChangeNotifier {
         'month_gross': 0,
         'month_net': 0,
         'month_tax': 0,
-        'currency': 'PKR',
+        'currency': 'USD',
       };
       notifyListeners();
       return;
@@ -141,6 +141,33 @@ class PayrollState extends ChangeNotifier {
         return (d is Map ? d['message'] : null)?.toString() ?? 'Delete failed';
       }
       await loadDefines();
+      return null;
+    } on DioException catch (e) {
+      return _msg(e);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> previewRun(Map<String, dynamic> body) async {
+    final res = await _api.dio.post('/payroll/run/preview', data: body);
+    final d = res.data;
+    if (d is Map && d['success'] == true) {
+      if (d['currency'] != null) {
+        stats = {...stats, 'currency': d['currency'].toString()};
+      }
+      return ((d['rows'] as List?) ?? []).map(asStringKeyedMap).toList();
+    }
+    throw Exception((d is Map ? d['message'] : null) ?? 'Preview failed');
+  }
+
+  Future<String?> generateRun(Map<String, dynamic> body) async {
+    if (_auth.isDemo) return 'Not available in demo mode';
+    try {
+      final res = await _api.dio.post('/payroll/run/generate', data: body);
+      final d = res.data;
+      if (d is! Map || d['success'] != true) {
+        return (d is Map ? d['message'] : null)?.toString() ?? 'Generate failed';
+      }
+      await loadDashboard();
       return null;
     } on DioException catch (e) {
       return _msg(e);

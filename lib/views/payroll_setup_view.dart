@@ -200,10 +200,13 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
     return ListView(
       children: [
         _h('Payroll Options'),
-        _dd('Payroll Type', '${_setup['payroll_type'] ?? 'Payroll (Pakistan)'}', [
-          'Payroll (Pakistan)',
+        _dd('Payroll Type', '${_setup['payroll_type'] ?? 'Payroll (USA)'}', [
+          'Payroll (USA)',
           'Payroll (UAE)',
+          'Payroll (Canada)',
+          'Payroll (Germany)',
           'Payroll (UK)',
+          'Payroll (Global)',
         ], (v) => setState(() => _setup['payroll_type'] = v)),
         _dd('Pay Schedule', '${_setup['pay_schedule'] ?? 'Monthly (12)'}', [
           'Monthly (12)',
@@ -245,8 +248,53 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
           const ['Prorated Salary', 'Full Month', 'No Proration'],
           (v) => setState(() => _setup['exit_join_proration'] = v),
         ),
+        _dd('Payroll Cutoff Days for New Joiners', '${_setup['cutoff_days'] ?? '-'}', const [
+          '-',
+          '0',
+          '5',
+          '10',
+          '15',
+        ], (v) => setState(() => _setup['cutoff_days'] = v)),
+        _switch('Merge Previous Month Salary with Current Salary', _setup['merge_previous'] == true, (v) {
+          setState(() => _setup['merge_previous'] = v);
+        }),
+        _switch('Enable Basic Salary', _setup['enable_basic_salary'] != false, (v) {
+          setState(() => _setup['enable_basic_salary'] = v);
+        }),
+        _switch('Enable Auto Overtime for Salaried Users', _setup['enable_auto_overtime'] == true, (v) {
+          setState(() => _setup['enable_auto_overtime'] = v);
+        }),
+        _dd('Salaried Hours Method', '${_setup['salaried_hours_method'] ?? 'Attendance'}', const [
+          'Attendance',
+          'Fixed Hours',
+          'Manual',
+        ], (v) => setState(() => _setup['salaried_hours_method'] = v)),
+        _dd('Hourly Salary Method', '${_setup['hourly_salary_method'] ?? 'Attendance'}', const [
+          'Attendance',
+          'Timesheet',
+          'Manual',
+        ], (v) => setState(() => _setup['hourly_salary_method'] = v)),
+        _dd('Decimal Places', '${_setup['decimal_places'] ?? 0}', const ['0', '2', '3'], (v) {
+          setState(() => _setup['decimal_places'] = int.tryParse(v) ?? 0);
+        }),
+        _dd('Round Off Before Decimal Places', '${_setup['round_off_places'] ?? 5}', const ['0', '2', '5'], (v) {
+          setState(() => _setup['round_off_places'] = int.tryParse(v) ?? 5);
+        }),
+        _dd('Hourly Salary Decimal Places', '${_setup['hourly_decimal_places'] ?? 5}', const ['0', '2', '5'], (v) {
+          setState(() => _setup['hourly_decimal_places'] = int.tryParse(v) ?? 5);
+        }),
+        const SizedBox(height: 8),
+        _h('Payroll Currencies'),
+        _dd('Payroll Currencies', '${_setup['payroll_currencies'] ?? 'USD'}', const [
+          'USD',
+          'AED',
+          'EUR',
+          'GBP',
+          'CAD',
+          'CHF',
+        ], (v) => setState(() => _setup['payroll_currencies'] = v)),
         const Divider(height: 28),
-        _h('Statutory (PK)'),
+        _h('Statutory'),
         _switch('Enable SESSI', _setup['enable_sessi'] == true, (v) {
           setState(() => _setup['enable_sessi'] = v);
         }),
@@ -647,7 +695,7 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
         children: [
           Text(label, style: TextStyle(fontSize: 12, color: HrUi.muted(context), fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          DropdownButtonFormField<String>(
+          HrDropdown<String>(
             value: safe,
             items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, overflow: TextOverflow.ellipsis))).toList(),
             onChanged: (v) {

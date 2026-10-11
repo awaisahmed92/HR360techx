@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/auth/auth_state.dart';
 import '../core/training/training_state.dart';
 import '../theme/hr_theme.dart';
+import '../widgets/hr_controls.dart';
 import '../widgets/hr_form_kit.dart';
 
 /// Training list · calendar · trainers · types.
@@ -280,6 +281,7 @@ class _TrainingViewState extends State<TrainingView> {
       }
     }
     if (!mounted) return;
+    final people = employees.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
 
     final ok = await showDialog<bool>(
       context: context,
@@ -292,7 +294,7 @@ class _TrainingViewState extends State<TrainingView> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButtonFormField<int?>(
+                  HrDropdown<int?>(
                     value: typeId,
                     decoration: const InputDecoration(labelText: 'Type'),
                     items: [
@@ -304,7 +306,7 @@ class _TrainingViewState extends State<TrainingView> {
                     ],
                     onChanged: (v) => setLocal(() => typeId = v),
                   ),
-                  DropdownButtonFormField<int?>(
+                  HrDropdown<int?>(
                     value: trainerId,
                     decoration: const InputDecoration(labelText: 'Trainer'),
                     items: [
@@ -316,7 +318,7 @@ class _TrainingViewState extends State<TrainingView> {
                     ],
                     onChanged: (v) => setLocal(() => trainerId = v),
                   ),
-                  DropdownButtonFormField<String>(
+                  HrDropdown<String>(
                     value: status,
                     decoration: const InputDecoration(labelText: 'Status'),
                     items: statuses.whereType<Map>().map((e) {
@@ -340,28 +342,18 @@ class _TrainingViewState extends State<TrainingView> {
                     alignment: Alignment.centerLeft,
                     child: Text('Participants', style: TextStyle(fontWeight: FontWeight.w700, color: HrUi.label(context))),
                   ),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 160),
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: employees.whereType<Map>().map((e) {
-                        final id = (e['id'] as num?)?.toInt();
-                        if (id == null) return const SizedBox.shrink();
-                        return CheckboxListTile(
-                          dense: true,
-                          value: selected.contains(id),
-                          title: Text('${e['name']}', style: const TextStyle(fontSize: 13)),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          onChanged: (v) => setLocal(() {
-                            if (v == true) {
-                              selected.add(id);
-                            } else {
-                              selected.remove(id);
-                            }
-                          }),
-                        );
-                      }).toList(),
-                    ),
+                  HrMultiSelect<Map<String, dynamic>>(
+                    hint: 'Select Users',
+                    person: true,
+                    items: people,
+                    values: people.where((e) => selected.contains((e['id'] as num?)?.toInt())).toList(),
+                    labelOf: (e) => '${e['name'] ?? ''}',
+                    subtitleOf: (e) => '${e['code'] ?? e['employee_code'] ?? e['id'] ?? ''}',
+                    onChanged: (list) => setLocal(() {
+                      selected
+                        ..clear()
+                        ..addAll(list.map((e) => (e['id'] as num).toInt()));
+                    }),
                   ),
                 ],
               ),
@@ -410,7 +402,7 @@ class _TrainingViewState extends State<TrainingView> {
               TextField(controller: first, decoration: const InputDecoration(labelText: 'First name *')),
               TextField(controller: last, decoration: const InputDecoration(labelText: 'Last name')),
               TextField(controller: role, decoration: const InputDecoration(labelText: 'Role')),
-              DropdownButtonFormField<String>(
+              HrDropdown<String>(
                 value: kind,
                 decoration: const InputDecoration(labelText: 'Type'),
                 items: const [

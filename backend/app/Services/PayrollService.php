@@ -764,7 +764,7 @@ class PayrollService
             'month_gross' => $gross,
             'month_net' => $net,
             'month_tax' => $tax,
-            'currency' => 'PKR',
+            'currency' => $this->companyCurrency(),
         ];
     }
 
@@ -987,9 +987,9 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
 <p>This is to certify that <b>'.$name.'</b> (Employee Code: <b>'.$code.'</b>),
 working as <b>'.$des.'</b> in the <b>'.$dept.'</b> department, is drawing the following salary:</p>
 <ul>
-<li>Basic Salary: <b>PKR '.number_format($basic, 2).'</b></li>
-<li>Gross Salary: <b>PKR '.number_format($gross, 2).'</b></li>
-<li>Net Salary: <b>PKR '.number_format($net, 2).'</b></li>
+<li>Basic Salary: <b>'.$this->companyCurrency().' '.number_format($basic, 2).'</b></li>
+<li>Gross Salary: <b>'.$this->companyCurrency().' '.number_format($gross, 2).'</b></li>
+<li>Net Salary: <b>'.$this->companyCurrency().' '.number_format($net, 2).'</b></li>
 </ul>
 <p>This certificate is issued upon request of the employee for whatever purpose it may serve.</p>
 <p style="margin-top:48px">Authorized Signatory ______________________</p>
@@ -1073,6 +1073,14 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
             'pf_org_percent' => (float) ($row->pf_org_percent ?? 0),
             'enable_sessi' => (int) ($row->enable_sessi ?? 1) === 1,
             'enable_pf' => (int) ($row->enable_pf ?? 0) === 1,
+            'payroll_currencies' => $this->companyCurrency(),
+            'cutoff_days' => '-',
+            'merge_previous' => false,
+            'salaried_hours_method' => 'Attendance',
+            'hourly_salary_method' => 'Attendance',
+            'decimal_places' => 0,
+            'round_off_places' => 5,
+            'hourly_decimal_places' => 5,
         ];
     }
 
@@ -1080,7 +1088,7 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
     {
         $payload = [
             'name' => $data['name'] ?? 'General Payroll',
-            'payroll_type' => $data['payroll_type'] ?? 'Payroll (Pakistan)',
+            'payroll_type' => $data['payroll_type'] ?? 'Payroll (USA)',
             'pay_schedule' => $data['pay_schedule'] ?? 'Monthly (12)',
             'salaries_per_year' => (int) ($data['salaries_per_year'] ?? 12),
             'fiscal_start_month' => $data['fiscal_start_month'] ?? 'January',
@@ -1101,6 +1109,11 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
             $payload['enable_auto_late'] = !empty($data['enable_auto_late']) ? 1 : 0;
             $payload['work_start_time'] = $data['work_start_time'] ?? '09:00:00';
             $payload['late_grace_minutes'] = (int) ($data['late_grace_minutes'] ?? 15);
+        }
+        if (!empty($data['payroll_currencies']) && Schema::hasTable('company') && Schema::hasColumn('company', 'currency')) {
+            DB::table('company')->orderBy('id')->limit(1)->update([
+                'currency' => strtoupper((string) $data['payroll_currencies']),
+            ]);
         }
         $existing = DB::table('hr_payroll_setup')->orderBy('id')->first();
         if ($existing) {
@@ -1459,7 +1472,7 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
         return [
             'id' => 0,
             'name' => 'General Payroll',
-            'payroll_type' => 'Payroll (Pakistan)',
+            'payroll_type' => 'Payroll (Global)',
             'pay_schedule' => 'Monthly (12)',
             'salaries_per_year' => 12,
             'fiscal_start_month' => 'January',
@@ -1496,16 +1509,208 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
         ];
     }
 
+    public function companyCurrency(): string
+    {
+        if (!Schema::hasTable('company')) {
+            return 'USD';
+        }
+        $code = strtoupper(trim((string) DB::table('company')->orderBy('id')->value('currency')));
+
+        return $code !== '' ? $code : 'USD';
+    }
+
+    /** @return list<array{code:string,name:string,station_ids:list<int>}> */
+    public function payrollCountries(): array
+    {
+        if (!Schema::hasTable('station')) {
+            return [];
+        }
+        $by = [];
+        foreach (DB::table('station')->orderBy('name')->get() as $station) {
+            [$code, $name] = $this->countryForStation((string) $station->name);
+            $by[$code]['code'] = $code;
+            $by[$code]['name'] = $name;
+            $by[$code]['station_ids'][] = (int) $station->station_id;
+        }
+
+        return array_values($by);
+    }
+
+    /** @return array{0:string,1:string} */
+    protected function countryForStation(string $name): array
+    {
+        $key = strtolower(trim($name));
+        $map = [
+            'new york' => ['us', 'USA'],
+            'chicago' => ['us', 'USA'],
+            'toronto' => ['ca', 'Canada'],
+            'vancouver' => ['ca', 'Canada'],
+            'berlin' => ['de', 'Germany'],
+            'munich' => ['de', 'Germany'],
+            'amsterdam' => ['nl', 'Netherlands'],
+            'paris' => ['fr', 'France'],
+            'zurich' => ['ch', 'Switzerland'],
+        ];
+        if (isset($map[$key])) {
+            return $map[$key];
+        }
+        $code = substr(preg_replace('/[^a-z]/', '', $key) ?: 'xx', 0, 8);
+
+        return [$code, $name !== '' ? $name : 'Other'];
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return list<object>
+     */
+    public function filteredDefines(array $filters): array
+    {
+        if (!Schema::hasTable('define_salary')) {
+            return [];
+        }
+        $q = DB::table('define_salary as d')
+            ->leftJoin('employee as e', 'e.employee_id', '=', 'd.employee_id')
+            ->leftJoin('department as dep', 'dep.department_id', '=', 'e.department')
+            ->leftJoin('station as st', 'st.station_id', '=', 'e.station')
+            ->leftJoin('designation as des', 'des.designation_id', '=', 'e.designation');
+        $country = (string) ($filters['country'] ?? '');
+        if ($country !== '') {
+            $ids = [];
+            foreach ($this->payrollCountries() as $c) {
+                if ($c['code'] === $country) {
+                    $ids = $c['station_ids'];
+                }
+            }
+            if ($ids === []) {
+                return [];
+            }
+            $q->whereIn('e.station', $ids);
+        }
+        $embassy = array_values(array_filter(array_map('strval', (array) ($filters['embassy_codes'] ?? []))));
+        if ($embassy !== []) {
+            $ids = [];
+            foreach ($this->payrollCountries() as $c) {
+                if (in_array($c['code'], $embassy, true)) {
+                    $ids = array_merge($ids, $c['station_ids']);
+                }
+            }
+            if ($ids === []) {
+                return [];
+            }
+            $q->whereIn('e.station', $ids);
+        }
+        foreach ([
+            'station_ids' => 'e.station',
+            'department_ids' => 'e.department',
+            'designation_ids' => 'e.designation',
+            'employee_ids' => 'e.employee_id',
+            'project_ids' => 'e.project',
+        ] as $key => $col) {
+            $vals = array_values(array_filter(array_map('intval', (array) ($filters[$key] ?? []))));
+            if ($vals !== []) {
+                $q->whereIn($col, $vals);
+            }
+        }
+        $exclude = array_values(array_filter(array_map('intval', (array) ($filters['exclude_ids'] ?? []))));
+        if ($exclude !== []) {
+            $q->whereNotIn('e.employee_id', $exclude);
+        }
+
+        return $q->select(
+            'd.*',
+            'e.name as employee_name',
+            'dep.name as department_name',
+            'st.name as station_name',
+            'des.name as designation_name'
+        )
+            ->orderBy('e.name')
+            ->limit(500)
+            ->get()
+            ->all();
+    }
+
+    /** @param array<string, mixed> $filters */
+    public function previewRun(array $filters): array
+    {
+        $rows = $this->filteredDefines($filters);
+        $ids = array_map(fn ($r) => (int) $r->id, $rows);
+        $items = [];
+        if ($ids !== [] && Schema::hasTable('define_salary_details')) {
+            $details = DB::table('define_salary_details as dd')
+                ->leftJoin('hr_payroll_item as i', 'i.id', '=', 'dd.payroll_item_id')
+                ->whereIn('dd.define_salary_id', $ids)
+                ->get(['dd.*', 'i.name as item_name']);
+            foreach ($details as $d) {
+                $items[(int) $d->define_salary_id][] = [
+                    'item' => (string) ($d->item_name ?? 'Item'),
+                    'description' => (string) ($d->item_name ?? ''),
+                    'hours' => 0,
+                    'amount' => (float) $d->allowance - (float) $d->deduction,
+                    'employer' => 0,
+                    'allowance' => (float) $d->allowance,
+                    'deduction' => (float) $d->deduction,
+                ];
+            }
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $basic = (float) $r->basic_salary;
+            $gross = (float) ($r->total_allowance ?: $basic);
+            $deduct = (float) $r->total_deduction;
+            $out[] = [
+                'id' => (int) $r->id,
+                'employee_id' => (int) $r->employee_id,
+                'employee_name' => (string) ($r->employee_name ?? ''),
+                'department_name' => (string) ($r->department_name ?? ''),
+                'station_name' => (string) ($r->station_name ?? ''),
+                'designation_name' => (string) ($r->designation_name ?? ''),
+                'salary_type' => 'Salary',
+                'basic_salary' => $basic,
+                'additions' => max(0, $gross - $basic),
+                'deductions' => $deduct,
+                'gross' => $gross,
+                'tax' => 0,
+                'net' => (float) $r->net_salary,
+                'items' => $items[(int) $r->id] ?? [],
+            ];
+        }
+
+        return $out;
+    }
+
+    /** @param array<string, mixed> $filters */
+    public function processFiltered(array $filters, string $date, int $days, int $actorId): array
+    {
+        $runs = [];
+        foreach ($this->filteredDefines($filters) as $def) {
+            $runs[] = $this->processOne($def, $date, $days, $actorId);
+        }
+
+        return ['count' => count($runs), 'runs' => $runs];
+    }
+
     public function metaLookups(): array
     {
         return [
-            'employees' => DB::table('employee')->orderBy('name')->limit(500)->get(['employee_id as id', 'name as label']),
+            'employees' => DB::table('employee')->orderBy('name')->limit(500)->get(
+                Schema::hasColumn('employee', 'employee_code')
+                    ? ['employee_id as id', 'name as label', 'employee_code as code']
+                    : ['employee_id as id', 'name as label']
+            ),
             'projects' => Schema::hasTable('project')
                 ? DB::table('project')->orderBy('name')->get(['project_id as id', 'name as label'])
                 : [],
             'stations' => Schema::hasTable('station')
                 ? DB::table('station')->orderBy('name')->get(['station_id as id', 'name as label'])
                 : [],
+            'departments' => Schema::hasTable('department')
+                ? DB::table('department')->orderBy('name')->get(['department_id as id', 'name as label'])
+                : [],
+            'designations' => Schema::hasTable('designation')
+                ? DB::table('designation')->orderBy('name')->get(['designation_id as id', 'name as label'])
+                : [],
+            'countries' => $this->payrollCountries(),
+            'currency' => $this->companyCurrency(),
             'items' => Schema::hasTable('hr_payroll_item')
                 ? DB::table('hr_payroll_item')->where('status', 1)->orderBy('name')->get(['id', 'code', 'name', 'category', 'default_value'])
                 : [],

@@ -283,54 +283,353 @@ TextStyle hrFieldTextStyle(BuildContext context) => GoogleFonts.plusJakartaSans(
       fontWeight: FontWeight.w500,
     );
 
-/// Dropdown that keeps selected text visible in light + dark themes.
-class HrDropdown<T> extends StatelessWidget {
-  const HrDropdown({
-    super.key,
+class HrLookupOption<T> {
+  const HrLookupOption({
     required this.value,
-    required this.items,
-    required this.onChanged,
-    this.hint,
+    required this.label,
+    this.subtitle,
+    this.person = false,
   });
 
   final T? value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
-  final String? hint;
+  final String label;
+  final String? subtitle;
+  final bool person;
+}
+
+/// Searchable select that opens under the field. One row is highlighted.
+/// Multi-select toggles rows. There is no checkbox dialog.
+class HrLookupSelect<T> extends StatefulWidget {
+  const HrLookupSelect({
+    super.key,
+    required this.options,
+    this.value,
+    this.values = const [],
+    this.onChanged,
+    this.onMultiChanged,
+    this.multiple = false,
+    this.hint = 'Select',
+    this.allLabel,
+    this.errorText,
+  });
+
+  final List<HrLookupOption<T>> options;
+  final T? value;
+  final List<T> values;
+  final ValueChanged<T?>? onChanged;
+  final ValueChanged<List<T>>? onMultiChanged;
+  final bool multiple;
+  final String hint;
+  final String? allLabel;
+  final String? errorText;
+
+  @override
+  State<HrLookupSelect<T>> createState() => _HrLookupSelectState<T>();
+}
+
+class _HrLookupSelectState<T> extends State<HrLookupSelect<T>> {
+  static const _highlight = Color(0xFFC6A98A);
+
+  final _link = LayerLink();
+  final _portal = OverlayPortalController();
+  final _fieldKey = GlobalKey();
+  final _text = TextEditingController();
+  final _focus = FocusNode();
+  double _width = 280;
+
+  @override
+  void initState() {
+    super.initState();
+    _text.text = _display;
+    _focus.addListener(_onFocus);
+  }
+
+  @override
+  void didUpdateWidget(covariant HrLookupSelect<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_focus.hasFocus && _text.text != _display) {
+      _text.text = _display;
+    }
+  }
+
+  @override
+  void dispose() {
+    _focus.removeListener(_onFocus);
+    _focus.dispose();
+    _text.dispose();
+    super.dispose();
+  }
+
+  String _labelOf(T? value) {
+    for (final option in widget.options) {
+      if (option.value == value) return option.label;
+    }
+    return '';
+  }
+
+  String get _display {
+    if (widget.multiple) {
+      final names = [
+        for (final value in widget.values)
+          if (_labelOf(value).isNotEmpty) _labelOf(value),
+      ];
+      return names.join(', ');
+    }
+    return _labelOf(widget.value);
+  }
+
+  bool get _hasValue => widget.multiple ? widget.values.isNotEmpty : widget.value != null && _display.isNotEmpty;
+
+  void _onFocus() {
+    if (_focus.hasFocus) {
+      _text.clear();
+      _open();
+    } else {
+      _text.text = _display;
+      if (_portal.isShowing) _portal.hide();
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _open() {
+    final box = _fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) _width = box.size.width;
+    if (!_portal.isShowing) _portal.show();
+  }
+
+  void _choose(HrLookupOption<T>? option) {
+    if (widget.multiple) {
+      if (option == null || option.value == null) {
+        widget.onMultiChanged?.call([]);
+      } else {
+        final next = List<T>.from(widget.values);
+        final value = option.value as T;
+        if (next.contains(value)) {
+          next.remove(value);
+        } else {
+          next.add(value);
+        }
+        widget.onMultiChanged?.call(next);
+      }
+      _focus.requestFocus();
+      return;
+    }
+    widget.onChanged?.call(option?.value);
+    _focus.unfocus();
+  }
+
+  void _clear() {
+    if (widget.multiple) {
+      widget.onMultiChanged?.call([]);
+    } else {
+      widget.onChanged?.call(null);
+    }
+    _text.clear();
+    _focus.requestFocus();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final textColor = HrUi.label(context);
-    // Only use value if it exists in items — avoids blank selection.
-    final safeValue = items.any((i) => i.value == value) ? value : null;
+    final query = _focus.hasFocus ? _text.text.trim().toLowerCase() : '';
+    final rows = [
+      if (widget.allLabel != null && (query.isEmpty || widget.allLabel!.toLowerCase().contains(query)))
+        HrLookupOption<T>(value: null, label: widget.allLabel!),
+      for (final option in widget.options)
+        if (query.isEmpty ||
+            option.label.toLowerCase().contains(query) ||
+            (option.subtitle ?? '').toLowerCase().contains(query))
+          option,
+    ];
 
-    return DropdownButtonFormField<T>(
-      value: safeValue,
-      isExpanded: true,
-      dropdownColor: HrUi.card(context),
-      iconEnabledColor: HrUi.muted(context),
-      style: GoogleFonts.plusJakartaSans(color: textColor, fontSize: 14),
-      decoration: hrFieldDecoration(context, hint: hint),
-      hint: hint == null
-          ? null
-          : Text(hint!, style: TextStyle(color: HrUi.muted(context), fontSize: 13)),
-      selectedItemBuilder: (context) {
-        return items.map((item) {
-          return Align(
-            alignment: Alignment.centerLeft,
-            child: DefaultTextStyle(
-              style: GoogleFonts.plusJakartaSans(
-                color: textColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+    return OverlayPortal(
+      controller: _portal,
+      overlayChildBuilder: (context) {
+        return SizedBox.expand(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () => _focus.unfocus(),
+                ),
               ),
-              child: item.child,
-            ),
-          );
-        }).toList();
+              CompositedTransformFollower(
+                link: _link,
+                targetAnchor: Alignment.bottomLeft,
+                followerAnchor: Alignment.topLeft,
+                offset: const Offset(0, 4),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 10,
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    clipBehavior: Clip.antiAlias,
+                    child: SizedBox(
+                      width: _width,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 280),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: rows.length,
+                          itemBuilder: (context, index) {
+                            final option = rows[index];
+                            final selected = widget.multiple
+                                ? (option.value == null
+                                    ? widget.values.isEmpty
+                                    : widget.values.contains(option.value))
+                                : option.value == widget.value;
+                            return Listener(
+                              behavior: HitTestBehavior.opaque,
+                              onPointerDown: (_) => _choose(option.value == null && widget.allLabel == option.label ? null : option),
+                              child: Container(
+                                color: selected ? _highlight : Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                child: option.person
+                                    ? Row(
+                                        children: [
+                                          const CircleAvatar(
+                                            radius: 16,
+                                            backgroundColor: Color(0xFFE7E5E4),
+                                            child: Icon(Icons.person, size: 18, color: Color(0xFF78716C)),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(option.label, style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+                                                if ((option.subtitle ?? '').isNotEmpty)
+                                                  Text(option.subtitle!, style: const TextStyle(fontSize: 12, color: Color(0xFF4B5563))),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Text(option.label, style: const TextStyle(color: Color(0xFF111827))),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
       },
-      items: items,
-      onChanged: onChanged,
+      child: CompositedTransformTarget(
+        link: _link,
+        child: TextField(
+          key: _fieldKey,
+          controller: _text,
+          focusNode: _focus,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF111827)),
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+            errorText: widget.errorText,
+            isDense: true,
+            filled: true,
+            fillColor: const Color(0xFFF3F4F6),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            suffixIcon: _hasValue
+                ? IconButton(
+                    tooltip: 'Clear',
+                    onPressed: _clear,
+                    icon: const Icon(Icons.close, size: 16, color: Color(0xFFEF4444)),
+                  )
+                : const Icon(Icons.keyboard_arrow_down, color: Color(0xFF9CA3AF)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: _highlight, width: 1.4),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String hrMenuLabel(Widget child) {
+  if (child is Text) {
+    if (child.data != null) return child.data!;
+    final span = child.textSpan;
+    if (span != null) return span.toPlainText();
+  }
+  return '';
+}
+
+/// Searchable select used by every form dropdown.
+class HrDropdown<T> extends StatelessWidget {
+  const HrDropdown({
+    super.key,
+    this.value,
+    this.initialValue,
+    required this.items,
+    required this.onChanged,
+    this.hint,
+    this.decoration,
+    this.validator,
+    this.isExpanded,
+    this.dropdownColor,
+    this.style,
+    this.iconEnabledColor,
+    this.selectedItemBuilder,
+    this.icon,
+    this.focusNode,
+    this.autovalidateMode,
+  });
+
+  final T? value;
+  final T? initialValue;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+  final String? hint;
+  final InputDecoration? decoration;
+  final FormFieldValidator<T>? validator;
+  final bool? isExpanded;
+  final Color? dropdownColor;
+  final TextStyle? style;
+  final Color? iconEnabledColor;
+  final DropdownButtonBuilder? selectedItemBuilder;
+  final Widget? icon;
+  final FocusNode? focusNode;
+  final AutovalidateMode? autovalidateMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final current = value ?? initialValue;
+    final prompt = hint ?? decoration?.labelText ?? decoration?.hintText ?? 'Select';
+    final options = [
+      for (final item in items)
+        if (item.enabled)
+          HrLookupOption<T>(
+            value: item.value,
+            label: hrMenuLabel(item.child).isEmpty ? '${item.value ?? ''}' : hrMenuLabel(item.child),
+          ),
+    ];
+    return FormField<T>(
+      initialValue: current,
+      validator: validator,
+      autovalidateMode: autovalidateMode ?? AutovalidateMode.disabled,
+      builder: (state) {
+        return HrLookupSelect<T>(
+          hint: prompt,
+          value: current,
+          options: options.where((o) => o.label != '—' && o.label != '-').toList(),
+          errorText: state.errorText,
+          onChanged: (next) {
+            state.didChange(next);
+            onChanged(next);
+          },
+        );
+      },
     );
   }
 }

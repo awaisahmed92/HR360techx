@@ -286,7 +286,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
         HrFormSection(
           title: 'Salary Certificate',
           children: [
-            DropdownButtonFormField<int>(
+            HrDropdown<int>(
               value: _employeeId,
               decoration: const InputDecoration(labelText: 'Employee'),
               items: _employees
@@ -326,7 +326,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
         HrFormSection(
           title: 'Salary Statement',
           children: [
-            DropdownButtonFormField<int>(
+            HrDropdown<int>(
               value: _employeeId,
               decoration: const InputDecoration(labelText: 'Employee'),
               items: _employees

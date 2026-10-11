@@ -43,7 +43,7 @@ class HrTextField extends StatelessWidget {
 /// Alias of [HrDropdown] for SelectBox naming consistency.
 typedef HrSelectBox<T> = HrDropdown<T>;
 
-/// Multi-select employee / option picker (chip style).
+/// Searchable multi-select. Selected rows highlight. No checkbox dialog.
 class HrMultiSelect<T> extends StatelessWidget {
   const HrMultiSelect({
     super.key,
@@ -51,137 +51,37 @@ class HrMultiSelect<T> extends StatelessWidget {
     required this.values,
     required this.onChanged,
     required this.labelOf,
-    this.hint = 'Select…',
+    this.subtitleOf,
+    this.person = false,
+    this.hint = 'Select',
+    this.allLabel,
   });
 
   final List<T> items;
   final List<T> values;
   final ValueChanged<List<T>> onChanged;
   final String Function(T) labelOf;
+  final String Function(T)? subtitleOf;
+  final bool person;
   final String hint;
+  final String? allLabel;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () async {
-        final next = await showDialog<List<T>>(
-          context: context,
-          builder: (ctx) => _MultiSelectDialog<T>(
-            items: items,
-            initial: List<T>.from(values),
-            labelOf: labelOf,
+    return HrLookupSelect<T>(
+      multiple: true,
+      hint: hint,
+      allLabel: allLabel,
+      values: values,
+      onMultiChanged: onChanged,
+      options: [
+        for (final item in items)
+          HrLookupOption<T>(
+            value: item,
+            label: labelOf(item),
+            subtitle: subtitleOf?.call(item),
+            person: person,
           ),
-        );
-        if (next != null) onChanged(next);
-      },
-      borderRadius: BorderRadius.circular(8),
-      child: InputDecorator(
-        decoration: hrFieldDecoration(context, hint: hint),
-        child: values.isEmpty
-            ? Text(hint, style: TextStyle(color: HrUi.muted(context), fontSize: 13))
-            : Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                children: [
-                  for (final v in values)
-                    Chip(
-                      label: Text(labelOf(v), style: const TextStyle(fontSize: 12)),
-                      visualDensity: VisualDensity.compact,
-                      backgroundColor: HrTheme.brandSoft(context),
-                      side: BorderSide.none,
-                      deleteIconColor: HrTheme.brand(context),
-                      onDeleted: () {
-                        final copy = List<T>.from(values)..remove(v);
-                        onChanged(copy);
-                      },
-                    ),
-                ],
-              ),
-      ),
-    );
-  }
-}
-
-class _MultiSelectDialog<T> extends StatefulWidget {
-  const _MultiSelectDialog({
-    required this.items,
-    required this.initial,
-    required this.labelOf,
-  });
-
-  final List<T> items;
-  final List<T> initial;
-  final String Function(T) labelOf;
-
-  @override
-  State<_MultiSelectDialog<T>> createState() => _MultiSelectDialogState<T>();
-}
-
-class _MultiSelectDialogState<T> extends State<_MultiSelectDialog<T>> {
-  late List<T> _selected;
-  String _q = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = List<T>.from(widget.initial);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final filtered = widget.items.where((i) {
-      if (_q.trim().isEmpty) return true;
-      return widget.labelOf(i).toLowerCase().contains(_q.toLowerCase());
-    }).toList();
-
-    return AlertDialog(
-      backgroundColor: HrUi.card(context),
-      title: Text('Select', style: TextStyle(color: HrUi.label(context))),
-      content: SizedBox(
-        width: 420,
-        height: 420,
-        child: Column(
-          children: [
-            TextField(
-              onChanged: (v) => setState(() => _q = v),
-              style: hrFieldTextStyle(context),
-              decoration: hrFieldDecoration(context, hint: 'Search'),
-            ),
-            const SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: filtered.length,
-                itemBuilder: (_, i) {
-                  final item = filtered[i];
-                  final checked = _selected.contains(item);
-                  return CheckboxListTile(
-                    value: checked,
-                    activeColor: HrTheme.brand(context),
-                    title: Text(widget.labelOf(item),
-                        style: TextStyle(color: HrUi.label(context), fontSize: 13)),
-                    onChanged: (v) {
-                      setState(() {
-                        if (v == true) {
-                          _selected.add(item);
-                        } else {
-                          _selected.remove(item);
-                        }
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(
-          style: HrTheme.filledButton(context),
-          onPressed: () => Navigator.pop(context, _selected),
-          child: const Text('Apply'),
-        ),
       ],
     );
   }

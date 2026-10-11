@@ -134,7 +134,7 @@ class _RecruitmentViewState extends State<RecruitmentView> {
           ),
           SizedBox(
             width: 160,
-            child: DropdownButtonFormField<int?>(
+            child: HrDropdown<int?>(
               value: _state.filterJobId,
               decoration: const InputDecoration(
                 labelText: 'Job',
@@ -160,7 +160,7 @@ class _RecruitmentViewState extends State<RecruitmentView> {
           ),
           SizedBox(
             width: 120,
-            child: DropdownButtonFormField<int?>(
+            child: HrDropdown<int?>(
               value: _state.filterGender,
               decoration: const InputDecoration(
                 labelText: 'Gender',
@@ -362,7 +362,7 @@ class _RecruitmentViewState extends State<RecruitmentView> {
                   const SizedBox(height: 12),
                   const Text('Education', style: TextStyle(fontWeight: FontWeight.w700)),
                   for (var i = 0; i < edu.length; i++) ...[
-                    DropdownButtonFormField<int>(
+                    HrDropdown<int>(
                       value: edu[i].degreeId,
                       decoration: const InputDecoration(labelText: 'Degree'),
                       items: [
@@ -666,7 +666,7 @@ class _RecruitmentViewState extends State<RecruitmentView> {
                 TextField(controller: email, decoration: const InputDecoration(labelText: 'Email')),
                 TextField(controller: phone, decoration: const InputDecoration(labelText: 'Phone')),
                 TextField(controller: exp, decoration: const InputDecoration(labelText: 'Experience')),
-                DropdownButtonFormField<int>(
+                HrDropdown<int>(
                   value: jobId,
                   decoration: const InputDecoration(labelText: 'Job'),
                   items: [

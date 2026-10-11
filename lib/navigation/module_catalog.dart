@@ -144,7 +144,7 @@ class ModuleCatalog {
       children: [
         // PHP sidebar order: Define → Process → Items → Setup → EOBI → PF → SESSI → Tax → Reports
         HrSubNav(id: 'define_salary', label: 'Define Salary', icon: Icons.payments_outlined, screen: 'payroll_define'),
-        HrSubNav(id: 'process_salary', label: 'Process Salary', icon: Icons.play_circle_outline, screen: 'payroll_process'),
+        HrSubNav(id: 'process_salary', label: 'Run Payroll', icon: Icons.play_circle_outline, screen: 'payroll_process'),
         HrSubNav(id: 'salary_payslips', label: 'Salary Payslips', icon: Icons.receipt_long_outlined, screen: 'my_payslips'),
         HrSubNav(id: 'payroll_items', label: 'Payroll Items', icon: Icons.list_alt_outlined, screen: 'master', entity: 'payroll_items'),
         HrSubNav(id: 'payroll_formulas', label: 'Payroll Setup', icon: Icons.rule_outlined, screen: 'master', entity: 'payroll_formulas'),

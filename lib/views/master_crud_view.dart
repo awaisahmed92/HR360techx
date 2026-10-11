@@ -245,7 +245,7 @@ class _MasterCrudViewState extends State<MasterCrudView> {
       final current = _values[key]?.toString();
       return HrFormRow(
         label: label,
-        child: DropdownButtonFormField<String>(
+        child: HrDropdown<String>(
           value: items.any((i) => i.value == current) ? current : null,
           items: items,
           onChanged: (v) => setState(() => _values[key] = v),

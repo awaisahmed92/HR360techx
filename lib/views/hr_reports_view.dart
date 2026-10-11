@@ -133,7 +133,7 @@ class _HrReportsViewState extends State<HrReportsView> {
         if (_state.tab != 2)
           SizedBox(
             width: 200,
-            child: DropdownButtonFormField<int?>(
+            child: HrDropdown<int?>(
               value: _state.employeeId,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Employee', isDense: true),
@@ -152,7 +152,7 @@ class _HrReportsViewState extends State<HrReportsView> {
           ),
         SizedBox(
             width: 180,
-            child: DropdownButtonFormField<int?>(
+            child: HrDropdown<int?>(
               value: _state.departmentId,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Department', isDense: true),
@@ -172,7 +172,7 @@ class _HrReportsViewState extends State<HrReportsView> {
         if (_state.tab == 0 || _state.tab == 1)
           SizedBox(
             width: 160,
-            child: DropdownButtonFormField<int?>(
+            child: HrDropdown<int?>(
               value: _state.leaveTypeId,
               isExpanded: true,
               decoration: const InputDecoration(labelText: 'Leave type', isDense: true),
@@ -192,7 +192,7 @@ class _HrReportsViewState extends State<HrReportsView> {
         if (_state.tab == 0)
           SizedBox(
             width: 140,
-            child: DropdownButtonFormField<int?>(
+            child: HrDropdown<int?>(
               value: _state.leaveStatus,
               decoration: const InputDecoration(labelText: 'Status', isDense: true),
               items: const [
@@ -210,7 +210,7 @@ class _HrReportsViewState extends State<HrReportsView> {
         if (_state.tab == 2)
           SizedBox(
             width: 160,
-            child: DropdownButtonFormField<String>(
+            child: HrDropdown<String>(
               value: _state.usageGroupBy,
               decoration: const InputDecoration(labelText: 'Group by', isDense: true),
               items: const [
@@ -227,7 +227,7 @@ class _HrReportsViewState extends State<HrReportsView> {
         if (_state.tab == 3)
           SizedBox(
             width: 140,
-            child: DropdownButtonFormField<String>(
+            child: HrDropdown<String>(
               value: _state.employeeReportType,
               decoration: const InputDecoration(labelText: 'Type', isDense: true),
               items: const [
