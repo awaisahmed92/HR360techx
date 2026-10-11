@@ -46,6 +46,7 @@ class _SignUpViewState extends State<SignUpView> {
   String? _country = 'Pakistan';
   String? _captchaToken;
   Uint8List? _captchaBytes;
+  bool _captchaLoading = true;
   String _phoneCountry = 'US';
   bool _obscure = true;
   bool _obscureConfirm = true;
@@ -123,6 +124,10 @@ class _SignUpViewState extends State<SignUpView> {
   }
 
   Future<void> _loadCaptcha() async {
+    setState(() {
+      _captchaLoading = true;
+      _error = null;
+    });
     try {
       final data = await _service.captcha();
       final image = data['image']?.toString() ?? '';
@@ -130,13 +135,18 @@ class _SignUpViewState extends State<SignUpView> {
       final bytes = comma >= 0 ? base64Decode(image.substring(comma + 1)) : null;
       if (!mounted) return;
       setState(() {
+        _captchaLoading = false;
         _captchaToken = data['token']?.toString();
         _captchaBytes = bytes;
         _captchaCtrl.clear();
       });
     } on SignupException catch (e) {
       if (!mounted) return;
-      setState(() => _error = e.message);
+      setState(() {
+        _captchaLoading = false;
+        _captchaBytes = null;
+        _error = e.message;
+      });
     }
   }
 
@@ -443,7 +453,7 @@ class _SignUpViewState extends State<SignUpView> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: _border),
                   ),
-                  child: _captchaBytes == null
+                  child: _captchaLoading
                       ? const Center(
                           child: SizedBox(
                             width: 16,
@@ -451,7 +461,11 @@ class _SignUpViewState extends State<SignUpView> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         )
-                      : Image.memory(_captchaBytes!, fit: BoxFit.cover, gaplessPlayback: true),
+                      : _captchaBytes == null
+                          ? const Center(
+                              child: Icon(Icons.image_not_supported_outlined, color: Color(0xFF8A95A6)),
+                            )
+                          : Image.memory(_captchaBytes!, fit: BoxFit.cover, gaplessPlayback: true),
                 ),
                 IconButton(
                   tooltip: 'New code',

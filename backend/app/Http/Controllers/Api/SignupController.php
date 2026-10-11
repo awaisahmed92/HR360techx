@@ -18,9 +18,18 @@ class SignupController extends Controller
 
     public function captcha()
     {
-        return response()->json([
-            'success' => true,
-        ] + $this->captcha->issue());
+        try {
+            return response()->json([
+                'success' => true,
+            ] + $this->captcha->issue());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not load the verification code.',
+            ], 503);
+        }
     }
 
     /** Live check for the Company Code field. */
