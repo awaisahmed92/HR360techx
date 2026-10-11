@@ -183,8 +183,10 @@ class SignupController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error('Signup failed', ['code' => $code, 'error' => $e->getMessage()]);
-            if (str_contains(strtolower($e->getMessage()), 'already exists')
-                || str_contains(strtolower($e->getMessage()), 'already registered')) {
+            $detail = strtolower($e->getMessage());
+            if (str_contains($detail, 'already exists')
+                || str_contains($detail, 'already registered')
+                || str_contains($detail, 'database exists')) {
                 return response()->json([
                     'success' => false,
                     'message' => TenantProvisioner::alreadyRegisteredMessage(null, $companyName),

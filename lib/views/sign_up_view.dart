@@ -198,6 +198,20 @@ class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateM
         _busy = false;
         _error = e.message;
       });
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Organization was not created'),
+          content: SingleChildScrollView(child: Text(e.message)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
       await _loadCaptcha();
     } finally {
       _stopProgress();

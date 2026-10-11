@@ -114,7 +114,7 @@ if ($optProvision !== null) {
 }
 
 /** Files that must never run against the tenant DB. */
-$skipFiles = ['01_master.sql', '11_reset_employee_passwords.sql'];
+$skipFiles = ['01_master.sql', '11_reset_employee_passwords.sql', '31_multi_app_registry.sql'];
 
 // ── --new=name: scaffold the next migration file and stop ────────────────
 if ($optNew !== null) {
@@ -634,6 +634,12 @@ SQL);
             'contact_email' => 'VARCHAR(191) NULL',
             'contact_phone' => 'VARCHAR(60) NULL',
             'source' => "VARCHAR(40) NOT NULL DEFAULT 'manual'",
+            'accounts_app' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'pos_app' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'school_app' => 'TINYINT(1) NOT NULL DEFAULT 0',
+            'accounts_db_name' => 'VARCHAR(191) NULL',
+            'pos_db_name' => 'VARCHAR(191) NULL',
+            'school_db_name' => 'VARCHAR(191) NULL',
         ]);
         $master->exec('UPDATE `tenants` SET `company_code` = `subdomain` WHERE `company_code` IS NULL OR `company_code` = ""');
 
