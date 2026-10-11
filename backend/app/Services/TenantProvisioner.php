@@ -238,9 +238,19 @@ class TenantProvisioner
         $process->run();
 
         if (!$process->isSuccessful()) {
-            throw new RuntimeException(
-                'Schema install failed: '.trim($process->getErrorOutput()."\n".$process->getOutput())
-            );
+            $detail = trim($process->getErrorOutput()."\n".$process->getOutput());
+            $line = '';
+            foreach (preg_split('/\R/', $detail) ?: [] as $row) {
+                if (str_contains($row, '→ error:') || str_contains($row, 'FAILED:')) {
+                    $line = trim($row);
+                    break;
+                }
+            }
+            if ($line === '') {
+                $line = 'the company database could not be finished';
+            }
+
+            throw new RuntimeException('Schema install failed. '.$line);
         }
     }
 
