@@ -44,6 +44,7 @@ import 'views/travel_view.dart';
 import 'views/timesheet_view.dart';
 import 'views/approvals_inbox_view.dart';
 import 'views/profile_view.dart';
+import 'views/system_logs_view.dart';
 import 'views/product_intro_view.dart';
 import 'views/sign_up_view.dart';
 import 'core/config/browser_path_stub.dart'
@@ -333,6 +334,8 @@ class _MainShellState extends State<MainShell> {
         return const AccountSettingsView();
       case 'system_settings':
         return const SystemSettingsView();
+      case 'system_logs':
+        return const SystemLogsView();
       case 'approvals':
         return const ApprovalsInboxView();
       case 'employees':

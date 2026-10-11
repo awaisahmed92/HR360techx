@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\OrganizationSettingsController;
 use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\WorkflowSettingsController;
 use App\Http\Controllers\Api\StatusFeedController;
+use App\Http\Controllers\Api\SystemLogController;
 use App\Http\Middleware\TenantAuth;
 use Illuminate\Support\Facades\Route;
 
@@ -125,6 +126,9 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/employees/{id}/leave-assignments', [EmployeeController::class, 'saveLeaveAssignments'])->whereNumber('id');
     Route::get('/employees/{id}/roles', [EmployeeController::class, 'roles'])->whereNumber('id');
     Route::post('/employees/{id}/roles', [EmployeeController::class, 'saveRoles'])->whereNumber('id');
+
+    Route::get('/system-logs/months', [SystemLogController::class, 'months']);
+    Route::get('/system-logs/export', [SystemLogController::class, 'export']);
 
     Route::get('/masters', [MasterDataController::class, 'catalog']);
     Route::get('/masters/{entity}/meta', [MasterDataController::class, 'meta']);
