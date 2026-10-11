@@ -470,7 +470,12 @@ class _HrLookupSelectState<T> extends State<HrLookupSelect<T>> {
                       width: _width,
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxHeight: 280),
-                        child: ListView.builder(
+                        child: rows.isEmpty
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                child: Text('No matches', style: TextStyle(color: Color(0xFF6B7280))),
+                              )
+                            : ListView.builder(
                           padding: EdgeInsets.zero,
                           shrinkWrap: true,
                           itemCount: rows.length,
@@ -528,6 +533,7 @@ class _HrLookupSelectState<T> extends State<HrLookupSelect<T>> {
           key: _fieldKey,
           controller: _text,
           focusNode: _focus,
+          onChanged: (_) => setState(() {}),
           style: const TextStyle(fontSize: 14, color: Color(0xFF111827)),
           decoration: InputDecoration(
             hintText: widget.hint,
@@ -557,13 +563,33 @@ class _HrLookupSelectState<T> extends State<HrLookupSelect<T>> {
   }
 }
 
-String hrMenuLabel(Widget child) {
-  if (child is Text) {
-    if (child.data != null) return child.data!;
-    final span = child.textSpan;
-    if (span != null) return span.toPlainText();
+String hrMenuLabel(Widget? child) {
+  switch (child) {
+    case null:
+      return '';
+    case Text text:
+      return text.data ?? text.textSpan?.toPlainText() ?? '';
+    case RichText text:
+      return text.text.toPlainText();
+    case Row row:
+      return row.children.map(hrMenuLabel).where((part) => part.isNotEmpty).join(' ');
+    case Column column:
+      return column.children.map(hrMenuLabel).where((part) => part.isNotEmpty).join(' ');
+    case Flex flex:
+      return flex.children.map(hrMenuLabel).where((part) => part.isNotEmpty).join(' ');
+    case Expanded expanded:
+      return hrMenuLabel(expanded.child);
+    case Flexible flexible:
+      return hrMenuLabel(flexible.child);
+    case Padding padding:
+      return hrMenuLabel(padding.child);
+    case Align align:
+      return hrMenuLabel(align.child);
+    case DefaultTextStyle style:
+      return hrMenuLabel(style.child);
+    default:
+      return '';
   }
-  return '';
 }
 
 /// Searchable select used by every form dropdown.

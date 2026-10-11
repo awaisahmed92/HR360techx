@@ -16,7 +16,7 @@
 			header_up X-Forwarded-Host {host}
 			transport http {
 				dial_timeout 10s
-				response_header_timeout 120s
+				response_header_timeout 300s
 			}
 		}
 	}

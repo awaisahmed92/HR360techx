@@ -74,21 +74,14 @@ class SignupController extends Controller
                 'message' => $e->getMessage(),
             ]);
         }
-        if ($hrAlready) {
+        if ($hrAlready || $existing) {
+            $row = $existing ?? TenantProvisioner::existingClient($code, $companyName);
+
             return response()->json([
                 'success' => true,
                 'code' => $code,
                 'available' => false,
-                'message' => 'That company already has HR360. Sign in with the existing company code.',
-            ]);
-        }
-        if ($existing) {
-            return response()->json([
-                'success' => true,
-                'code' => $code,
-                'available' => true,
-                'existing_client' => true,
-                'message' => 'This company is already on 360tech. HR will open on the same company record.',
+                'message' => TenantProvisioner::alreadyRegisteredMessage($row, $companyName),
             ]);
         }
 
@@ -134,19 +127,13 @@ class SignupController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
-        if ($existing && (int) ($existing->hr_app ?? 0) === 1) {
+        if ($existing) {
             return response()->json([
                 'success' => false,
-                'message' => 'That company already has HR360. Sign in with the existing company code.',
+                'message' => TenantProvisioner::alreadyRegisteredMessage($existing, $companyName),
             ], 422);
         }
-        if ($existing) {
-            $canonical = TenantProvisioner::normalizeCode((string) ($existing->company_code ?: $existing->subdomain));
-            if (strlen($canonical) >= 3) {
-                $code = $canonical;
-            }
-        }
-        if (!$existing && str_contains($code, '_')) {
+        if (str_contains($code, '_')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Company code cannot contain underscores. It is used as your web address.',
@@ -164,14 +151,25 @@ class SignupController extends Controller
                 'message' => 'That company code is reserved. Please pick another.',
             ], 422);
         }
-        if (TenantProvisioner::codeTaken($code)) {
+        if (TenantProvisioner::codeTaken($code, $companyName)) {
             return response()->json([
                 'success' => false,
-                'message' => 'That company code is already registered.',
+                'message' => TenantProvisioner::alreadyRegisteredMessage(
+                    TenantProvisioner::existingClient($code, $companyName),
+                    $companyName
+                ),
+            ], 422);
+        }
+        if ($this->provisioner->databaseExists(TenantProvisioner::databaseNameFor($code))) {
+            return response()->json([
+                'success' => false,
+                'message' => TenantProvisioner::alreadyRegisteredMessage(null, $companyName),
             ], 422);
         }
 
         try {
+            // Building a new company database takes longer than PHP's 30 second default.
+            @set_time_limit(300);
             $result = $this->provisioner->provision([
                 'company_name' => $companyName,
                 'company_code' => $code,
@@ -185,6 +183,13 @@ class SignupController extends Controller
             ]);
         } catch (\Throwable $e) {
             Log::error('Signup failed', ['code' => $code, 'error' => $e->getMessage()]);
+            if (str_contains(strtolower($e->getMessage()), 'already exists')
+                || str_contains(strtolower($e->getMessage()), 'already registered')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => TenantProvisioner::alreadyRegisteredMessage(null, $companyName),
+                ], 422);
+            }
 
             return response()->json([
                 'success' => false,

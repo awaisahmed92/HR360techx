@@ -90,10 +90,30 @@ class TenantProvisioner
             }
         }
         if ($byCode && $byName && (int) $byCode->id !== (int) $byName->id) {
-            throw new RuntimeException('That company name is already registered under a different company code.');
+            throw new RuntimeException('The organization is already registered with that name.');
         }
 
         return $byCode ?? $byName;
+    }
+
+    public static function alreadyRegisteredMessage(?object $existing, string $companyName): string
+    {
+        $name = trim((string) ($existing->name ?? ''));
+        if ($name === '') {
+            $name = trim($companyName);
+        }
+
+        return 'The organization is already registered with the name '.$name.'.';
+    }
+
+    public function databaseExists(string $dbName): bool
+    {
+        $row = $this->serverConnection()->selectOne(
+            'SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?',
+            [$dbName]
+        );
+
+        return $row !== null;
     }
 
     /**

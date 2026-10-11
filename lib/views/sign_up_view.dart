@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
@@ -24,7 +25,7 @@ class SignUpView extends StatefulWidget {
   State<SignUpView> createState() => _SignUpViewState();
 }
 
-class _SignUpViewState extends State<SignUpView> {
+class _SignUpViewState extends State<SignUpView> with SingleTickerProviderStateMixin {
   static const _brand = Color(0xFF1E4B8C);
   static const _ink = Color(0xFF16233A);
   static const _border = Color(0xFFD5DBE5);
@@ -51,6 +52,10 @@ class _SignUpViewState extends State<SignUpView> {
   bool _obscure = true;
   bool _obscureConfirm = true;
   bool _busy = false;
+  double _progress = 0;
+  DateTime? _progressStarted;
+  Timer? _progressTimer;
+  late final AnimationController _spin;
   String? _error;
   String? _codeHint;
   bool _codeOk = false;
@@ -60,6 +65,7 @@ class _SignUpViewState extends State<SignUpView> {
   @override
   void initState() {
     super.initState();
+    _spin = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
     _companyCtrl.addListener(_suggestCode);
     _codeCtrl.addListener(_onCodeChanged);
     _loadCaptcha();
@@ -67,6 +73,8 @@ class _SignUpViewState extends State<SignUpView> {
 
   @override
   void dispose() {
+    _progressTimer?.cancel();
+    _spin.dispose();
     _codeDebounce?.cancel();
     _companyCtrl.removeListener(_suggestCode);
     _codeCtrl.removeListener(_onCodeChanged);
@@ -159,7 +167,12 @@ class _SignUpViewState extends State<SignUpView> {
       return;
     }
 
-    setState(() => _busy = true);
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      _busy = true;
+      _progress = 0;
+    });
+    _startProgress();
     try {
       final result = await _service.submit(
         name: _nameCtrl.text,
@@ -175,14 +188,77 @@ class _SignUpViewState extends State<SignUpView> {
         captchaAnswer: _captchaCtrl.text,
       );
       if (!mounted) return;
+      await _completeProgress();
+      if (!mounted) return;
       setState(() => _done = result);
     } on SignupException catch (e) {
+      _stopProgress();
       if (!mounted) return;
-      setState(() => _error = e.message);
+      setState(() {
+        _busy = false;
+        _error = e.message;
+      });
       await _loadCaptcha();
     } finally {
+      _stopProgress();
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Creeps toward 94% while the server builds the company database.
+  void _startProgress() {
+    _progressStarted = DateTime.now();
+    _spin.repeat();
+    _progressTimer?.cancel();
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+      final started = _progressStarted;
+      if (!mounted || started == null) return;
+      final seconds = DateTime.now().difference(started).inMilliseconds / 1000;
+      final next = 94 * (1 - math.exp(-seconds / 36));
+      setState(() => _progress = next);
+    });
+  }
+
+  void _stopProgress() {
+    _progressTimer?.cancel();
+    _progressTimer = null;
+    _progressStarted = null;
+    if (!mounted) return;
+    if (_spin.isAnimating) _spin.stop();
+  }
+
+  Future<void> _completeProgress() async {
+    _progressTimer?.cancel();
+    _progressTimer = null;
+    final start = _progress;
+    final began = DateTime.now();
+    final done = Completer<void>();
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      final t = (DateTime.now().difference(began).inMilliseconds / 420).clamp(0.0, 1.0);
+      final eased = 1 - math.pow(1 - t, 3).toDouble();
+      if (!mounted) {
+        timer.cancel();
+        if (!done.isCompleted) done.complete();
+        return;
+      }
+      setState(() => _progress = start + (100 - start) * eased);
+      if (t >= 1) {
+        timer.cancel();
+        _progressTimer = null;
+        if (!done.isCompleted) done.complete();
+      }
+    });
+    await done.future;
+    await Future<void>.delayed(const Duration(milliseconds: 280));
+  }
+
+  String get _progressLabel {
+    if (_progress >= 100) return 'Your organization is ready';
+    if (_progress < 12) return 'Checking your organization';
+    if (_progress < 38) return 'Creating the company database';
+    if (_progress < 70) return 'Installing HR records';
+    if (_progress < 90) return 'Creating your admin account';
+    return 'Finishing the setup';
   }
 
   @override
@@ -284,6 +360,14 @@ class _SignUpViewState extends State<SignUpView> {
               ],
             ),
           ),
+          if (_busy)
+            Positioned.fill(
+              child: _OrgProgressOverlay(
+                progress: _progress,
+                label: _progressLabel,
+                spin: _spin,
+              ),
+            ),
         ],
       ),
     );
@@ -522,18 +606,9 @@ class _SignUpViewState extends State<SignUpView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: _busy
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Sign Up',
-                      style: TextStyle(
+              child: Text(
+                      _busy ? 'Please wait…' : 'Sign Up',
+                      style: const TextStyle(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -771,6 +846,150 @@ class _SignUpBackdrop extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _OrgProgressOverlay extends StatelessWidget {
+  const _OrgProgressOverlay({
+    required this.progress,
+    required this.label,
+    required this.spin,
+  });
+
+  final double progress;
+  final String label;
+  final Animation<double> spin;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = progress.clamp(0, 100).round();
+    return ColoredBox(
+      color: const Color(0xE616233A),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 168,
+                  height: 168,
+                  child: AnimatedBuilder(
+                    animation: spin,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        painter: _PercentRingPainter(
+                          progress: progress / 100,
+                          spin: spin.value,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$shown%',
+                            style: const TextStyle(
+                              fontSize: 36,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: -0.8,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Creating your organization. Please keep this page open.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.4,
+                    color: Color(0xFFD5DEEA),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: (progress / 100).clamp(0, 1),
+                    minHeight: 8,
+                    backgroundColor: const Color(0x33FFFFFF),
+                    color: const Color(0xFF7EB6F6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PercentRingPainter extends CustomPainter {
+  const _PercentRingPainter({required this.progress, required this.spin});
+
+  final double progress;
+  final double spin;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.width / 2 - 10;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final track = Paint()
+      ..color = const Color(0x33FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12;
+    canvas.drawCircle(center, radius, track);
+
+    final sweep = 2 * math.pi * progress.clamp(0, 1);
+    if (sweep > 0) {
+      final arc = Paint()
+        ..shader = const SweepGradient(
+          startAngle: -math.pi / 2,
+          endAngle: 3 * math.pi / 2,
+          colors: [Color(0xFF7EB6F6), Color(0xFF1E4B8C), Color(0xFF06B6D4)],
+        ).createShader(rect)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 12
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(rect, -math.pi / 2, sweep, false, arc);
+    }
+
+    final headAngle = -math.pi / 2 + (spin * 2 * math.pi);
+    final head = Offset(
+      center.dx + radius * math.cos(headAngle),
+      center.dy + radius * math.sin(headAngle),
+    );
+    canvas.drawCircle(
+      head,
+      7,
+      Paint()..color = const Color(0xFF7EB6F6),
+    );
+    canvas.drawCircle(
+      head,
+      3.5,
+      Paint()..color = Colors.white,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _PercentRingPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.spin != spin;
   }
 }
 
