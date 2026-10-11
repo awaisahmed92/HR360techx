@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/auth/auth_state.dart';
-import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/person_photo.dart';
 
 /// Full-width org chart. Cards scroll sideways; filters narrow the tree.
 class OrgChartView extends StatefulWidget {
@@ -294,7 +294,6 @@ class _OrgChartViewState extends State<OrgChartView> {
   }
 
   Widget _card(_Person person, int reports) {
-    final photo = AppConfig.resolveMediaUrl(person.raw['profile_picture']?.toString());
     return Container(
       width: 188,
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -306,11 +305,10 @@ class _OrgChartViewState extends State<OrgChartView> {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: const Color(0xFFDBEAFE),
-            backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-            child: photo.isEmpty ? const Icon(Icons.person, color: Color(0xFF2563EB)) : null,
+          PersonPhoto(
+            path: person.raw['profile_picture']?.toString(),
+            employeeId: person.id,
+            size: 44,
           ),
           const SizedBox(height: 8),
           Text(person.name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis,
