@@ -322,129 +322,252 @@ class _ProfileViewState extends State<ProfileView> {
     final tenure = _tenure(joined);
     return LayoutBuilder(
       builder: (context, c) {
-        final wide = c.maxWidth > 900;
-        final cards = [
+        final wide = c.maxWidth > 860;
+        final summary = [
           _mini(
             child: Column(
               children: [
                 CircleAvatar(
                   radius: 36,
+                  backgroundColor: const Color(0xFFE8F0FE),
                   backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                  child: photo.isEmpty ? const Icon(Icons.person, size: 36) : null,
+                  child: photo.isEmpty
+                      ? Text(_initials(name), style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8)))
+                      : null,
                 ),
                 const SizedBox(height: 8),
-                Text(name.isEmpty ? 'My Info' : name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
-                if (title.isNotEmpty)
+                Text(name.isEmpty ? 'My Info' : name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                if (title.isNotEmpty) ...[
+                  const SizedBox(height: 6),
                   Container(
-                    margin: const EdgeInsets.only(top: 6),
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    color: const Color(0xFF8D6E63),
-                    child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                    decoration: BoxDecoration(color: const Color(0xFF8D6E63), borderRadius: BorderRadius.circular(20)),
+                    child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
                   ),
+                ],
                 TextButton.icon(
                   onPressed: () => context.read<AppState>().openScreen(moduleId: 'dashboard', subId: 'org_chart'),
                   icon: const Icon(Icons.account_tree_outlined, size: 16),
-                  label: const Text('Org Chart'),
+                  label: const Text('Open org chart'),
                 ),
               ],
             ),
           ),
           _mini(
-            title: 'My Manager And Supervisor',
+            title: 'Reports to',
+            trailing: managers.isEmpty ? null : '${managers.length}',
             child: managers.isEmpty
-                ? _emptyHint('No manager is assigned.')
+                ? _emptyHint('No manager is assigned. You sit at the top of this company.')
                 : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (var i = 0; i < managers.length; i++)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Text(
-                            '${i == managers.length - 1 ? 'Reports to' : 'Then'} ${managers[i]['name']} · ${managers[i]['designation_name'] ?? ''}',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
+                      for (var i = 0; i < managers.length; i++) ...[
+                        if (i > 0)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 4),
+                            child: Icon(Icons.arrow_downward, size: 14, color: Color(0xFF94A3B8)),
                           ),
-                        ),
+                        _personTile(managers[i], role: i == managers.length - 1 ? 'Your manager' : 'Their manager'),
+                      ],
                     ],
                   ),
           ),
           _mini(
-            title: 'My Team',
-            child: team.isEmpty
-                ? _emptyHint('Nobody reports directly to you yet.')
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final person in team.take(8))
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Text('${person['name']} · ${person['designation_name'] ?? ''}',
-                              style: const TextStyle(fontWeight: FontWeight.w600)),
-                        ),
-                      if (team.length > 8) Text('+ ${team.length - 8} more'),
-                    ],
-                  ),
-          ),
-          _mini(
-            title: 'My Facts',
+            title: 'My facts',
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('My journey with the organization spans'),
-                const SizedBox(height: 6),
-                Text(tenure.isEmpty ? 'Join date is not set' : tenure, style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 10),
-                const Text('The day I came onboard'),
-                Text(joined.isEmpty ? '—' : joined, style: const TextStyle(fontWeight: FontWeight.w800)),
+                _fact('With the company', tenure.isEmpty ? 'Join date is not set' : tenure, Icons.timelapse),
+                const SizedBox(height: 8),
+                _fact('Joined', joined.isEmpty ? '—' : joined, Icons.event_available_outlined),
+                const SizedBox(height: 8),
+                _fact('Direct reports', '${team.length}', Icons.groups_outlined),
               ],
             ),
           ),
         ];
-        if (!wide) return Column(children: [for (final card in cards) Padding(padding: const EdgeInsets.only(bottom: 10), child: card)]);
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [for (final card in cards) Expanded(child: Padding(padding: const EdgeInsets.only(right: 10), child: card))],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!wide)
+              Column(children: [for (final card in summary) Padding(padding: const EdgeInsets.only(bottom: 10), child: card)])
+            else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [for (final card in summary) Expanded(child: Padding(padding: const EdgeInsets.only(right: 10), child: card))],
+              ),
+            const SizedBox(height: 12),
+            _teamBoard(team),
+          ],
         );
       },
     );
   }
 
+  Widget _teamBoard(List<Map<String, dynamic>> team) {
+    return _sectionCard(
+      context,
+      title: 'My Team',
+      icon: Icons.groups_outlined,
+      trailing: team.isEmpty ? null : '${team.length} direct',
+      child: team.isEmpty
+          ? _emptyHint('Nobody reports directly to you yet.')
+          : LayoutBuilder(
+              builder: (context, c) {
+                final cols = c.maxWidth >= 980 ? 3 : c.maxWidth >= 640 ? 2 : 1;
+                const gap = 10.0;
+                final width = (c.maxWidth - gap * (cols - 1)) / cols;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: [
+                    for (final person in team) SizedBox(width: width, child: _personTile(person)),
+                  ],
+                );
+              },
+            ),
+    );
+  }
+
   Widget _chainCard(BuildContext context) {
     final reports = ((_chain['reports'] as List?) ?? []).map(asStringKeyedMap).toList();
+    final nested = reports.fold<int>(0, (sum, node) => sum + _treeCount(node));
     return _sectionCard(
       context,
       title: 'Reporting Chain',
       icon: Icons.account_tree_outlined,
+      trailing: reports.isEmpty ? null : '$nested people',
       child: reports.isEmpty
           ? _emptyHint('No one reports to you. Your manager chain is in the card above.')
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Everyone in your tree, including people who report to your team.'),
-                const SizedBox(height: 8),
-                for (final node in reports) _reportNode(node, 0),
+                Text(
+                  'Each block is someone who reports to you. People listed inside that block report to them.',
+                  style: TextStyle(color: HrUi.muted(context), fontSize: 12.5),
+                ),
+                const SizedBox(height: 12),
+                for (final node in reports) _chainGroup(node, 0),
               ],
             ),
     );
   }
 
-  Widget _reportNode(Map<String, dynamic> node, int depth) {
+  int _treeCount(Map<String, dynamic> node) {
     final kids = ((node['children'] as List?) ?? []).map(asStringKeyedMap).toList();
-    return Padding(
-      padding: EdgeInsets.only(left: depth * 16.0, bottom: 6),
+    return 1 + kids.fold<int>(0, (sum, kid) => sum + _treeCount(kid));
+  }
+
+  Widget _chainGroup(Map<String, dynamic> node, int depth) {
+    final kids = ((node['children'] as List?) ?? []).map(asStringKeyedMap).toList();
+    return Container(
+      margin: EdgeInsets.only(left: depth * 18.0, bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: depth == 0 ? Colors.white : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${node['name']} · ${node['designation_name'] ?? ''} · ${node['station_name'] ?? ''}',
-            style: const TextStyle(fontWeight: FontWeight.w700),
+          _personTile(
+            node,
+            role: kids.isEmpty ? 'No one reports to them' : '${kids.length} report${kids.length == 1 ? '' : 's'} to them',
           ),
-          for (final kid in kids) _reportNode(kid, depth + 1),
+          if (kids.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            for (final kid in kids)
+              ((kid['children'] as List?) ?? []).isEmpty
+                  ? Padding(padding: const EdgeInsets.only(bottom: 6, left: 18), child: _personTile(kid))
+                  : _chainGroup(kid, depth + 1),
+          ],
         ],
       ),
     );
   }
 
-  Widget _mini({String? title, required Widget child}) {
+  Widget _personTile(Map<String, dynamic> person, {String? role}) {
+    final name = '${person['name'] ?? ''}'.trim();
+    final job = '${person['designation_name'] ?? ''}'.trim();
+    final office = '${person['station_name'] ?? ''}'.trim();
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 16,
+          backgroundColor: const Color(0xFFE8F0FE),
+          child: Text(_initials(name), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8))),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name.isEmpty ? 'Employee' : name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Text(
+                [if (job.isNotEmpty) job, if (role != null && role.isNotEmpty) role].join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
+        ),
+        if (office.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Flexible(
+            flex: 0,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 140),
+              child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
+              child: Text(
+                office,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+              ),
+            ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _fact(String label, String value, IconData icon) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: const Color(0xFF8D6E63)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.characters.take(1).toString().toUpperCase();
+    return '${parts.first.characters.first}${parts.last.characters.first}'.toUpperCase();
+  }
+
+  Widget _mini({String? title, String? trailing, required Widget child}) {
     return Container(
       width: double.infinity,
       constraints: const BoxConstraints(minHeight: 180),
@@ -459,7 +582,13 @@ class _ProfileViewState extends State<ProfileView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (title != null) ...[
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+            Row(
+              children: [
+                Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w800))),
+                if (trailing != null)
+                  Text(trailing, style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF8D6E63))),
+              ],
+            ),
             const SizedBox(height: 10),
           ],
           child,
@@ -473,6 +602,7 @@ class _ProfileViewState extends State<ProfileView> {
     required String title,
     required IconData icon,
     required Widget child,
+    String? trailing,
   }) {
     return Container(
       width: double.infinity,
@@ -489,14 +619,25 @@ class _ProfileViewState extends State<ProfileView> {
             children: [
               Icon(icon, size: 18, color: HrTheme.brand(context)),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: HrUi.label(context),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: HrUi.label(context),
+                  ),
                 ),
               ),
+              if (trailing != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3E8E4),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(trailing, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF8D6E63))),
+                ),
             ],
           ),
           const SizedBox(height: 14),

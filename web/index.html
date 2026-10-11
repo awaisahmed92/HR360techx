@@ -213,28 +213,26 @@
     })();
   </script>
 
-  <script src="flutter.js" defer></script>
   <script>
+    {{flutter_js}}
+    {{flutter_build_config}}
+
     function removeBootLogin() {
       var el = document.getElementById('boot-login');
       if (el) el.remove();
     }
 
-    window.addEventListener('load', function () {
-      if (typeof _flutter === 'undefined') return;
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: { serviceWorkerVersion: null },
-        onEntrypointLoaded: function (engineInitializer) {
-          engineInitializer.initializeEngine().then(function (appRunner) {
-            return appRunner.runApp();
-          }).then(function () {
-            // Drop the HTML shell as soon as Flutter has started.
-            setTimeout(removeBootLogin, 50);
-          }).catch(function () {
-            removeBootLogin();
-          });
-        }
-      });
+    _flutter.loader.load({
+      onEntrypointLoaded: function (engineInitializer) {
+        engineInitializer.initializeEngine().then(function (appRunner) {
+          return appRunner.runApp();
+        }).then(function () {
+          // Drop the HTML shell as soon as Flutter has started.
+          setTimeout(removeBootLogin, 50);
+        }).catch(function () {
+          removeBootLogin();
+        });
+      }
     });
 
     // Fallback: if Flutter paints a view, remove the shell.

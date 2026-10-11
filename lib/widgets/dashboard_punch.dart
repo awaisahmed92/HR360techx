@@ -12,6 +12,8 @@ class DashboardPunchButton extends StatefulWidget {
 }
 
 class _DashboardPunchButtonState extends State<DashboardPunchButton> {
+  bool _busy = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,11 +44,14 @@ class _DashboardPunchButtonState extends State<DashboardPunchButton> {
 
     return IconButton(
       tooltip: tip,
-      onPressed: ss.busy || (!canIn && !canOut)
+      onPressed: _busy || ss.loading || (!canIn && !canOut)
           ? null
           : () async {
+              setState(() => _busy = true);
               final err = await ss.punch(canOut ? 'out' : 'in');
-              if (!context.mounted || err == null) return;
+              if (!mounted) return;
+              setState(() => _busy = false);
+              if (err == null) return;
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
             },
       icon: Icon(icon, color: color, size: 22),

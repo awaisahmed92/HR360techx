@@ -251,7 +251,7 @@ class _AttendanceFormViewState extends State<AttendanceFormView> {
             alignment: Alignment.centerLeft,
             child: FilledButton(
               onPressed: _busy ? null : _save,
-              style: FilledButton.styleFrom(backgroundColor: HrUi.brand),
+              style: FilledButton.styleFrom(backgroundColor: HrTheme.brand(context)),
               child: Text(_busy ? 'Saving…' : 'Save Attendance'),
             ),
           ),
