@@ -160,24 +160,17 @@ class _LoginViewState extends State<LoginView> {
     }
   }
 
-  InputDecoration _fieldDecoration(String hint, {Widget? suffix}) {
+  InputDecoration _fieldDecoration(String hint, {Widget? suffix, IconData? icon}) {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: const Color(0xFFF9FAFB),
+      fillColor: Colors.white,
+      prefixIcon: icon == null ? null : Icon(icon, size: 18, color: const Color(0xFF64748B)),
       suffixIcon: suffix,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: _blue, width: 1.4),
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFD5DEE8))),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFD5DEE8))),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _blue, width: 1.6)),
     );
   }
 
@@ -186,25 +179,20 @@ class _LoginViewState extends State<LoginView> {
     final auth = context.watch<AuthState>();
     final wide = MediaQuery.sizeOf(context).width >= 980;
     final form = _formCard(auth);
-
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFF4F7FB), Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      backgroundColor: const Color(0xFFE7EDF3),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(wide ? 18 : 0),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(wide ? 28 : 0),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(color: Colors.white),
+              child: wide
+                  ? Row(children: [Expanded(flex: 5, child: form), const Expanded(flex: 6, child: _HrStory())])
+                  : form,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: wide
-              ? Row(
-                  children: [
-                    Expanded(flex: 38, child: form),
-                    const Expanded(flex: 62, child: _HrHero()),
-                  ],
-                )
-              : form,
         ),
       ),
     );
@@ -218,13 +206,19 @@ class _LoginViewState extends State<LoginView> {
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Card(
-          margin: const EdgeInsets.all(24),
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(28, 28, 28, 20),
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(36, 36, 36, 24),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) => Opacity(
+              opacity: value,
+              child: Transform.translate(offset: Offset(0, 16 * (1 - value)), child: child),
+            ),
+            child: Padding(
+            padding: EdgeInsets.zero,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -240,9 +234,9 @@ class _LoginViewState extends State<LoginView> {
                   ],
                 ),
                 const SizedBox(height: 26),
-                const Text('Welcome Back', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                const Text('Sign in to continue', style: TextStyle(color: Color(0xFF6B7280), fontSize: 15)),
+                const Text('Welcome Back', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.4)),
+                const SizedBox(height: 6),
+                const Text('Sign in to the people, payroll, and attendance desk.', style: TextStyle(color: Color(0xFF64748B), fontSize: 15, height: 1.4)),
                 const SizedBox(height: 24),
                 Form(
                   key: _formKey,
@@ -257,7 +251,7 @@ class _LoginViewState extends State<LoginView> {
                         enableInteractiveSelection: _lockedCode == null,
                         textInputAction: TextInputAction.next,
                         validator: (v) => (v == null || v.trim().isEmpty) ? 'Company name is required' : null,
-                        decoration: _fieldDecoration(_lockedCode ?? 'demo'),
+                        decoration: _fieldDecoration(_lockedCode ?? 'demo', icon: Icons.apartment_outlined),
                       ),
                       const SizedBox(height: 14),
                       const Text('UserName'),
@@ -266,7 +260,7 @@ class _LoginViewState extends State<LoginView> {
                         controller: _userCtrl,
                         textInputAction: TextInputAction.next,
                         validator: (v) => (v == null || v.trim().isEmpty) ? 'UserName is required' : null,
-                        decoration: _fieldDecoration('UserName'),
+                        decoration: _fieldDecoration('UserName', icon: Icons.person_outline),
                       ),
                       const SizedBox(height: 14),
                       const Text('Password'),
@@ -278,6 +272,7 @@ class _LoginViewState extends State<LoginView> {
                         validator: (v) => (v == null || v.isEmpty) ? 'Password is required' : null,
                         decoration: _fieldDecoration(
                           'Enter your password',
+                          icon: Icons.lock_outline,
                           suffix: IconButton(
                             onPressed: () => setState(() => _obscure = !_obscure),
                             icon: Icon(_obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined),
@@ -339,66 +334,147 @@ class _LoginViewState extends State<LoginView> {
       ),
             ),
           ),
+            ),
         );
       },
     );
   }
 }
 
-class _HrHero extends StatelessWidget {
-  const _HrHero();
+class _HrStory extends StatefulWidget {
+  const _HrStory();
+
+  @override
+  State<_HrStory> createState() => _HrStoryState();
+}
+
+class _HrStoryState extends State<_HrStory> with SingleTickerProviderStateMixin {
+  late final AnimationController _float = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _float.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: Colors.white,
-      child: Center(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: SizedBox(
-            width: 620,
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 36, vertical: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'People, payroll,\nand attendance\nmade simple',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 44,
-                      height: 1.12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1F2937),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0E3A4A), Color(0xFF14687A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: AnimatedBuilder(
+        animation: _float,
+        builder: (context, _) {
+          final dy = (_float.value - 0.5) * 16;
+          return Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(48, 56, 48, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('HR360', style: TextStyle(color: Color(0xFFB7E0EA), fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Run people operations\nwith a calmer desk',
+                      style: TextStyle(color: Colors.white, fontSize: 40, height: 1.12, fontWeight: FontWeight.w700),
                     ),
-                  ),
-                  SizedBox(height: 14),
-                  Text(
-                    'HR360 helps companies manage employees, leave, payroll, and approvals in one place.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF6B7280), fontSize: 18, height: 1.35),
-                  ),
-                  SizedBox(height: 22),
-                  SizedBox(
-                    width: 460,
-                    height: 200,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFF4F7FB), Color(0xFFE7EEF6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.all(Radius.circular(24)),
-                      ),
-                      child: Icon(Icons.groups_outlined, size: 112, color: Color(0xFF1E4B8C)),
+                    const SizedBox(height: 22),
+                    const Text('“', style: TextStyle(color: Colors.white, fontSize: 42, height: 1)),
+                    const Text(
+                      'Payroll, attendance, and approvals finally sit in one place. The team stopped chasing spreadsheets.',
+                      style: TextStyle(color: Color(0xFFE6F4F7), fontSize: 18, height: 1.45),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    const Text('Amina Rahman', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    const Text('People lead, multi-country team', style: TextStyle(color: Color(0xFFB7E0EA))),
+                    const Spacer(),
+                    const Text('BUILT FOR GLOBAL TEAMS', style: TextStyle(color: Color(0xFFB7E0EA), fontSize: 12, letterSpacing: 1.4)),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: const [
+                        _Chip('Payroll'),
+                        _Chip('Attendance'),
+                        _Chip('Leave'),
+                        _Chip('Org chart'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              Positioned(
+                top: 36 + dy,
+                right: 28,
+                child: const _GlassCard(icon: Icons.groups_outlined, title: 'Team check-in', subtitle: '18 present · 2 late'),
+              ),
+              Positioned(
+                bottom: 36 - dy,
+                right: 48,
+                child: const _GlassCard(icon: Icons.payments_outlined, title: 'Pay run', subtitle: 'October ready'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  const _GlassCard({required this.icon, required this.title, required this.subtitle});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 210,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 8))],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF0E3A4A)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+              ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
