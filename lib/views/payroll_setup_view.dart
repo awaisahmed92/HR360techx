@@ -7,6 +7,7 @@ import '../core/network/api_client.dart';
 import '../core/payroll/payroll_state.dart';
 import '../core/uploads/upload_service.dart';
 import '../core/util/json_maps.dart';
+import '../core/util/money.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
@@ -284,15 +285,13 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
           setState(() => _setup['hourly_decimal_places'] = int.tryParse(v) ?? 5);
         }),
         const SizedBox(height: 8),
-        _h('Payroll Currencies'),
-        _dd('Payroll Currencies', '${_setup['payroll_currencies'] ?? 'USD'}', const [
-          'USD',
-          'AED',
-          'EUR',
-          'GBP',
-          'CAD',
-          'CHF',
-        ], (v) => setState(() => _setup['payroll_currencies'] = v)),
+        _h('Salary currency'),
+        const Text(
+          'Open Payroll, then Payroll Options. This is where salary currency is set. Save US Dollar and payslips, certificates, and salary screens show \$.',
+          style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
+        ),
+        const SizedBox(height: 8),
+        _currencyField(),
         const Divider(height: 28),
         _h('Statutory'),
         _switch('Enable SESSI', _setup['enable_sessi'] == true, (v) {
@@ -320,7 +319,10 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
             style: FilledButton.styleFrom(backgroundColor: _accent),
             onPressed: () async {
               final err = await _state.saveSetup(_setup);
-              _toast(err ?? 'Payroll options saved.');
+              if (err == null && mounted) {
+                await context.read<AuthState>().refreshCompany();
+              }
+              _toast(err ?? 'Payroll options saved. Amounts now use ${moneyLabel('${_setup['payroll_currencies']}')}.');
             },
             child: const Text('Save Payroll Options'),
           ),
@@ -522,6 +524,9 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
             style: FilledButton.styleFrom(backgroundColor: _accent),
             onPressed: () async {
               final err = await _state.saveSetup(_setup);
+              if (err == null && mounted) {
+                await context.read<AuthState>().refreshCompany();
+              }
               _toast(err ?? 'Overtime / late options saved.');
             },
             child: const Text('Save Auto Overtime'),
@@ -685,6 +690,41 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
         padding: const EdgeInsets.only(bottom: 14),
         child: Text(t, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: HrUi.label(context))),
       );
+
+  Widget _currencyField() {
+    const codes = ['USD', 'EUR', 'GBP', 'AED', 'CAD', 'CHF', 'SAR', 'PKR'];
+    final current = '${_setup['payroll_currencies'] ?? 'USD'}'.toUpperCase();
+    final items = [
+      if (!codes.contains(current)) current,
+      ...codes,
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Salary currency', style: TextStyle(fontSize: 12, color: HrUi.muted(context), fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          HrDropdown<String>(
+            value: items.contains(current) ? current : items.first,
+            items: [
+              for (final code in items)
+                DropdownMenuItem(value: code, child: Text(moneyLabel(code), overflow: TextOverflow.ellipsis)),
+            ],
+            onChanged: (v) {
+              if (v != null) setState(() => _setup['payroll_currencies'] = v);
+            },
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: const Color(0xFFF3F3F3),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _dd(String label, String value, List<String> items, ValueChanged<String> onChanged) {
     final safe = items.contains(value) ? value : items.first;

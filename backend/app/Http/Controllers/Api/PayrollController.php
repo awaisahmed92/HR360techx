@@ -590,10 +590,12 @@ class PayrollController extends Controller
         if ($employeeId < 1) {
             return response()->json(['success' => false, 'message' => 'employee_id required'], 422);
         }
+        $base = rtrim($request->getSchemeAndHttpHost().$request->getBasePath(), '/');
         $html = $this->payroll->salaryStatementHtml(
             $employeeId,
             $request->query('from'),
-            $request->query('to')
+            $request->query('to'),
+            preg_replace('#/api$#', '', $base)
         );
         if ($html === null) {
             return response('Employee not found', 404);

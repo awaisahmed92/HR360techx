@@ -97,8 +97,8 @@ class OrganizationSettingsController extends Controller
             'calendar_start_day' => 'Monday',
             'default_theme' => '',
             'employee_name_display' => '{Last Name}, {Preferred Name}',
-            'base_currency' => 'PKR',
-            'currency_sign' => 'Rs',
+            'base_currency' => 'USD',
+            'currency_sign' => '$',
             'decimal_places' => '2',
             'temperature_format' => 'Celsius (C)',
             'no_birthday_notifications' => false,
@@ -120,7 +120,7 @@ class OrganizationSettingsController extends Controller
 
         $defaults['org_name'] = (string) ($company->hr_company_name ?? $company->name ?? $defaults['org_name']);
         $defaults['contact_email'] = (string) ($company->email ?? '');
-        $defaults['base_currency'] = (string) ($company->currency ?? 'PKR');
+        $defaults['base_currency'] = (string) ($company->currency ?? 'USD');
         $defaults['logo_url'] = $company->hr_logo ?? $company->logo ?? null;
         if (Schema::hasColumn('company', 'code') && !empty($company->code)) {
             $defaults['org_code'] = (string) $company->code;

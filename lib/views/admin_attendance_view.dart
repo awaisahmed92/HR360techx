@@ -5,6 +5,7 @@ import '../core/attendance/attendance_admin_state.dart';
 import '../core/auth/auth_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
 import 'attendance_form_view.dart';
 
 /// Admin day grid — mark Present / Absent (PHP Admin Attendance parity).
@@ -126,7 +127,7 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
                       DataColumn(label: Text('Status')),
                       DataColumn(label: Text('Actions')),
                     ],
-                    rows: [
+                    rows: hrQueryRows([
                       for (final r in _state.rows)
                         DataRow(cells: [
                           DataCell(Text('${r['name']}', overflow: TextOverflow.ellipsis)),
@@ -159,7 +160,7 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
                             ],
                           )),
                         ]),
-                    ],
+                    ], hrSearchQuery(context)),
                   ),
                 ),
             ],

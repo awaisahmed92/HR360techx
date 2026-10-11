@@ -45,7 +45,7 @@ class MasterRegistry
                     ['key' => 'address', 'label' => 'Address', 'type' => 'text'],
                     ['key' => 'province', 'label' => 'Province', 'type' => 'text'],
                     ['key' => 'website', 'label' => 'Website', 'type' => 'text'],
-                    ['key' => 'currency', 'label' => 'Currency', 'type' => 'text', 'default' => 'PKR'],
+                    ['key' => 'currency', 'label' => 'Currency', 'type' => 'text', 'default' => 'USD'],
                 ],
             ],
             'divisions' => [

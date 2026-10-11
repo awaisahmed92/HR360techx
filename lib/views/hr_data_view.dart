@@ -8,6 +8,7 @@ import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
 import '../widgets/analytics_charts.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
 
 /// HR Data — job title, department, and office charts plus the user list.
 class HrDataView extends StatefulWidget {
@@ -55,13 +56,7 @@ class _HrDataViewState extends State<HrDataView> {
 
   @override
   Widget build(BuildContext context) {
-    final query = _q.trim().toLowerCase();
-    final rows = query.isEmpty
-        ? _rows
-        : _rows.where((r) {
-            final blob = '${r['name']} ${r['employee_code']} ${r['designation_name']} ${r['department_name']} ${r['station_name']}'.toLowerCase();
-            return blob.contains(query);
-          }).toList();
+    final query = hrSearchQuery(context, _q);
 
     return AnimatedBuilder(
       animation: _charts,
@@ -119,6 +114,10 @@ class _HrDataViewState extends State<HrDataView> {
                 ],
               ),
               const SizedBox(height: 8),
+              hrQueryBanner(query, _rows.where((r) {
+                final blob = '${r['name']} ${r['employee_code']} ${r['designation_name']} ${r['department_name']} ${r['station_name']}';
+                return hrMatchesQuery(blob, query);
+              }).length),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
@@ -132,17 +131,17 @@ class _HrDataViewState extends State<HrDataView> {
                     DataColumn(label: Text('Department')),
                     DataColumn(label: Text('Office')),
                   ],
-                  rows: [
-                    for (var i = 0; i < rows.length; i++)
+                  rows: hrQueryRows([
+                    for (var i = 0; i < _rows.length; i++)
                       DataRow(cells: [
                         DataCell(Text('${i + 1}')),
-                        DataCell(Text('${rows[i]['name'] ?? ''}')),
-                        DataCell(Text('${rows[i]['employee_code'] ?? rows[i]['user_name'] ?? ''}')),
-                        DataCell(Text('${rows[i]['designation_name'] ?? ''}')),
-                        DataCell(Text('${rows[i]['department_name'] ?? ''}')),
-                        DataCell(Text('${rows[i]['station_name'] ?? ''}')),
+                        DataCell(Text('${_rows[i]['name'] ?? ''}')),
+                        DataCell(Text('${_rows[i]['employee_code'] ?? _rows[i]['user_name'] ?? ''}')),
+                        DataCell(Text('${_rows[i]['designation_name'] ?? ''}')),
+                        DataCell(Text('${_rows[i]['department_name'] ?? ''}')),
+                        DataCell(Text('${_rows[i]['station_name'] ?? ''}')),
                       ]),
-                  ],
+                  ], query),
                 ),
               ),
             ],

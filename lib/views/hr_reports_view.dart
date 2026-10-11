@@ -5,6 +5,7 @@ import '../core/auth/auth_state.dart';
 import '../core/reports/hr_reports_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
 
 /// Non-payroll HR reports hub (leave, workforce, attendance).
 class HrReportsView extends StatefulWidget {
@@ -309,17 +310,20 @@ class _HrReportsViewState extends State<HrReportsView> {
           columns: columns
               .map((c) => DataColumn(label: Text(c.$1, overflow: TextOverflow.ellipsis)))
               .toList(),
-          rows: _state.rows.map((r) {
-            return DataRow(
-              cells: columns
-                  .map((c) => DataCell(Text(
-                        '${r[c.$2] ?? ''}',
-                        style: const TextStyle(fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      )))
-                  .toList(),
-            );
-          }).toList(),
+          rows: hrQueryRows(
+            _state.rows.map((r) {
+              return DataRow(
+                cells: columns
+                    .map((c) => DataCell(Text(
+                          '${r[c.$2] ?? ''}',
+                          style: const TextStyle(fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        )))
+                    .toList(),
+              );
+            }).toList(),
+            hrSearchQuery(context),
+          ),
         ),
       ),
     );

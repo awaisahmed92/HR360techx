@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
+import 'hr_grid_query.dart';
 
 /// ERP form + grid tokens — all accents come from [HrTheme] (app-wide).
 class HrUi {
@@ -668,6 +669,10 @@ class HrDataGridPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return HrGridQuery(
+      rows: rows,
+      onSearch: onSearch,
+      builder: (context, shown, query, setLocal) {
     final header = HrUi.header(context);
     final textPrimary = HrUi.label(context);
 
@@ -713,7 +718,7 @@ class HrDataGridPage extends StatelessWidget {
                 width: 220,
                 height: 38,
                 child: TextField(
-                  onChanged: onSearch,
+                  onChanged: setLocal,
                   style: TextStyle(color: textPrimary, fontSize: 13),
                   decoration: InputDecoration(
                     hintText: searchHint,
@@ -736,6 +741,7 @@ class HrDataGridPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
+          hrQueryBanner(query, shown.length),
           Container(
             decoration: BoxDecoration(
               color: HrUi.card(context),
@@ -771,7 +777,7 @@ class HrDataGridPage extends StatelessWidget {
                             label: Text(c, overflow: TextOverflow.ellipsis),
                           ))
                       .toList(),
-                  rows: rows.isEmpty
+                  rows: shown.isEmpty
                       ? [
                           DataRow(
                             cells: List.generate(
@@ -788,8 +794,11 @@ class HrDataGridPage extends StatelessWidget {
                           ),
                         ]
                       : [
-                          for (final r in rows)
+                          for (final r in shown)
                             DataRow(
+                              color: query.trim().isEmpty
+                                  ? null
+                                  : const WidgetStatePropertyAll(hrMatchRowColor),
                               cells: r.map((w) => DataCell(w)).toList(),
                             ),
                         ],
@@ -825,6 +834,8 @@ class HrDataGridPage extends StatelessWidget {
             ),
         ],
       ),
+    );
+      },
     );
   }
 }

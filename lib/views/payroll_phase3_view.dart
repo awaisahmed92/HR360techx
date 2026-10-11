@@ -6,12 +6,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/auth/auth_state.dart';
 import '../core/config/app_config.dart';
 import '../core/payroll/payroll_state.dart';
+import '../core/util/money.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
 String _money(String currency, num? value) {
-  final code = currency.trim().isEmpty ? 'USD' : currency.trim();
-  return NumberFormat.currency(symbol: '$code ', decimalDigits: 0).format(value ?? 0);
+  return NumberFormat.currency(symbol: moneySymbol(currency), decimalDigits: 2).format(value ?? 0);
 }
 
 /// Opens the generated payslip. Print shows the page (browser Print / Save PDF).

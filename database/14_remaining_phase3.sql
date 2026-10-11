@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `hr_employee_pay` (
   `employee_id` INT UNSIGNED NOT NULL,
   `payroll_setup` VARCHAR(80) DEFAULT 'General Payroll',
   `salary_type` VARCHAR(40) DEFAULT 'Salary',
-  `currency` VARCHAR(10) DEFAULT 'PKR',
+  `currency` VARCHAR(10) DEFAULT 'USD',
   `hours_per_week` DECIMAL(8,2) DEFAULT 0,
   `annual_salary` DECIMAL(12,2) DEFAULT 0,
   `gross_salary` DECIMAL(12,2) DEFAULT 0,

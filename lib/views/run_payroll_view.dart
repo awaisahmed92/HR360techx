@@ -7,6 +7,8 @@ import '../widgets/hr_form_kit.dart';
 import '../core/auth/auth_state.dart';
 import '../core/payroll/payroll_state.dart';
 import '../core/util/json_maps.dart';
+import '../core/util/money.dart';
+import '../widgets/hr_grid_query.dart';
 
 /// Run Payroll matches the process form, pay period, and payslip preview.
 /// Station, department, and designation filters are sent when salaries are generated.
@@ -77,7 +79,8 @@ class _RunPayrollViewState extends State<RunPayrollView> {
     return (_ps.stats['currency'] ?? 'USD').toString();
   }
 
-  String _money(num? value) => NumberFormat.decimalPattern().format(value ?? 0);
+  String _money(num? value) =>
+      NumberFormat.currency(symbol: moneySymbol(_currency), decimalDigits: 2).format(value ?? 0);
 
   List<Map<String, dynamic>> get _countries =>
       ((_ps.meta['countries'] as List?) ?? []).map(asStringKeyedMap).toList();
@@ -253,7 +256,12 @@ class _RunPayrollViewState extends State<RunPayrollView> {
   }
 
   Widget _workspace() {
-    final visible = _visible;
+    final query = hrSearchQuery(context);
+    final visible = _visible.where((row) {
+      final blob =
+          '${row['employee_name']} ${row['employee_code']} ${row['station_name']} ${row['department_name']} ${row['designation_name']}';
+      return hrMatchesQuery(blob, query);
+    }).toList();
     final total = visible.fold<num>(0, (sum, row) => sum + ((row['net'] as num?) ?? 0));
     return ListView(
       padding: const EdgeInsets.fromLTRB(28, 18, 28, 40),
@@ -334,6 +342,7 @@ class _RunPayrollViewState extends State<RunPayrollView> {
         ],
         if (_rows.isNotEmpty) ...[
           const SizedBox(height: 18),
+          hrQueryBanner(query, visible.length),
           _table(visible),
           const SizedBox(height: 8),
           Align(
@@ -638,7 +647,9 @@ class _RunPayrollViewState extends State<RunPayrollView> {
     final name = '${row['employee_name']}';
     final open = _openId == id;
     return Container(
-      color: index.isEven ? Colors.white : const Color(0xFFFAFAFA),
+      color: hrSearchQuery(context).isNotEmpty
+          ? hrMatchRowColor
+          : (index.isEven ? Colors.white : const Color(0xFFFAFAFA)),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
@@ -896,7 +907,7 @@ class _RunPayrollViewState extends State<RunPayrollView> {
               final monthly = (double.tryParse(amount.text) ?? 0) / 12;
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Monthly gross ${_money(monthly)} $_currency')),
+                SnackBar(content: Text('Monthly gross ${_money(monthly)}')),
               );
             },
             child: const Text('Calculate'),

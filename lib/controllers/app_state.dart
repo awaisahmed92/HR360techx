@@ -100,6 +100,15 @@ class AppState extends ChangeNotifier {
   HrSubNav get activeSub => ModuleCatalog.subById(activeModule, _subId);
   String get activeScreen => activeSub.screen;
 
+  /// Text typed in the top search box. Grids such as Attendance use it to filter and highlight.
+  String pageQuery = '';
+
+  void setPageQuery(String value) {
+    if (pageQuery == value) return;
+    pageQuery = value;
+    notifyListeners();
+  }
+
   void selectModule(String id) {
     if (_moduleId == id) return;
     _moduleId = id;

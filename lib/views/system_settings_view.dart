@@ -124,7 +124,7 @@ class _SystemSettingsViewState extends State<SystemSettingsView> {
     '{Last Name}, {First Name}',
   ];
 
-  static const _currencies = ['PKR', 'USD', 'EUR', 'GBP', 'AED', 'SAR', 'INR', 'CAD'];
+  static const _currencies = ['USD', 'EUR', 'GBP', 'AED', 'CAD', 'CHF', 'SAR'];
 
   static const _temperatureFormats = ['Celsius (C)', 'Fahrenheit (F)'];
 

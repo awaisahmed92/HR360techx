@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/auth/auth_state.dart';
-import '../core/config/app_config.dart';
 import '../core/employees/employee_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
+import '../widgets/person_photo.dart';
 
 /// Searchable employee directory cards (HR360tech-style).
 class EmployeeDirectoryView extends StatefulWidget {
@@ -40,12 +41,11 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
         if (_state.busy && _state.rows.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
+        final query = hrSearchQuery(context, _query);
         final filtered = _state.rows.where((r) {
-          if (_query.isEmpty) return true;
-          final q = _query.toLowerCase();
-          return '${r['name']}|${r['job_title']}|${r['department_name']}|${r['email']}|${r['user_name']}'
-              .toLowerCase()
-              .contains(q);
+          final blob =
+              '${r['name']} ${r['job_title']} ${r['department_name']} ${r['email']} ${r['user_name']} ${r['employee_code']} ${r['station_name']}';
+          return hrMatchesQuery(blob, query);
         }).toList();
 
         return ColoredBox(
@@ -93,6 +93,7 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
                 ],
               ),
               const SizedBox(height: 8),
+              hrQueryBanner(query, filtered.length),
               Text(
                 '${filtered.length} people',
                 style: TextStyle(color: HrUi.muted(context), fontSize: 12),
@@ -122,7 +123,7 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
                       runSpacing: gap,
                       children: [
                         for (final row in filtered)
-                          SizedBox(width: w, child: _DirectoryCard(row: row)),
+                          SizedBox(width: w, child: _DirectoryCard(row: row, highlighted: query.isNotEmpty)),
                       ],
                     );
                   },
@@ -136,8 +137,9 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
 }
 
 class _DirectoryCard extends StatelessWidget {
-  const _DirectoryCard({required this.row});
+  const _DirectoryCard({required this.row, this.highlighted = false});
   final Map<String, dynamic> row;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -146,7 +148,6 @@ class _DirectoryCard extends StatelessWidget {
     final title = '${row['job_title'] ?? ''}';
     final dept = '${row['department_name'] ?? ''}';
     final email = '${row['email'] ?? ''}';
-    final photo = AppConfig.resolveMediaUrl(row['profile_picture']?.toString());
     final status = (row['status'] as num?)?.toInt() ?? 0;
     final statusLabel = status == 2 ? 'Admin' : status > 0 ? 'Active' : 'Inactive';
     final statusColor = status == 2
@@ -158,9 +159,12 @@ class _DirectoryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
       decoration: BoxDecoration(
-        color: HrUi.card(context),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: HrUi.border(context)),
+        border: Border.all(
+          color: highlighted ? const Color(0xFFF5D36A) : HrUi.border(context),
+          width: highlighted ? 2 : 1,
+        ),
+        color: highlighted ? hrMatchRowColor : HrUi.card(context),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -171,17 +175,7 @@ class _DirectoryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: brand.withValues(alpha: 0.14),
-            backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-            child: photo.isEmpty
-                ? Text(
-                    _initials(name),
-                    style: TextStyle(fontWeight: FontWeight.w800, color: brand, fontSize: 18),
-                  )
-                : null,
-          ),
+          PersonPhoto(path: row['profile_picture']?.toString(), size: 72),
           const SizedBox(height: 10),
           Text(
             name.isEmpty ? 'Employee' : name,
@@ -210,10 +204,4 @@ class _DirectoryCard extends StatelessWidget {
     );
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first[0] + parts.last[0]).toUpperCase();
-  }
 }

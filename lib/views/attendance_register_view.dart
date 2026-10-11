@@ -5,6 +5,7 @@ import '../core/attendance/attendance_admin_state.dart';
 import '../core/auth/auth_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
 
 /// Attendance Register / Summary report for one date.
 class AttendanceRegisterView extends StatefulWidget {
@@ -53,6 +54,7 @@ class _AttendanceRegisterViewState extends State<AttendanceRegisterView> {
       animation: _state,
       builder: (context, _) {
         final s = _state.registerSummary;
+        final query = hrSearchQuery(context);
         return ColoredBox(
           color: HrUi.pageBg(context),
           child: ListView(
@@ -109,7 +111,19 @@ class _AttendanceRegisterViewState extends State<AttendanceRegisterView> {
                 Text(_state.error!, style: const TextStyle(color: Colors.redAccent)),
               if (_state.busy && _state.registerRows.isEmpty)
                 const Center(child: CircularProgressIndicator())
-              else
+              else ...[
+                hrQueryBanner(
+                  query,
+                  hrQueryRows([
+                    for (final r in _state.registerRows)
+                      DataRow(cells: [
+                        DataCell(Text('${r['name'] ?? ''}')),
+                        DataCell(Text('${r['employee_code'] ?? ''}')),
+                        DataCell(Text('${r['department_name'] ?? ''}')),
+                        DataCell(Text('${r['status_label'] ?? ''}')),
+                      ]),
+                  ], query).length,
+                ),
                 HrFitDataTableHost(
                   child: DataTable(
                     headingRowColor: WidgetStateProperty.all(HrTheme.brand(context)),
@@ -128,7 +142,7 @@ class _AttendanceRegisterViewState extends State<AttendanceRegisterView> {
                       DataColumn(label: Text('Minutes')),
                       DataColumn(label: Text('Status')),
                     ],
-                    rows: [
+                    rows: hrQueryRows([
                       for (final r in _state.registerRows)
                         DataRow(cells: [
                           DataCell(Text('${r['name']}', overflow: TextOverflow.ellipsis)),
@@ -139,9 +153,10 @@ class _AttendanceRegisterViewState extends State<AttendanceRegisterView> {
                           DataCell(Text('${r['total_minutes'] ?? '—'}')),
                           DataCell(Text('${r['status_label']}')),
                         ]),
-                    ],
+                    ], query),
                   ),
                 ),
+              ],
             ],
           ),
         );

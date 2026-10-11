@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/auth/auth_state.dart';
 import '../core/config/app_config.dart';
 import '../core/payroll/payroll_state.dart';
+import '../core/util/money.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/company_logo.dart';
 import '../widgets/hr_form_kit.dart';
@@ -152,7 +153,7 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
                 TableRow(
                   decoration: BoxDecoration(color: brand),
                   children: [
-                    for (final h in ['#', 'Employee', 'Pay date', 'Period', 'Net ($currency)', 'Status', ''])
+                    for (final h in ['#', 'Employee', 'Pay date', 'Period', 'Net (${moneySymbol(currency).trim()})', 'Status', ''])
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                         child: Text(
@@ -312,7 +313,7 @@ class _PayslipRecord extends StatelessWidget {
     }).toList();
     final status = '${slip['slip_status'] ?? 'processed'}';
     final open = status == 'processed';
-    final money = NumberFormat.currency(symbol: '$currency ', decimalDigits: 2);
+    final money = NumberFormat.currency(symbol: moneySymbol(currency), decimalDigits: 2);
     double n(dynamic v) => (v as num?)?.toDouble() ?? 0;
     var earn = 0.0;
     var extra = 0.0;

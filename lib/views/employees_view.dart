@@ -7,6 +7,8 @@ import '../core/auth/auth_state.dart';
 import '../core/employees/employee_state.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
+import '../widgets/person_photo.dart';
 import 'employee_form_view.dart';
 
 /// HR360tech-style Employees grid + Personal/Job/History add/edit form.
@@ -117,14 +119,7 @@ class _EmployeesViewState extends State<EmployeesView> {
   }
 
   Widget _buildGrid() {
-    final filtered = _state.rows.where((r) {
-      if (_query.isEmpty) return true;
-      final q = _query.toLowerCase();
-      return '${r['name']}|${r['user_name']}|${r['job_title']}|${r['department_name']}'
-          .toLowerCase()
-          .contains(q);
-    }).toList();
-
+    final query = hrSearchQuery(context, _query);
     return ColoredBox(
       color: HrUi.pageBg(context),
       child: ListView(
@@ -149,7 +144,7 @@ class _EmployeesViewState extends State<EmployeesView> {
           const SizedBox(height: 16),
           _toolbar(),
           const SizedBox(height: 12),
-          _dataTable(filtered),
+          _dataTable(_state.rows, query),
         ],
       ),
     );
@@ -284,13 +279,74 @@ class _EmployeesViewState extends State<EmployeesView> {
     );
   }
 
-  Widget _dataTable(List<Map<String, dynamic>> rows) {
+  Widget _dataTable(List<Map<String, dynamic>> rows, String query) {
     final brand = HrTheme.brand(context);
     final onBrand = HrTheme.onBrand(context);
     final card = HrUi.card(context);
     final textColor = HrUi.label(context);
 
-    return Container(
+    final visible = hrQueryRows([
+      for (var i = 0; i < rows.length; i++)
+        DataRow(
+          color: WidgetStateProperty.all(
+            i.isOdd ? HrTheme.brandSoft(context, 0.04) : card,
+          ),
+          cells: [
+            DataCell(Text('${i + 1}')),
+            DataCell(
+              InkWell(
+                onTap: () => setState(() => _viewRow = rows[i]),
+                child: Row(
+                  children: [
+                    PersonPhoto(path: '${rows[i]['profile_picture'] ?? ''}', size: 28),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '${rows[i]['name']}',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: brand, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            DataCell(Text('${rows[i]['job_title'] ?? '—'}', overflow: TextOverflow.ellipsis)),
+            DataCell(Text('${rows[i]['department_name'] ?? '—'}', overflow: TextOverflow.ellipsis)),
+            DataCell(Text(
+              '${rows[i]['user_name'] ?? rows[i]['employee_code'] ?? ''}',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: brand),
+            )),
+            DataCell(Text('${rows[i]['reports_to'] ?? '—'}', overflow: TextOverflow.ellipsis)),
+            DataCell(Text('${rows[i]['station_name'] ?? '—'}', overflow: TextOverflow.ellipsis)),
+            DataCell(_statusChip((rows[i]['status'] as num?)?.toInt() ?? 0)),
+            DataCell(
+              PopupMenuButton<String>(
+                tooltip: 'Actions',
+                onSelected: (value) {
+                  if (value == 'view') {
+                    setState(() => _viewRow = rows[i]);
+                  } else if (value == 'edit') {
+                    _openEdit(rows[i]);
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'view', child: Text('View Record')),
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                ],
+                child: Icon(Icons.more_horiz, color: brand),
+              ),
+            ),
+          ],
+        ),
+    ], query);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        hrQueryBanner(query, visible.length),
+        Container(
       decoration: BoxDecoration(
         color: card,
         borderRadius: BorderRadius.circular(8),
@@ -319,78 +375,11 @@ class _EmployeesViewState extends State<EmployeesView> {
             DataColumn(label: Text('Status')),
             DataColumn(label: Text('')),
           ],
-          rows: [
-            for (var i = 0; i < rows.length; i++)
-              DataRow(
-                color: WidgetStateProperty.all(
-                  i.isOdd ? HrTheme.brandSoft(context, 0.04) : card,
-                ),
-                cells: [
-                  DataCell(Text('${i + 1}')),
-                  DataCell(
-                    InkWell(
-                      onTap: () => setState(() => _viewRow = rows[i]),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 14,
-                            backgroundColor: brand.withValues(alpha: 0.2),
-                            child: Text(
-                              _initials('${rows[i]['name']}'),
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: brand,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              '${rows[i]['name']}',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: brand,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  DataCell(Text('${rows[i]['job_title'] ?? '—'}', overflow: TextOverflow.ellipsis)),
-                  DataCell(Text('${rows[i]['department_name'] ?? '—'}', overflow: TextOverflow.ellipsis)),
-                  DataCell(Text(
-                    '${rows[i]['user_name'] ?? rows[i]['employee_code'] ?? ''}',
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: brand),
-                  )),
-                  DataCell(Text('${rows[i]['reports_to'] ?? '—'}', overflow: TextOverflow.ellipsis)),
-                  DataCell(Text('${rows[i]['station_name'] ?? '—'}', overflow: TextOverflow.ellipsis)),
-                  DataCell(_statusChip((rows[i]['status'] as num?)?.toInt() ?? 0)),
-                  DataCell(
-                    PopupMenuButton<String>(
-                      tooltip: 'Actions',
-                      onSelected: (value) {
-                        if (value == 'view') {
-                          setState(() => _viewRow = rows[i]);
-                        } else if (value == 'edit') {
-                          _openEdit(rows[i]);
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'view', child: Text('View Record')),
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      ],
-                      child: Icon(Icons.more_horiz, color: brand),
-                    ),
-                  ),
-                ],
-              ),
-          ],
+          rows: visible,
         ),
       ),
+        ),
+      ],
     );
   }
 
@@ -408,12 +397,6 @@ class _EmployeesViewState extends State<EmployeesView> {
     );
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first[0] + parts.last[0]).toUpperCase();
-  }
 }
 
 class _EmployeeRecordView extends StatefulWidget {

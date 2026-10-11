@@ -972,31 +972,75 @@ class PayrollService
             }
         }
         $today = date('d M Y');
+        $logos = $this->letterheadLogos($baseUrl);
+        $basicTxt = htmlspecialchars($this->formatMoney($basic));
+        $grossTxt = htmlspecialchars($this->formatMoney($gross));
+        $netTxt = htmlspecialchars($this->formatMoney($net));
 
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Salary Certificate</title>
-<style>body{font-family:Georgia,serif;margin:48px;line-height:1.6;color:#222}
-h1{font-size:22px;text-align:center;letter-spacing:2px}
-.box{border:1px solid #ccc;padding:24px;margin-top:24px}
-button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px;cursor:pointer}
-@media print{button{display:none}}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6;color:#1f2937;font-family:"Source Sans 3",Segoe UI,sans-serif}
+.page{max-width:820px;margin:28px auto;background:#fff;padding:36px 42px 48px;box-shadow:0 12px 40px rgba(15,23,42,.08)}
+.logos{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.logos img{max-height:58px;max-width:160px;object-fit:contain}
+h1{font-family:"Libre Baskerville",Georgia,serif;text-align:center;letter-spacing:2px;font-size:26px;margin:22px 0 4px}
+.company{text-align:center;color:#0e3a4a;font-weight:700;margin:0}
+.rule{height:3px;background:linear-gradient(90deg,#0e3a4a,#38bdf8);margin:16px 0 22px;border:0}
+.meta{font-size:14px;color:#475569}
+.lead{font-size:16px;line-height:1.7}
+.amounts{width:100%;border-collapse:collapse;margin:18px 0}
+.amounts td{padding:10px 12px;border-bottom:1px solid #e5e7eb}
+.amounts td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.sign{margin-top:54px;display:flex;justify-content:flex-end}
+.sign div{width:240px;text-align:center}
+.sign .line{border-top:1px solid #111;margin-top:42px;padding-top:6px;font-size:13px}
+button{padding:8px 14px;background:#0e3a4a;color:#fff;border:0;border-radius:6px;cursor:pointer}
+@media print{body{background:#fff} .page{box-shadow:none;margin:0} button{display:none}}
+</style></head><body>
 <button onclick="window.print()">Print / Save PDF</button>
+<div class="page">
+<div class="logos">'.$logos.'</div>
 <h1>SALARY CERTIFICATE</h1>
-<p style="text-align:center">'.$company.'</p>
-<div class="box">
-<p>Date: <b>'.$today.'</b></p>
-<p>This is to certify that <b>'.$name.'</b> (Employee Code: <b>'.$code.'</b>),
-working as <b>'.$des.'</b> in the <b>'.$dept.'</b> department, is drawing the following salary:</p>
-<ul>
-<li>Basic Salary: <b>'.$this->companyCurrency().' '.number_format($basic, 2).'</b></li>
-<li>Gross Salary: <b>'.$this->companyCurrency().' '.number_format($gross, 2).'</b></li>
-<li>Net Salary: <b>'.$this->companyCurrency().' '.number_format($net, 2).'</b></li>
-</ul>
+<p class="company">'.$company.'</p>
+<hr class="rule">
+<p class="meta">Date: <b>'.$today.'</b></p>
+<p class="lead">This is to certify that <b>'.$name.'</b> (Employee Code: <b>'.$code.'</b>), working as <b>'.$des.'</b> in the <b>'.$dept.'</b> department, is drawing the following salary:</p>
+<table class="amounts">
+<tr><td>Basic salary</td><td>'.$basicTxt.'</td></tr>
+<tr><td>Gross salary</td><td>'.$grossTxt.'</td></tr>
+<tr><td>Net salary</td><td>'.$netTxt.'</td></tr>
+</table>
 <p>This certificate is issued upon request of the employee for whatever purpose it may serve.</p>
-<p style="margin-top:48px">Authorized Signatory ______________________</p>
+<div class="sign"><div><div class="line">Authorized signatory</div></div></div>
 </div></body></html>';
     }
 
-    public function salaryStatementHtml(int $employeeId, ?string $from = null, ?string $to = null): ?string
+    /** HR360 mark plus the company logo for certificates and statements. */
+    protected function letterheadLogos(?string $baseUrl): string
+    {
+        $hr = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="52" height="52" fill="none">'
+            .'<defs><linearGradient id="g" x1="20" y1="24" x2="180" y2="180" gradientUnits="userSpaceOnUse">'
+            .'<stop stop-color="#67e8f9"/><stop offset="0.45" stop-color="#2563eb"/><stop offset="1" stop-color="#1e3a8a"/>'
+            .'</linearGradient></defs>'
+            .'<path d="M58 46c-28 8-40 48-28 78 14 34 58 48 96 32 22-10 34-32 28-52" stroke="url(#g)" stroke-width="18" stroke-linecap="round"/>'
+            .'<path d="M46 118c6-36 28-62 62-70 30-8 58 6 70 28" stroke="url(#g)" stroke-width="18" stroke-linecap="round"/>'
+            .'</svg>';
+        $client = '';
+        if (Schema::hasTable('company') && $baseUrl) {
+            $c = DB::table('company')->orderBy('id')->first();
+            $path = $c ? (string) ($c->hr_logo ?? $c->logo ?? '') : '';
+            if ($path !== '') {
+                $url = htmlspecialchars(rtrim($baseUrl, '/').'/'.ltrim($path, '/'), ENT_QUOTES, 'UTF-8');
+                $client = '<img src="'.$url.'" alt="Company logo"/>';
+            }
+        }
+
+        return $hr.$client;
+    }
+
+    public function salaryStatementHtml(int $employeeId, ?string $from = null, ?string $to = null, ?string $baseUrl = null): ?string
     {
         $emp = DB::table('employee')->where('employee_id', $employeeId)->first();
         if (!$emp) {
@@ -1013,10 +1057,10 @@ working as <b>'.$des.'</b> in the <b>'.$dept.'</b> department, is drawing the fo
         $lines = '';
         foreach ($rows as $r) {
             $lines .= '<tr><td>'.htmlspecialchars((string) $r->date).'</td>'
-                .'<td style="text-align:right">'.number_format((float) $r->basic_salary, 2).'</td>'
-                .'<td style="text-align:right">'.number_format((float) $r->total_allowance, 2).'</td>'
-                .'<td style="text-align:right">'.number_format((float) $r->total_deduction, 2).'</td>'
-                .'<td style="text-align:right">'.number_format((float) $r->net_salary, 2).'</td></tr>';
+                .'<td style="text-align:right">'.htmlspecialchars($this->formatMoney((float) $r->basic_salary)).'</td>'
+                .'<td style="text-align:right">'.htmlspecialchars($this->formatMoney((float) $r->total_allowance)).'</td>'
+                .'<td style="text-align:right">'.htmlspecialchars($this->formatMoney((float) $r->total_deduction)).'</td>'
+                .'<td style="text-align:right">'.htmlspecialchars($this->formatMoney((float) $r->net_salary)).'</td></tr>';
         }
         if ($lines === '') {
             $lines = '<tr><td colspan="5">No processed salary found for this period.</td></tr>';
@@ -1024,21 +1068,32 @@ working as <b>'.$des.'</b> in the <b>'.$dept.'</b> department, is drawing the fo
         $name = htmlspecialchars((string) ($emp->name ?? ''));
         $code = htmlspecialchars((string) ($emp->employee_code ?? ''));
 
+        $logos = $this->letterheadLogos($baseUrl);
+
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Salary Statement</title>
-<style>body{font-family:Segoe UI,Arial,sans-serif;margin:32px;color:#222}
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#eef2f6;color:#1f2937;font-family:"Source Sans 3",Segoe UI,sans-serif}
+.page{max-width:860px;margin:28px auto;background:#fff;padding:32px 36px 40px}
+h1{font-family:"Libre Baskerville",Georgia,serif;font-size:26px;margin:16px 0 4px}
 table{width:100%;border-collapse:collapse;margin-top:16px}
-th,td{border-bottom:1px solid #ddd;padding:8px;font-size:13px}
-th{background:#A67C5D;color:#fff;text-align:left}
-button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px;cursor:pointer}
-@media print{button{display:none}}</style></head><body>
+th,td{border-bottom:1px solid #e5e7eb;padding:10px;font-size:14px}
+th{background:#0e3a4a;color:#fff;text-align:left}
+td:not(:first-child),th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+.logos{display:flex;justify-content:space-between;align-items:center}
+button{padding:8px 14px;background:#0e3a4a;color:#fff;border:0;border-radius:6px;cursor:pointer}
+@media print{body{background:#fff}.page{margin:0}button{display:none}}
+</style></head><body>
 <button onclick="window.print()">Print / Save PDF</button>
+<div class="page">
+<div class="logos">'.$logos.'</div>
 <h1>Salary Statement</h1>
-<p><b>'.$name.'</b> ('.$code.')'
-.($from || $to ? ' · Period: '.htmlspecialchars((string) ($from ?? '…')).' → '.htmlspecialchars((string) ($to ?? '…')) : '')
+<p><b>'.$name.'</b> · '.$code
+.($from || $to ? ' · '.htmlspecialchars((string) ($from ?? '…')).' to '.htmlspecialchars((string) ($to ?? '…')) : '')
 .'</p>
-<table><thead><tr><th>Date</th><th style="text-align:right">Basic</th><th style="text-align:right">Gross</th><th style="text-align:right">Deductions</th><th style="text-align:right">Net</th></tr></thead>
+<table><thead><tr><th>Date</th><th>Basic</th><th>Gross</th><th>Deductions</th><th>Net</th></tr></thead>
 <tbody>'.$lines.'</tbody></table>
-</body></html>';
+</div></body></html>';
     }
 
     public function getSetup(): array
@@ -1327,10 +1382,9 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
         $e = $slip['employee'];
         $opts = $slip['options'] ?? [];
         $h = static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
-        $money = static fn ($v) => number_format((float) $v, 2);
+        $money = fn ($v) => $this->formatMoney((float) $v, (string) ($c['currency'] ?? 'USD'));
         $title = $h($opts['payslip_title'] ?? 'Payslip');
         $company = $h($c['name'] ?? '');
-        $currency = $h($c['currency'] ?? 'USD');
         $start = $h($this->prettyDate((string) ($slip['period_start'] ?? '')));
         $end = $h($this->prettyDate((string) ($slip['period_end'] ?? $slip['period_date'] ?? '')));
         $logoPath = (string) ($c['logo'] ?? '');
@@ -1402,7 +1456,7 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
             .$field('Email', (string) ($e['email'] ?? ''))
             .$field('Phone', (string) ($e['phone'] ?? ''))
             .$field('Salary Days', (string) ($slip['days'] ?? ''))
-            .$field('Monthly Gross Salary', $money($slip['total_allowance']).' '.$currency)
+            .$field('Monthly Gross Salary', $money($slip['total_allowance']))
             .$field('Status', (string) ($slip['status'] ?? 'Processed'))
             .$field('Address', (string) ($e['address'] ?? ''));
 
@@ -1452,7 +1506,7 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
 <table><thead><tr><th>DEDUCTION</th><th class="num">AMOUNT</th></tr></thead><tbody>'.$deduct.'
 <tr><td><b>Total Deductions</b></td><td class="num"><b>'.$money($deductTotal).'</b></td></tr></tbody></table>
 </div>
-<div class="net"><span>Net Salary ('.$currency.')</span><span>'.$money($slip['net_salary']).'</span></div>
+<div class="net"><span>Net Salary</span><span>'.$money($slip['net_salary']).'</span></div>
 '.$note.'
 </body></html>';
     }
@@ -1517,6 +1571,25 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
         $code = strtoupper(trim((string) DB::table('company')->orderBy('id')->value('currency')));
 
         return $code !== '' ? $code : 'USD';
+    }
+
+    public function moneySymbol(?string $code = null): string
+    {
+        return match (strtoupper(trim((string) ($code ?? $this->companyCurrency())))) {
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'AED' => 'AED ',
+            'CAD' => 'CA$',
+            'CHF' => 'CHF ',
+            'SAR' => 'SAR ',
+            default => strtoupper(trim((string) ($code ?? $this->companyCurrency()))).' ',
+        };
+    }
+
+    public function formatMoney(float $amount, ?string $code = null): string
+    {
+        return $this->moneySymbol($code).number_format($amount, 2);
     }
 
     /** @return list<array{code:string,name:string,station_ids:list<int>}> */

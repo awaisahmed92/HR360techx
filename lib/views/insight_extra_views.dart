@@ -152,7 +152,7 @@ class _HrGlobeViewState extends State<HrGlobeView> {
                           children: [
                             const Icon(Icons.public, color: Color(0xFF2563EB)),
                             const SizedBox(height: 8),
-                            Text('${office['name']}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                            Text(_place('${office['name']}'), style: const TextStyle(fontWeight: FontWeight.w800)),
                             Text('${office['count']} people', style: const TextStyle(color: Color(0xFF6B7280))),
                           ],
                         ),
@@ -228,6 +228,14 @@ class _PlaySpaceViewState extends State<PlaySpaceView> {
       ),
     );
   }
+}
+
+String _place(String name) {
+  final n = name.trim().toLowerCase();
+  if (n == 'head office' || n == 'headoffice' || n == 'headquarters' || n == 'hq') {
+    return 'HQ';
+  }
+  return name;
 }
 
 Widget _empty(String text) {

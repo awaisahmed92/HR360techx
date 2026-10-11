@@ -93,6 +93,14 @@ class _OrgChartViewState extends State<OrgChartView> {
   List<_Person> _childrenOf(int id, List<_Person> people) =>
       people.where((p) => p.managerId == id && p.id != id).toList();
 
+  String _place(String name) {
+    final n = name.trim().toLowerCase();
+    if (n == 'head office' || n == 'headoffice' || n == 'headquarters' || n == 'hq') {
+      return 'HQ';
+    }
+    return name;
+  }
+
   String _managerName(int id) {
     for (final person in _people) {
       if (person.id == id) return person.name;
@@ -107,7 +115,7 @@ class _OrgChartViewState extends State<OrgChartView> {
 
     final stations = {
       for (final p in _people)
-        if (p.stationId > 0) p.stationId: p.office,
+        if (p.stationId > 0) p.stationId: _place(p.office),
     };
     final departments = {
       for (final p in _people)
@@ -157,22 +165,27 @@ class _OrgChartViewState extends State<OrgChartView> {
             ),
           ),
           Expanded(
-            child: Scrollbar(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final root in roots) ...[
-                        _node(root, visible, 0),
-                        const SizedBox(width: 28),
-                      ],
-                    ],
+            child: LayoutBuilder(
+              builder: (context, box) {
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: box.maxWidth, minHeight: box.maxHeight),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (final root in roots) _node(root, visible, 0),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -286,7 +299,7 @@ class _OrgChartViewState extends State<OrgChartView> {
             Text(person.title, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 11, color: Color(0xFF6B7280))),
           if (person.office.isNotEmpty)
-            Text(person.office, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
+            Text(_place(person.office), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 10, color: Color(0xFF9CA3AF))),
           Align(
             alignment: Alignment.centerRight,
@@ -319,7 +332,7 @@ class _OrgChartViewState extends State<OrgChartView> {
                     DataCell(Text(p.name)),
                     DataCell(Text(p.title)),
                     DataCell(Text(p.department)),
-                    DataCell(Text(p.office)),
+                    DataCell(Text(_place(p.office))),
                     DataCell(Text(_managerName(p.managerId))),
                   ]),
               ],

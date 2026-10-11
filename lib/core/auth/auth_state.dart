@@ -87,6 +87,15 @@ class AuthState extends ChangeNotifier {
     }
   }
 
+  /// Reloads company details (including salary currency) after Payroll Options are saved.
+  Future<void> refreshCompany() async {
+    final refreshed = await _service.refreshMe();
+    if (refreshed != null) {
+      _session = refreshed;
+      notifyListeners();
+    }
+  }
+
   Future<void> logout() async {
     await _service.logout();
     _session = null;

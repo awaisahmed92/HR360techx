@@ -8,6 +8,7 @@ import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
 
 /// PHP-parity payroll reports: structure, sheet, certificate, statement.
 class PayrollReportsView extends StatefulWidget {
@@ -186,7 +187,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                     DataColumn(label: Text('Deductions')),
                     DataColumn(label: Text('Net')),
                   ],
-                  rows: _structure
+                  rows: hrQueryRows(_structure
                       .map(
                         (r) => DataRow(cells: [
                           DataCell(Text('${r['employee_name'] ?? r['name'] ?? r['employee_id']}', overflow: TextOverflow.ellipsis)),
@@ -196,7 +197,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                           DataCell(Text('${r['net_salary'] ?? 0}')),
                         ]),
                       )
-                      .toList(),
+                      .toList(), hrSearchQuery(context)),
                 ),
               ),
           ],
@@ -260,7 +261,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                     DataColumn(label: Text('Tax')),
                     DataColumn(label: Text('Net')),
                   ],
-                  rows: _sheet
+                  rows: hrQueryRows(_sheet
                       .map(
                         (r) => DataRow(cells: [
                           DataCell(Text('${r['employee_name'] ?? r['name'] ?? r['employee_id']}', overflow: TextOverflow.ellipsis)),
@@ -270,7 +271,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                           DataCell(Text('${r['net_salary'] ?? 0}')),
                         ]),
                       )
-                      .toList(),
+                      .toList(), hrSearchQuery(context)),
                 ),
               ),
           ],

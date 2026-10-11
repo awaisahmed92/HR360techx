@@ -243,7 +243,7 @@ class AuthService {
       company: AuthCompany(
         name: 'HR360 Demo Org',
         code: 'DEMO',
-        currency: 'PKR',
+        currency: 'USD',
         dateFormat: 'd-m-Y',
         subdomain: subdomain,
       ),

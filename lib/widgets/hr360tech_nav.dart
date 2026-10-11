@@ -443,29 +443,7 @@ class Hr360techTopBar extends StatelessWidget {
             SizedBox(
               width: 240,
               height: 36,
-              child: TextField(
-                style: TextStyle(color: fg, fontSize: 13),
-                decoration: InputDecoration(
-                  hintText: 'Search Employees, Module, Help',
-                  hintStyle: TextStyle(fontSize: 12, color: muted),
-                  filled: true,
-                  fillColor: field,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  suffixIcon: Icon(Icons.search, size: 18, color: muted),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: fieldLine),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: fieldLine),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: brand),
-                  ),
-                ),
-              ),
+              child: _GridSearch(fg: fg, muted: muted, field: field, fieldLine: fieldLine, brand: brand),
             ),
           const Spacer(),
           if (NavAccess.unrestricted(auth) || auth.permissions.canAdd('employees', 'employees'))
@@ -616,6 +594,71 @@ class Hr360techTopBar extends StatelessWidget {
       ),
     );
       },
+    );
+  }
+}
+
+/// Top-bar search. The typed text is stored on [AppState.pageQuery] so the open grid can filter.
+class _GridSearch extends StatefulWidget {
+  const _GridSearch({
+    required this.fg,
+    required this.muted,
+    required this.field,
+    required this.fieldLine,
+    required this.brand,
+  });
+
+  final Color fg;
+  final Color muted;
+  final Color field;
+  final Color fieldLine;
+  final Color brand;
+
+  @override
+  State<_GridSearch> createState() => _GridSearchState();
+}
+
+class _GridSearchState extends State<_GridSearch> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: context.read<AppState>().pageQuery);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _ctrl,
+      style: TextStyle(color: widget.fg, fontSize: 13),
+      onChanged: context.read<AppState>().setPageQuery,
+      decoration: InputDecoration(
+        hintText: 'Search Employees, Module, Help',
+        hintStyle: TextStyle(fontSize: 12, color: widget.muted),
+        filled: true,
+        fillColor: widget.field,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        suffixIcon: Icon(Icons.search, size: 18, color: widget.muted),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: widget.fieldLine),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: widget.fieldLine),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: widget.brand),
+        ),
+      ),
     );
   }
 }

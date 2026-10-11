@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS `company` (
   `hr_company_name` VARCHAR(191) DEFAULT NULL,
   `code` VARCHAR(50) DEFAULT NULL,
   `email` VARCHAR(191) DEFAULT NULL,
-  `currency` VARCHAR(10) DEFAULT 'PKR',
+  `currency` VARCHAR(10) DEFAULT 'USD',
   `hr_date_format` VARCHAR(20) DEFAULT 'd-m-Y',
   `hr_logo` VARCHAR(255) DEFAULT NULL,
   `logo` VARCHAR(255) DEFAULT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `leave_approval` (
 
 -- Seed company
 INSERT INTO `company` (`id`, `name`, `hr_company_name`, `code`, `email`, `currency`)
-VALUES (1, 'HR360 Demo Org', 'HR360 Demo Org', 'DEMO', 'hr@demo.local', 'PKR')
+VALUES (1, 'HR360 Demo Org', 'HR360 Demo Org', 'DEMO', 'hr@demo.local', 'USD')
 ON DUPLICATE KEY UPDATE `hr_company_name` = VALUES(`hr_company_name`);
 
 INSERT INTO `department` (`department_id`, `name`) VALUES

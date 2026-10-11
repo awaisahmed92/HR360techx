@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/auth/auth_state.dart';
 import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
+import '../widgets/hr_grid_query.dart';
 
 /// Attendance Summary tab: present / late / absent, hour gauges, calendar, daily table.
 class AttendanceSummaryView extends StatefulWidget {
@@ -273,7 +274,7 @@ class _AttendanceSummaryViewState extends State<AttendanceSummaryView> {
           headingRowColor: WidgetStateProperty.all(const Color(0xFF8D6E63)),
           headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
           columns: [for (final h in head) DataColumn(label: Text(h))],
-          rows: [
+          rows: hrQueryRows([
             for (var i = 0; i < _rows.length; i++)
               DataRow(cells: [
                 DataCell(Text('${i + 1}')),
@@ -285,7 +286,7 @@ class _AttendanceSummaryViewState extends State<AttendanceSummaryView> {
                 DataCell(_statusChip('${_rows[i]['status_label']}')),
                 DataCell(Text(_hours(_rows[i]['total_minutes']))),
               ]),
-          ],
+          ], hrSearchQuery(context)),
         ),
       ),
     );
