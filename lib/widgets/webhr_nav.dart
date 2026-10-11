@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../controllers/app_state.dart';
 import '../core/auth/auth_state.dart';
+import '../core/permissions/nav_access.dart';
 import '../core/util/person_name.dart';
-import '../navigation/module_catalog.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
 import 'company_logo.dart';
@@ -24,6 +24,17 @@ class WebHrNavRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthState>();
+    final app = context.read<AppState>();
+    if (!NavAccess.canSee(auth, app.moduleId, app.subId)) {
+      final next = NavAccess.firstScreen(auth);
+      if (next != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          context.read<AppState>().openScreen(moduleId: next.moduleId, subId: next.subId);
+        });
+      }
+    }
     if (layout == HrNavLayout.drawer) return const _DrawerNav();
     final showSubs = layout == HrNavLayout.full;
     return Row(
@@ -43,9 +54,11 @@ class WebHrSubmenuPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final auth = context.watch<AuthState>();
     final brand = HrTheme.brand(context);
     final isDark = app.isDarkMode;
     final module = app.activeModule;
+    final children = module.children.where((s) => NavAccess.canSee(auth, module.id, s.id)).toList();
     final bg = isDark ? AppTheme.sidebarDark : Colors.white;
     final line = isDark ? AppTheme.darkBorder : AppTheme.lightBorder;
     final muted = isDark ? AppTheme.darkTextMuted : const Color(0xFF6B7280);
@@ -87,7 +100,7 @@ class WebHrSubmenuPanel extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
               children: [
-                for (final s in module.children)
+                for (final s in children)
                   _SubItem(
                     label: s.label,
                     icon: s.icon,
@@ -115,6 +128,8 @@ class _IconRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final auth = context.watch<AuthState>();
+    final modules = NavAccess.visibleModules(auth);
     final brand = HrTheme.brand(context);
     final isDark = app.isDarkMode;
     final bg = isDark ? AppTheme.sidebarDark : Colors.white;
@@ -144,7 +159,7 @@ class _IconRail extends StatelessWidget {
           Expanded(
             child: ListView(
               children: [
-                for (final m in ModuleCatalog.modules)
+                for (final m in modules)
                   _RailItem(
                     label: m.label,
                     icon: m.icon,
@@ -152,7 +167,10 @@ class _IconRail extends StatelessWidget {
                     brand: brand,
                     isDark: isDark,
                     onTap: () {
-                      app.selectModule(m.id);
+                      final first = m.children.isNotEmpty ? m.children.first.id : null;
+                      if (first != null) {
+                        app.openScreen(moduleId: m.id, subId: first);
+                      }
                       onModuleSelected?.call();
                     },
                   ),
@@ -288,6 +306,8 @@ class _DrawerNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final auth = context.watch<AuthState>();
+    final modules = NavAccess.visibleModules(auth);
     final brand = HrTheme.brand(context);
     final isDark = app.isDarkMode;
     final bg = isDark ? AppTheme.sidebarDark : Colors.white;
@@ -311,7 +331,7 @@ class _DrawerNav extends StatelessWidget {
               ],
             ),
           ),
-          for (final module in ModuleCatalog.modules) ...[
+          for (final module in modules) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
               child: Text(
@@ -447,6 +467,7 @@ class WebHrTopBar extends StatelessWidget {
               ),
             ),
           const Spacer(),
+          if (NavAccess.unrestricted(auth) || auth.permissions.canAdd('employees', 'employees'))
           PopupMenuButton<String>(
             tooltip: 'Quick Action',
             offset: const Offset(0, 42),

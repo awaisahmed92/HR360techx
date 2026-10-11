@@ -171,6 +171,8 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::get('/payroll/salary-sheet', [PayrollController::class, 'salarySheet']);
     Route::get('/payroll/salary-structure', [PayrollController::class, 'salaryStructure']);
     Route::get('/payroll/payslip/{id}/print', [PayrollController::class, 'payslipPrint'])->whereNumber('id');
+    Route::post('/payroll/payslip/{id}/cancel', [PayrollController::class, 'payslipCancel'])->whereNumber('id');
+    Route::post('/payroll/payslip/{id}/reverse', [PayrollController::class, 'payslipReverse'])->whereNumber('id');
     Route::get('/payroll/salary-certificate', [PayrollController::class, 'salaryCertificate']);
     Route::get('/payroll/salary-statement', [PayrollController::class, 'salaryStatement']);
     Route::post('/payroll/preview-formulas', [PayrollController::class, 'previewFormulas']);

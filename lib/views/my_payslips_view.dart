@@ -8,8 +8,10 @@ import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 import 'payroll_phase3_view.dart';
 
-final _money = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 2);
 final _day = DateFormat('MMMM d, yyyy');
+
+String _money(num value, String currency) =>
+    NumberFormat.currency(symbol: '$currency ', decimalDigits: 2).format(value);
 
 /// List of processed payslips for the signed-in user (admins see every employee).
 class MyPayslipsView extends StatefulWidget {
@@ -21,6 +23,7 @@ class MyPayslipsView extends StatefulWidget {
 
 class _MyPayslipsViewState extends State<MyPayslipsView> {
   late final PayrollState _ps;
+  int? _openId;
 
   @override
   void initState() {
@@ -40,6 +43,18 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
     return AnimatedBuilder(
       animation: _ps,
       builder: (context, _) {
+        if (_openId != null && _ps.payslip != null) {
+          return _PayslipRecord(
+            slip: _ps.payslip!,
+            currency: context.watch<AuthState>().company?.currency ?? 'USD',
+            canManage: context.watch<AuthState>().user?.isAdmin == true ||
+                context.watch<AuthState>().permissions.all,
+            onBack: () => setState(() => _openId = null),
+            onPrint: () => openPayslipDocument(context, _openId!, download: false),
+            onCancel: () => _change('cancel'),
+            onReverse: () => _change('reverse'),
+          );
+        }
         return ColoredBox(
           color: HrUi.pageBg(context),
           child: ListView(
@@ -131,11 +146,30 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
         DataCell(Text(_fmt(r['date']))),
         DataCell(Text(_fmt(r['period_start']))),
         DataCell(Text(_fmt(r['period_end']))),
-        DataCell(Text(_money.format(net))),
+        DataCell(Text(_money(net, context.watch<AuthState>().company?.currency ?? 'USD'))),
         DataCell(Text('${r['status'] ?? 'Processed'}')),
-        DataCell(TextButton(
-          onPressed: id < 1 ? null : () => _open(id),
-          child: const Text('View'),
+        DataCell(PopupMenuButton<String>(
+          tooltip: 'Actions',
+          onSelected: (value) {
+            if (value == 'view') {
+              _open(id);
+            } else if (value == 'print') {
+              openPayslipDocument(context, id, download: false);
+            } else if (value == 'cancel' || value == 'reverse') {
+              _change(value, id);
+            }
+          },
+          itemBuilder: (_) {
+            final manage = context.read<AuthState>().user?.isAdmin == true ||
+                context.read<AuthState>().permissions.all;
+            final open = '${r['slip_status'] ?? 'processed'}' == 'processed';
+            return [
+              const PopupMenuItem(value: 'view', child: Text('View Record')),
+              const PopupMenuItem(value: 'print', child: Text('Print Payslip')),
+              if (manage && open) const PopupMenuItem(value: 'cancel', child: Text('Cancel Payslip')),
+              if (manage && open) const PopupMenuItem(value: 'reverse', child: Text('Reverse Payslip')),
+            ];
+          },
         )),
       ],
     );
@@ -155,80 +189,170 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
       return;
     }
-    final p = _ps.payslip;
-    if (p == null) return;
-    final lines = ((p['lines'] as List?) ?? []).map((e) => asLine(e)).toList();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Payslip — ${p['employee']?['name'] ?? ''}'),
-        content: SizedBox(
-          width: 520,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('${p['company']?['name'] ?? ''}',
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 8),
-                Text('Pay date: ${_fmt(p['period_date'])}'),
-                Text('Employee code: ${p['employee']?['code'] ?? '—'}'),
-                Text('Designation: ${p['employee']?['designation'] ?? '—'}'),
-                Text('Project: ${p['project'] ?? '—'}'),
-                const SizedBox(height: 12),
-                const Text('Salary items', style: TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 6),
-                for (final line in lines)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text('${line['item']}')),
-                        Text(_money.format(_num(line['allowance']))),
-                        const SizedBox(width: 12),
-                        Text(
-                          _num(line['deduction']) == 0
-                              ? ''
-                              : '- ${_money.format(_num(line['deduction']))}',
-                        ),
-                      ],
-                    ),
-                  ),
-                const Divider(),
-                Text('Gross: ${_money.format(_num(p['total_allowance']))}'),
-                Text('Tax: ${_money.format(_num(p['tax_amount']))}'),
-                Text('EOBI: ${_money.format(_num(p['eobi_amount']))}'),
-                Text('Loan: ${_money.format(_num(p['loan_amount']))}'),
-                Text('Deductions: ${_money.format(_num(p['total_deduction']))}'),
-                const SizedBox(height: 6),
-                Text(
-                  'Net: ${_money.format(_num(p['net_salary']))}',
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                ),
+    setState(() => _openId = id);
+  }
+
+  Future<void> _change(String action, [int? id]) async {
+    final slipId = id ?? _openId ?? 0;
+    if (slipId < 1) return;
+    final err = await _ps.setPayslipStatus(slipId, action);
+    if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      return;
+    }
+    if (_openId != null) {
+      await _ps.loadPayslip(slipId);
+    }
+    if (!mounted) return;
+    setState(() {});
+  }
+
+}
+
+class _PayslipRecord extends StatelessWidget {
+  const _PayslipRecord({
+    required this.slip,
+    required this.currency,
+    required this.canManage,
+    required this.onBack,
+    required this.onPrint,
+    required this.onCancel,
+    required this.onReverse,
+  });
+
+  final Map<String, dynamic> slip;
+  final String currency;
+  final bool canManage;
+  final VoidCallback onBack;
+  final VoidCallback onPrint;
+  final VoidCallback onCancel;
+  final VoidCallback onReverse;
+
+  @override
+  Widget build(BuildContext context) {
+    final emp = slip['employee'] is Map
+        ? (slip['employee'] as Map).map((k, v) => MapEntry('$k', v))
+        : <String, dynamic>{};
+    final lines = ((slip['lines'] as List?) ?? []).map((e) {
+      if (e is Map<String, dynamic>) return e;
+      if (e is Map) return e.map((k, v) => MapEntry('$k', v));
+      return <String, dynamic>{};
+    }).toList();
+    final status = '${slip['slip_status'] ?? 'processed'}';
+    final open = status == 'processed';
+    double n(dynamic v) => (v as num?)?.toDouble() ?? 0;
+
+    return ColoredBox(
+      color: HrUi.pageBg(context),
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Back'),
+              ),
+              const Spacer(),
+              OutlinedButton.icon(
+                onPressed: onPrint,
+                icon: const Icon(Icons.print_outlined, size: 16),
+                label: const Text('Print Payslip'),
+              ),
+              if (canManage && open) ...[
+                const SizedBox(width: 8),
+                OutlinedButton(onPressed: onCancel, child: const Text('Cancel Payslip')),
+                const SizedBox(width: 8),
+                OutlinedButton(onPressed: onReverse, child: const Text('Reverse Payslip')),
               ],
-            ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => openPayslipDocument(context, id, download: false),
-            child: const Text('Print'),
+          const SizedBox(height: 8),
+          Text(
+            'Salary Payslip of ${emp['name'] ?? ''}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
           ),
-          TextButton(
-            onPressed: () => openPayslipDocument(context, id, download: true),
-            child: const Text('Download'),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text('Current status: ${slip['status'] ?? 'Processed'}',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
           ),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          const SizedBox(height: 12),
+          _block(context, 'Salary Payslip Information', [
+            _pair('User name', '${emp['name'] ?? '—'}'),
+            _pair('Username', '${emp['user_name'] ?? '—'}'),
+            _pair('Pay date', _fmt(slip['period_date'])),
+            _pair('Status', '${slip['status'] ?? 'Processed'}'),
+          ]),
+          _block(context, 'Salary Payslip Period', [
+            _pair('Payslip type', 'Monthly (12)'),
+            _pair('Start date', _fmt(slip['period_start'])),
+            _pair('End date', _fmt(slip['period_end'])),
+            _pair('Salary days', '${slip['days'] ?? '—'}'),
+          ]),
+          _block(context, 'Salary Items', [
+            for (final line in lines)
+              _pair(
+                '${line['item']}',
+                n(line['deduction']) > 0
+                    ? '- ${_money(n(line['deduction']), currency)}'
+                    : _money(n(line['allowance']), currency),
+              ),
+            _pair('Total allowance', _money(n(slip['total_allowance']), currency)),
+            _pair('Total deduction', _money(n(slip['total_deduction']), currency)),
+            _pair('Net salary', _money(n(slip['net_salary']), currency)),
+          ]),
+          _block(context, 'Additional Information', [
+            _pair('Record added by', '${slip['created_by_name'] ?? '—'}'),
+            _pair('Record added on', _fmt(slip['created_at'])),
+            _pair('Station', '${emp['station'] ?? '—'}'),
+            _pair('Department', '${emp['department'] ?? '—'}'),
+            _pair('Job title', '${emp['designation'] ?? '—'}'),
+          ]),
         ],
       ),
     );
   }
 
-  Map<String, dynamic> asLine(dynamic e) {
-    if (e is Map<String, dynamic>) return e;
-    if (e is Map) return e.map((k, v) => MapEntry(k.toString(), v));
-    return {};
+  String _fmt(dynamic raw) {
+    final d = DateTime.tryParse('$raw');
+    if (d == null) return '$raw'.isEmpty || '$raw' == 'null' ? '—' : '$raw';
+    return _day.format(d);
   }
 
-  double _num(dynamic v) => (v as num?)?.toDouble() ?? 0;
+  Widget _block(BuildContext context, String title, List<Widget> rows) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      decoration: BoxDecoration(
+        color: HrUi.card(context),
+        border: Border.all(color: HrUi.border(context)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 8),
+          ...rows,
+        ],
+      ),
+    );
+  }
+
+  Widget _pair(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
 }

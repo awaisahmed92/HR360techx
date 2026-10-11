@@ -390,6 +390,40 @@ class PayrollController extends Controller
         return response()->json(['success' => true, 'sheet' => $sheet]);
     }
 
+    public function payslipCancel(Request $request, int $id)
+    {
+        return $this->changeSlipStatus($request, $id, 'cancelled');
+    }
+
+    public function payslipReverse(Request $request, int $id)
+    {
+        return $this->changeSlipStatus($request, $id, 'reversed');
+    }
+
+    private function changeSlipStatus(Request $request, int $id, string $status)
+    {
+        if ($this->payslipScope($request) !== null) {
+            return response()->json(['success' => false, 'message' => 'Only an administrator can change a payslip.'], 403);
+        }
+        $slip = $this->payroll->payslip($id);
+        if (!$slip) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+        $updated = $this->payroll->setSlipStatus($id, $status);
+        if ($updated === null) {
+            return response()->json(['success' => false, 'message' => 'Not found.'], 404);
+        }
+        if (isset($updated['error'])) {
+            return response()->json(['success' => false, 'message' => $updated['error']], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $status === 'cancelled' ? 'Payslip cancelled.' : 'Payslip reversed.',
+            'payslip' => $updated,
+        ]);
+    }
+
     public function payslipPrint(Request $request, int $id)
     {
         $slip = $this->payroll->payslip($id);

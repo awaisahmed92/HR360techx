@@ -210,8 +210,15 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
   }
 
   void _fill(Map<String, dynamic> e) {
-    _name.text = '${e['name'] ?? ''}';
-    _surname.text = '${e['surname'] ?? ''}';
+    var first = '${e['name'] ?? ''}'.trim();
+    var last = '${e['surname'] ?? ''}'.trim();
+    if (last.isEmpty && first.contains(' ')) {
+      final parts = first.split(RegExp(r'\s+'));
+      last = parts.removeLast();
+      first = parts.join(' ');
+    }
+    _name.text = first;
+    _surname.text = last;
     _father.text = '${e['father_name'] ?? ''}';
     _userName.text = '${e['user_name'] ?? ''}';
     _email.text = '${e['email'] ?? ''}';

@@ -93,13 +93,23 @@ class EmployeeController extends Controller
             $query->where('e.status', (int) $status);
         }
 
+        $claims = $request->attributes->get('hr_claims') ?? [];
+        if (!$this->canBrowseEmployees(is_array($claims) ? $claims : [])) {
+            $query->where('e.employee_id', (int) ($claims['employee_id'] ?? 0));
+        }
+
         $rows = $query->orderBy('e.name')->limit(500)->get()->map(fn ($r) => $this->mapListRow($r));
 
         return response()->json(['success' => true, 'rows' => $rows]);
     }
 
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
+        $claims = $request->attributes->get('hr_claims') ?? [];
+        $claims = is_array($claims) ? $claims : [];
+        if (!$this->canBrowseEmployees($claims) && (int) ($claims['employee_id'] ?? 0) !== $id) {
+            return response()->json(['success' => false, 'message' => 'You can only open your own record.'], 403);
+        }
         $emp = DB::table('employee')->where('employee_id', $id)->first();
         if (!$emp) {
             return response()->json(['success' => false, 'message' => 'Employee not found.'], 404);
@@ -775,6 +785,39 @@ class EmployeeController extends Controller
                 ]);
             }
         }
+    }
+
+    /** Admin, or a job title with the Employees module, may open the full list. */
+    protected function canBrowseEmployees(array $claims): bool
+    {
+        if ((int) ($claims['user_status'] ?? 0) === 2 || !empty($claims['is_superuser'])) {
+            return true;
+        }
+        $employeeId = (int) ($claims['employee_id'] ?? 0);
+        if ($employeeId < 1) {
+            return false;
+        }
+        $row = DB::table('employee as e')
+            ->leftJoin('designation as d', 'd.designation_id', '=', 'e.designation')
+            ->where('e.employee_id', $employeeId)
+            ->first(['e.rolls as emp_rolls', 'd.rolls as des_rolls']);
+        $raw = null;
+        if ($row && Schema::hasColumn('employee', 'rolls') && !empty($row->emp_rolls)) {
+            $raw = $row->emp_rolls;
+        } elseif ($row && !empty($row->des_rolls)) {
+            $raw = $row->des_rolls;
+        }
+        $rolls = is_string($raw) ? @unserialize($raw) : null;
+        if (!is_array($rolls) || !isset($rolls['employees']) || !is_array($rolls['employees'])) {
+            return false;
+        }
+        $mod = $rolls['employees'];
+        if (!empty($mod['roll']) && (string) $mod['roll'] === '1') {
+            return true;
+        }
+        $screen = $mod['employees'] ?? null;
+
+        return is_array($screen) && !empty($screen[0]) && (string) $screen[0] === '1';
     }
 
     protected function mapListRow(object $r): array

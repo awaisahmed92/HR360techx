@@ -17,7 +17,7 @@ $pdo = new PDO("mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
 ]);
 echo "Seeding {$name} on {$host}\n";
 
-$password = password_hash('Demo@360', PASSWORD_BCRYPT);
+$password = password_hash('360tech', PASSWORD_BCRYPT);
 $pdo->exec("UPDATE company SET currency = 'USD' WHERE id = 1");
 
 $places = [
@@ -191,6 +191,8 @@ $insTime = $pdo->prepare(
      VALUES (?,?,?,?,72,?,1)'
 );
 
+$payrollCol = $pdo->query("SHOW COLUMNS FROM employee LIKE 'payroll_type'")->fetch(PDO::FETCH_ASSOC);
+$payrollType = (isset($payrollCol['Type']) && stripos((string) $payrollCol['Type'], 'int') !== false) ? 1 : 'Monthly';
 $workdays = ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04', '2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'];
 $managers = [];
 $byStation = [];
@@ -225,7 +227,7 @@ foreach ($people as $i => [$first, $last, $role, $city, $gender]) {
         sprintf('199%d-0%d-15', $n % 8, ($n % 9) + 1),
         $n % 4 === 0 ? 'Married' : 'Single',
         "$city, $country",
-        'Monthly',
+        $payrollType,
         $name,
         'USD' . str_pad((string) (100000 + $n), 8, '0', STR_PAD_LEFT),
         'SEED',
@@ -277,7 +279,7 @@ $pdo->commit();
 
 echo "Inserted $inserted employees, $loanCount loans, currency USD\n";
 echo "Stations: " . implode(', ', array_keys($places)) . "\n";
-echo "Login any SEED user with password Demo@360\n";
+echo "Login any SEED user with password 360tech\n";
 
 function ensure(PDO $pdo, string $table, string $col, string $value, string $idCol): int
 {

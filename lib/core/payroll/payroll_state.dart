@@ -197,6 +197,20 @@ class PayrollState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<String?> setPayslipStatus(int id, String action) async {
+    try {
+      final res = await _api.dio.post('/payroll/payslip/$id/$action');
+      final d = res.data;
+      if (d is! Map || d['success'] != true) {
+        return (d is Map ? d['message'] : null)?.toString() ?? 'Could not update payslip';
+      }
+      await loadMyPayslips();
+      return null;
+    } on DioException catch (e) {
+      return _msg(e);
+    }
+  }
+
   Future<String?> loadPayslip(int id) async {
     try {
       final res = await _api.dio.get('/payroll/payslip/$id');

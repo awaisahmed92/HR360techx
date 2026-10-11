@@ -614,6 +614,7 @@ class PayrollService
         if (!Schema::hasTable('process_salary')) {
             return [];
         }
+        $this->ensureSlipStatus();
         $q = DB::table('process_salary as ps')
             ->leftJoin('employee as e', 'e.employee_id', '=', 'ps.employee_id')
             ->leftJoin('project as p', 'p.project_id', '=', 'ps.project_id')
@@ -635,17 +636,33 @@ class PayrollService
 
     public function payslip(int $processId): ?array
     {
+        $this->ensureSlipStatus();
         $row = DB::table('process_salary as ps')
             ->leftJoin('employee as e', 'e.employee_id', '=', 'ps.employee_id')
             ->leftJoin('project as p', 'p.project_id', '=', 'ps.project_id')
             ->leftJoin('designation as d', 'd.designation_id', '=', 'e.designation')
+            ->leftJoin('department as dep', 'dep.department_id', '=', 'e.department')
+            ->leftJoin('station as st', 'st.station_id', '=', 'e.station')
+            ->leftJoin('employee as creator', 'creator.employee_id', '=', 'ps.created_by')
             ->select(
                 'ps.*',
                 'e.name as employee_name',
+                'e.surname as employee_surname',
                 'e.employee_code',
+                'e.user_name',
                 'e.email',
+                'e.phone',
+                'e.date_of_birth',
+                'e.joining_date',
+                'e.address',
+                'e.bnk_title',
+                'e.bnk_number',
+                'e.bnk_code',
                 'p.name as project_name',
-                'd.name as designation_name'
+                'd.name as designation_name',
+                'dep.name as department_name',
+                'st.name as station_name',
+                'creator.name as created_by_name'
             )
             ->where('ps.id', $processId)
             ->first();
@@ -660,23 +677,42 @@ class PayrollService
             ->get(['pd.*', 'i.name as item_name', 'i.code', 'i.category']);
 
         $logo = $company->hr_logo ?? $company->logo ?? null;
+        $slipStatus = (string) ($row->slip_status ?? 'processed');
 
         return [
+            'id' => (int) $row->id,
             'company' => [
                 'name' => (string) ($company->hr_company_name ?? $company->name ?? 'Organization'),
-                'currency' => (string) ($company->currency ?? 'PKR'),
+                'email' => (string) ($company->email ?? ''),
+                'currency' => (string) ($company->currency ?? 'USD'),
                 'logo' => $logo,
             ],
             'options' => $opts,
             'employee' => [
                 'id' => (int) $row->employee_id,
-                'name' => (string) ($row->employee_name ?? ''),
+                'name' => trim((string) ($row->employee_name ?? '').' '.(string) ($row->employee_surname ?? '')),
                 'code' => (string) ($row->employee_code ?? ''),
+                'user_name' => (string) ($row->user_name ?? ''),
                 'email' => (string) ($row->email ?? ''),
+                'phone' => (string) ($row->phone ?? ''),
+                'date_of_birth' => (string) ($row->date_of_birth ?? ''),
+                'joining_date' => (string) ($row->joining_date ?? ''),
+                'address' => (string) ($row->address ?? ''),
                 'designation' => (string) ($row->designation_name ?? ''),
+                'department' => (string) ($row->department_name ?? ''),
+                'station' => (string) ($row->station_name ?? ''),
+                'bank_title' => (string) ($row->bnk_title ?? ''),
+                'bank_number' => (string) ($row->bnk_number ?? ''),
+                'bank_code' => (string) ($row->bnk_code ?? ''),
             ],
             'project' => (string) ($row->project_name ?? ''),
             'period_date' => (string) ($row->date ?? ''),
+            'period_start' => self::periodStart((string) ($row->date ?? '')),
+            'period_end' => (string) ($row->date ?? ''),
+            'slip_status' => $slipStatus,
+            'status' => self::slipStatusLabel($slipStatus),
+            'created_at' => (string) ($row->created_at ?? ''),
+            'created_by_name' => (string) ($row->created_by_name ?? ''),
             'days' => (int) $row->days,
             'basic_salary' => (float) $row->basic_salary,
             'total_allowance' => (float) $row->total_allowance,
@@ -1277,68 +1313,129 @@ button{padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px
         $c = $slip['company'];
         $e = $slip['employee'];
         $opts = $slip['options'] ?? [];
-        $title = htmlspecialchars((string) ($opts['payslip_title'] ?? 'Payslip'));
-        $company = htmlspecialchars((string) ($c['name'] ?? ''));
-        $currency = htmlspecialchars((string) ($c['currency'] ?? 'PKR'));
-        $ename = htmlspecialchars((string) ($e['name'] ?? ''));
-        $ecode = htmlspecialchars((string) ($e['code'] ?? ''));
-        $edes = htmlspecialchars((string) ($e['designation'] ?? ''));
-        $period = htmlspecialchars((string) ($slip['period_date'] ?? ''));
-        $logoPath = (string) ($c['logo'] ?? '');
+        $h = static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        $money = static fn ($v) => number_format((float) $v, 2);
+        $title = $h($opts['payslip_title'] ?? 'Payslip');
+        $company = $h($c['name'] ?? '');
+        $currency = $h($c['currency'] ?? 'USD');
+        $start = $h($this->prettyDate((string) ($slip['period_start'] ?? '')));
+        $end = $h($this->prettyDate((string) ($slip['period_end'] ?? $slip['period_date'] ?? '')));
         $logoHtml = '';
+        $logoPath = (string) ($c['logo'] ?? '');
         if ($logoPath !== '' && $publicBase) {
             $url = rtrim($publicBase, '/').'/'.ltrim($logoPath, '/');
-            $logoHtml = '<img src="'.htmlspecialchars($url).'" alt="logo" style="max-height:64px;margin-bottom:8px"/>';
+            $logoHtml = '<img src="'.$h($url).'" alt="" style="max-height:48px"/>';
         }
-        $lines = '';
+
+        $earn = '';
+        $extra = '';
+        $deduct = '';
+        $earnTotal = 0.0;
+        $extraTotal = 0.0;
+        $deductTotal = 0.0;
         foreach ($slip['lines'] as $l) {
-            $lines .= '<tr><td>'.htmlspecialchars($l['item']).'</td>'
-                .'<td style="text-align:right">'.number_format((float) $l['allowance'], 2).'</td>'
-                .'<td style="text-align:right">'.number_format((float) $l['deduction'], 2).'</td></tr>';
+            $allow = (float) ($l['allowance'] ?? 0);
+            $ded = (float) ($l['deduction'] ?? 0);
+            $name = $h($l['item'] ?? 'Item');
+            if ($ded > 0) {
+                $deductTotal += $ded;
+                $deduct .= '<tr><td>'.$name.'</td><td class="num">'.$money($ded).'</td></tr>';
+            } elseif (strtoupper((string) ($l['code'] ?? '')) === 'BASIC') {
+                $earnTotal += $allow;
+                $earn .= '<tr><td>'.$name.'</td><td class="num">'.$money($allow).'</td></tr>';
+            } elseif ($allow > 0) {
+                $extraTotal += $allow;
+                $extra .= '<tr><td>'.$name.'</td><td class="num">'.$money($allow).'</td></tr>';
+            }
         }
-        $sig = !empty($opts['add_signature'])
-            ? '<div style="margin-top:40px;display:flex;justify-content:space-between"><div>Employee _____________</div><div>Authorized _____________</div></div>'
+        if ($earn === '') {
+            $earnTotal = (float) $slip['basic_salary'];
+            $earn = '<tr><td>Basic Salary</td><td class="num">'.$money($earnTotal).'</td></tr>';
+        }
+        if ($extra === '') {
+            $extra = '<tr><td colspan="2" class="muted">—</td></tr>';
+        }
+        if ($deduct === '') {
+            $deduct = '<tr><td colspan="2" class="muted">—</td></tr>';
+        }
+
+        $field = static function (string $label, string $value) use ($h): string {
+            $shown = trim($value) === '' ? '—' : $value;
+
+            return '<div class="k">'.$h($label).'</div><div class="v">'.$h($shown).'</div>';
+        };
+        $left = $field('User Name', (string) $e['name'])
+            .$field('Username', (string) ($e['user_name'] ?? ''))
+            .$field('Employee Id', (string) ($e['code'] ?? ''))
+            .$field('Date of Birth', $this->prettyDate((string) ($e['date_of_birth'] ?? '')))
+            .$field('Joining Date', $this->prettyDate((string) ($e['joining_date'] ?? '')))
+            .$field('Station', (string) ($e['station'] ?? ''))
+            .$field('Account Title', (string) ($e['bank_title'] ?? ''))
+            .$field('Account Number', (string) ($e['bank_number'] ?? ''))
+            .$field('Bank Code', (string) ($e['bank_code'] ?? ''));
+        $right = $field('Job Title', (string) ($e['designation'] ?? ''))
+            .$field('Department', (string) ($e['department'] ?? ''))
+            .$field('Project', (string) ($slip['project'] ?? ''))
+            .$field('Email', (string) ($e['email'] ?? ''))
+            .$field('Phone', (string) ($e['phone'] ?? ''))
+            .$field('Salary Days', (string) ($slip['days'] ?? ''))
+            .$field('Monthly Gross Salary', $money($slip['total_allowance']).' '.$currency)
+            .$field('Status', (string) ($slip['status'] ?? 'Processed'))
+            .$field('Address', (string) ($e['address'] ?? ''));
+
+        $note = !empty($opts['add_signature'])
+            ? '<p class="foot">This payslip is electronically generated and is valid without a signature or company stamp.</p>'
             : '';
 
         return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'.$title.'</title>
 <style>
-body{font-family:Segoe UI,Arial,sans-serif;color:#222;margin:32px}
-h1{font-size:20px;margin:0 0 4px}
-table{width:100%;border-collapse:collapse;margin-top:16px}
-th,td{border-bottom:1px solid #ddd;padding:8px;font-size:13px}
-th{background:#A67C5D;color:#fff;text-align:left}
-.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;font-size:13px}
-.totals{margin-top:16px;font-size:14px}
-@media print{button{display:none}}
+body{font-family:Segoe UI,Arial,sans-serif;color:#1f2937;margin:28px;background:#fff}
+h1{text-align:center;font-size:22px;font-weight:600;margin:0}
+.sub{text-align:center;color:#4b5563;margin:4px 0 18px;font-size:13px}
+.top{display:flex;justify-content:space-between;gap:24px;border:1px solid #d1d5db;padding:12px 14px;margin-bottom:16px}
+.co{font-size:13px;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid #e5e7eb}
+.col{display:grid;grid-template-columns:180px 1fr}
+.k,.v{border-bottom:1px solid #e5e7eb;padding:6px 10px;font-size:12px}
+.k{color:#6b7280}
+.v{font-weight:600}
+.cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:18px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;padding:6px 4px;border-bottom:2px solid #111}
+td{font-size:12px;padding:5px 4px;border-bottom:1px solid #e5e7eb}
+.num{text-align:right}
+.muted{color:#9ca3af}
+.net{margin-top:10px;display:flex;justify-content:space-between;font-size:15px;font-weight:700;border-top:2px solid #111;padding-top:8px}
+.foot{margin-top:28px;font-size:11px;color:#6b7280;text-align:center}
+button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:0;border-radius:6px;cursor:pointer}
+@media print{button{display:none} body{margin:12px}}
 </style></head><body>
-<button onclick="window.print()" style="padding:8px 14px;background:#A67C5D;color:#fff;border:0;border-radius:6px;cursor:pointer">Print / Save PDF</button>
-'.$logoHtml.'
-<h1>'.$title.' — '.$company.'</h1>
-<div class="meta">
-<div><b>Employee:</b> '.$ename.' ('.$ecode.')</div>
-<div><b>Period:</b> '.$period.'</div>
-<div><b>Designation:</b> '.$edes.'</div>
-<div><b>Project:</b> '.htmlspecialchars((string) ($slip['project'] ?? '')).'</div>
-<div><b>Days:</b> '.(int) $slip['days'].'</div>
-<div><b>Currency:</b> '.$currency.'</div>
+<button onclick="window.print()">Print / Save PDF</button>
+<h1>'.$title.'</h1>
+<div class="sub">Payslip for '.$start.' – '.$end.'</div>
+<div class="top"><div class="co"><b>'.$company.'</b><br>'.($c['email'] ? $h($c['email']) : '').'</div><div>'.$logoHtml.'</div></div>
+<div class="grid"><div class="col">'.$left.'</div><div class="col">'.$right.'</div></div>
+<div class="cols">
+<table><thead><tr><th>GROSS EARNING</th><th class="num">AMOUNT</th></tr></thead><tbody>'.$earn.'
+<tr><td><b>Gross Salary</b></td><td class="num"><b>'.$money($earnTotal).'</b></td></tr></tbody></table>
+<table><thead><tr><th>ADDITIONAL</th><th class="num">AMOUNT</th></tr></thead><tbody>'.$extra.'
+<tr><td><b>Total Additional</b></td><td class="num"><b>'.$money($extraTotal).'</b></td></tr></tbody></table>
+<table><thead><tr><th>DEDUCTION</th><th class="num">AMOUNT</th></tr></thead><tbody>'.$deduct.'
+<tr><td><b>Total Deductions</b></td><td class="num"><b>'.$money($deductTotal).'</b></td></tr></tbody></table>
 </div>
-<table><thead><tr><th>Item</th><th style="text-align:right">Allowance</th><th style="text-align:right">Deduction</th></tr></thead>
-<tbody>'.$lines.'</tbody></table>
-<div class="totals">
-<div>Gross: <b>'.number_format((float) $slip['total_allowance'], 2).'</b></div>
-<div>Tax: '.number_format((float) $slip['tax_amount'], 2)
-.' · EOBI: '.number_format((float) $slip['eobi_amount'], 2)
-.' · SESSI: '.number_format((float) ($slip['sessi_amount'] ?? 0), 2)
-.' · PF: '.number_format((float) ($slip['pf_amount'] ?? 0), 2).'</div>
-<div>Late: '.number_format((float) ($slip['late_amount'] ?? 0), 2)
-.' · LWP: '.number_format((float) ($slip['lwp_amount'] ?? 0), 2)
-.' · Loan: '.number_format((float) ($slip['loan_amount'] ?? 0), 2)
-.' · Arrears: '.number_format((float) ($slip['arrears_amount'] ?? 0), 2).'</div>
-<div>Total Deduction: '.number_format((float) $slip['total_deduction'], 2).'</div>
-<div style="font-size:18px;margin-top:8px">Net Pay: <b>'.number_format((float) $slip['net_salary'], 2).' '.$currency.'</b></div>
-</div>
-'.$sig.'
+<div class="net"><span>Net Salary ('.$currency.')</span><span>'.$money($slip['net_salary']).'</span></div>
+'.$note.'
 </body></html>';
+    }
+
+    protected function prettyDate(string $value): string
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+            return $value;
+        }
+        $ts = strtotime(substr($value, 0, 10));
+
+        return $ts ? date('F j, Y', $ts) : $value;
     }
 
     protected function defaultSetup(): array
@@ -1451,8 +1548,52 @@ th{background:#A67C5D;color:#fff;text-align:left}
             'employee_code' => (string) ($r->employee_code ?? ''),
             'period_start' => self::periodStart((string) ($r->date ?? '')),
             'period_end' => (string) ($r->date ?? ''),
-            'status' => 'Processed',
+            'slip_status' => (string) ($r->slip_status ?? 'processed'),
+            'status' => self::slipStatusLabel((string) ($r->slip_status ?? 'processed')),
         ];
+    }
+
+    public static function slipStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'cancelled' => 'Cancelled',
+            'reversed' => 'Reversed',
+            default => 'Processed',
+        };
+    }
+
+    public function ensureSlipStatus(): void
+    {
+        if (!Schema::hasTable('process_salary') || Schema::hasColumn('process_salary', 'slip_status')) {
+            return;
+        }
+        try {
+            DB::statement("ALTER TABLE `process_salary` ADD COLUMN `slip_status` VARCHAR(20) NOT NULL DEFAULT 'processed'");
+        } catch (\Throwable $e) {
+            // Applied by database/31_payslip_status.sql on the next schema boot.
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    public function setSlipStatus(int $id, string $status): ?array
+    {
+        $this->ensureSlipStatus();
+        $row = DB::table('process_salary')->where('id', $id)->first();
+        if (!$row) {
+            return null;
+        }
+        $current = (string) ($row->slip_status ?? 'processed');
+        if (!in_array($current, ['processed', ''], true)) {
+            return ['error' => 'Only a processed payslip can be updated.'];
+        }
+        DB::table('process_salary')->where('id', $id)->update(['slip_status' => $status]);
+
+        return $this->mapProcess(DB::table('process_salary as ps')
+            ->leftJoin('employee as e', 'e.employee_id', '=', 'ps.employee_id')
+            ->leftJoin('project as p', 'p.project_id', '=', 'ps.project_id')
+            ->select('ps.*', 'e.name as employee_name', 'e.employee_code', 'p.name as project_name')
+            ->where('ps.id', $id)
+            ->first());
     }
 
     protected static function periodStart(string $date): string

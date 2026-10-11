@@ -21,6 +21,7 @@ class _EmployeesViewState extends State<EmployeesView> {
   late final EmployeeState _state;
   bool _showForm = false;
   int? _editId;
+  Map<String, dynamic>? _viewRow;
   String _query = '';
 
   @override
@@ -66,6 +67,21 @@ class _EmployeesViewState extends State<EmployeesView> {
     return AnimatedBuilder(
       animation: _state,
       builder: (context, _) {
+        if (_viewRow != null) {
+          return _EmployeeRecordView(
+            row: _viewRow!,
+            state: _state,
+            onBack: () => setState(() => _viewRow = null),
+            onEdit: () {
+              final row = _viewRow!;
+              setState(() {
+                _viewRow = null;
+                _editId = (row['employee_id'] as num?)?.toInt();
+                _showForm = true;
+              });
+            },
+          );
+        }
         if (_showForm) {
           // Avoid AnimatedSwitcher measuring this with loose height.
           return EmployeeFormView(
@@ -301,6 +317,7 @@ class _EmployeesViewState extends State<EmployeesView> {
             DataColumn(label: Text('Reports To')),
             DataColumn(label: Text('Station')),
             DataColumn(label: Text('Status')),
+            DataColumn(label: Text('')),
           ],
           rows: [
             for (var i = 0; i < rows.length; i++)
@@ -312,7 +329,7 @@ class _EmployeesViewState extends State<EmployeesView> {
                   DataCell(Text('${i + 1}')),
                   DataCell(
                     InkWell(
-                      onTap: () => _openEdit(rows[i]),
+                      onTap: () => setState(() => _viewRow = rows[i]),
                       child: Row(
                         children: [
                           CircleAvatar(
@@ -352,6 +369,23 @@ class _EmployeesViewState extends State<EmployeesView> {
                   DataCell(Text('${rows[i]['reports_to'] ?? '—'}', overflow: TextOverflow.ellipsis)),
                   DataCell(Text('${rows[i]['station_name'] ?? '—'}', overflow: TextOverflow.ellipsis)),
                   DataCell(_statusChip((rows[i]['status'] as num?)?.toInt() ?? 0)),
+                  DataCell(
+                    PopupMenuButton<String>(
+                      tooltip: 'Actions',
+                      onSelected: (value) {
+                        if (value == 'view') {
+                          setState(() => _viewRow = rows[i]);
+                        } else if (value == 'edit') {
+                          _openEdit(rows[i]);
+                        }
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'view', child: Text('View Record')),
+                        PopupMenuItem(value: 'edit', child: Text('Edit')),
+                      ],
+                      child: Icon(Icons.more_horiz, color: brand),
+                    ),
+                  ),
                 ],
               ),
           ],
@@ -379,5 +413,142 @@ class _EmployeesViewState extends State<EmployeesView> {
     if (parts.isEmpty || parts.first.isEmpty) return '?';
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
+  }
+}
+
+class _EmployeeRecordView extends StatefulWidget {
+  const _EmployeeRecordView({
+    required this.row,
+    required this.state,
+    required this.onBack,
+    required this.onEdit,
+  });
+
+  final Map<String, dynamic> row;
+  final EmployeeState state;
+  final VoidCallback onBack;
+  final VoidCallback onEdit;
+
+  @override
+  State<_EmployeeRecordView> createState() => _EmployeeRecordViewState();
+}
+
+class _EmployeeRecordViewState extends State<_EmployeeRecordView> {
+  Map<String, dynamic> _detail = {};
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final id = (widget.row['employee_id'] as num?)?.toInt() ?? 0;
+    final data = await widget.state.getById(id);
+    if (!mounted) return;
+    final emp = data == null ? null : data['employee'];
+    setState(() {
+      _detail = emp is Map ? emp.map((k, v) => MapEntry('$k', v)) : {};
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = '${widget.row['name'] ?? ''}';
+    final status = (widget.row['status'] as num?)?.toInt() ?? 0;
+    final active = status > 0;
+    String pick(String key, [String fallback = '—']) {
+      final v = _detail[key] ?? widget.row[key];
+      final s = '$v'.trim();
+      if (s.isEmpty || s == 'null') return fallback;
+      return s;
+    }
+
+    return ColoredBox(
+      color: HrUi.pageBg(context),
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: widget.onBack,
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Back'),
+              ),
+              const Spacer(),
+              FilledButton.icon(
+                onPressed: widget.onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: const Text('Edit'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            name,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(fontSize: 28, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 20),
+          if (_loading) const LinearProgressIndicator(),
+          _section('Employment', [
+            _line('Employment type', active ? 'Active' : 'Inactive'),
+            _line('Joining date', pick('joining_date')),
+            _line('Employee code', pick('employee_code')),
+          ]),
+          _section('User Information', [
+            _line('Department', pick('department_name')),
+            _line('Job title', '${widget.row['job_title'] ?? '—'}'),
+            _line('Station', '${widget.row['station_name'] ?? '—'}'),
+            _line('Reports to', '${widget.row['reports_to'] ?? '—'}'),
+            _line('Email', pick('email')),
+            _line('Phone', pick('phone', pick('contact_number'))),
+            _line('Date of birth', pick('date_of_birth')),
+            _line('Address', pick('address', pick('permanent_address'))),
+          ]),
+          _section('Login', [
+            _line('Username', pick('user_name')),
+            _line('Allow login', active ? 'Yes' : 'No'),
+            _line('Role', status == 2 ? 'Administrator' : 'Employee'),
+          ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _section(String title, List<Widget> lines) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      decoration: BoxDecoration(
+        color: HrUi.card(context),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: HrUi.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          const SizedBox(height: 8),
+          ...lines,
+        ],
+      ),
+    );
+  }
+
+  Widget _line(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 160, child: Text(label, style: TextStyle(color: HrUi.muted(context)))),
+          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w600))),
+        ],
+      ),
+    );
   }
 }
