@@ -154,9 +154,39 @@ class _RunPayrollViewState extends State<RunPayrollView> {
   Future<void> _generate() async {
     final err = await _ps.generateRun(_body);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(err ?? 'Payslips generated for the selected filters.')),
+    if (err != null) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.error_outline, color: Color(0xFFB45309), size: 36),
+          title: const Text('Payroll'),
+          content: Text(err),
+          actions: [
+            FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+          ],
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 40),
+        title: const Text('Payslips Generated'),
+        content: Text(_ps.lastRunMessage ?? 'Payslips were generated for the selected period.'),
+        actions: [
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: const Color(0xFF16A34A)),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
     );
+    if (!mounted) return;
+    context.read<AppState>().openScreen(moduleId: 'payroll', subId: 'pay_dashboard');
   }
 
   List<Map<String, dynamic>> get _visible {

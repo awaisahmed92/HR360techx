@@ -367,6 +367,8 @@ class _MainShellState extends State<MainShell> {
         return const LeaveView();
       case 'payroll':
         return const PayrollView();
+      case 'payroll_dashboard':
+        return const PayrollProcessView();
       case 'payroll_process':
         return const RunPayrollView();
       case 'my_payslips':

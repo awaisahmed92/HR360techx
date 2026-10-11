@@ -19,6 +19,7 @@ class PayrollState extends ChangeNotifier {
   List<Map<String, dynamic>> runs = [];
   List<Map<String, dynamic>> myPayslips = [];
   Map<String, dynamic>? payslip;
+  String? lastRunMessage;
 
   ApiClient get _api =>
       ApiClient(tokenProvider: () async => _auth.session?.token);
@@ -167,6 +168,7 @@ class PayrollState extends ChangeNotifier {
       if (d is! Map || d['success'] != true) {
         return (d is Map ? d['message'] : null)?.toString() ?? 'Generate failed';
       }
+      lastRunMessage = (d['message'] ?? 'Payslips were generated.').toString();
       await loadDashboard();
       return null;
     } on DioException catch (e) {

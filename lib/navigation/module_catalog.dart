@@ -153,7 +153,7 @@ class ModuleCatalog {
         HrSubNav(id: 'sessi_setup', label: 'SESSI', icon: Icons.medical_services_outlined, screen: 'master', entity: 'sessi_setup'),
         HrSubNav(id: 'tax_slabs', label: 'Tax', icon: Icons.receipt_long_outlined, screen: 'master', entity: 'tax_slabs'),
         HrSubNav(id: 'payroll_reports', label: 'Reports', icon: Icons.assessment_outlined, screen: 'payroll_reports'),
-        HrSubNav(id: 'pay_dashboard', label: 'Dashboard', icon: Icons.show_chart_outlined, screen: 'payroll_process'),
+        HrSubNav(id: 'pay_dashboard', label: 'Dashboard', icon: Icons.show_chart_outlined, screen: 'payroll_dashboard'),
         HrSubNav(id: 'payroll_options', label: 'Payroll Options', icon: Icons.storage_outlined, screen: 'payroll_setup'),
         HrSubNav(id: 'employee_salary', label: 'Employee Salary', icon: Icons.person_outline, screen: 'employee_pay'),
         HrSubNav(id: 'eobi_rates', label: 'EOBI Rates', icon: Icons.percent_outlined, screen: 'master', entity: 'eobi_rates'),

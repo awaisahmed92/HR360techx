@@ -1678,6 +1678,78 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
         return $out;
     }
 
+    /**
+     * True when this month already has a processed payslip for the selection:
+     * the chosen employees, the chosen stations, or the whole organization.
+     *
+     * @param array<string, mixed> $filters
+     */
+    public function selectionAlreadyPaid(array $filters, string $date): bool
+    {
+        if (!Schema::hasTable('process_salary')) {
+            return false;
+        }
+        $stamp = strtotime($date);
+        if ($stamp === false) {
+            return false;
+        }
+        $start = date('Y-m-01', $stamp);
+        $end = date('Y-m-t', $stamp);
+
+        $paid = DB::table('process_salary as ps')
+            ->leftJoin('employee as e', 'e.employee_id', '=', 'ps.employee_id')
+            ->whereBetween('ps.date', [$start, $end]);
+        if (Schema::hasColumn('process_salary', 'slip_status')) {
+            $paid->where(function ($w) {
+                $w->whereNull('ps.slip_status')
+                    ->orWhere('ps.slip_status', '')
+                    ->orWhereNotIn('ps.slip_status', ['cancelled', 'reversed']);
+            });
+        }
+
+        $employeeIds = array_values(array_filter(array_map('intval', (array) ($filters['employee_ids'] ?? []))));
+        $stationIds = array_values(array_filter(array_map('intval', (array) ($filters['station_ids'] ?? []))));
+        $hasNarrow = $employeeIds !== []
+            || $stationIds !== []
+            || array_filter((array) ($filters['department_ids'] ?? [])) !== []
+            || array_filter((array) ($filters['designation_ids'] ?? [])) !== []
+            || array_filter((array) ($filters['project_ids'] ?? [])) !== []
+            || array_filter((array) ($filters['embassy_codes'] ?? [])) !== [];
+
+        if ($employeeIds !== []) {
+            return (clone $paid)->whereIn('ps.employee_id', $employeeIds)->exists();
+        }
+        if ($stationIds !== []) {
+            return (clone $paid)->whereIn('e.station', $stationIds)->exists();
+        }
+        if ($hasNarrow) {
+            $ids = [];
+            foreach ($this->filteredDefines($filters) as $def) {
+                $ids[] = (int) $def->employee_id;
+            }
+            if ($ids === []) {
+                return false;
+            }
+
+            return (clone $paid)->whereIn('ps.employee_id', $ids)->exists();
+        }
+
+        $country = (string) ($filters['country'] ?? '');
+        if ($country !== '') {
+            $ids = [];
+            foreach ($this->payrollCountries() as $c) {
+                if ($c['code'] === $country) {
+                    $ids = $c['station_ids'];
+                }
+            }
+            if ($ids !== []) {
+                $paid->whereIn('e.station', $ids);
+            }
+        }
+
+        return $paid->exists();
+    }
+
     /** @param array<string, mixed> $filters */
     public function processFiltered(array $filters, string $date, int $days, int $actorId): array
     {

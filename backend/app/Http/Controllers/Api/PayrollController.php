@@ -152,6 +152,12 @@ class PayrollController extends Controller
             'embassy_codes' => 'nullable|array',
             'embassy_codes.*' => 'string|max:20',
         ]);
+        if ($this->payroll->selectionAlreadyPaid($data, $data['date'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payroll has already been generated for this selection.',
+            ], 422);
+        }
         $actor = (int) ($request->attributes->get('hr_claims')['employee_id'] ?? 0);
         $result = $this->payroll->processFiltered(
             $data,
@@ -159,6 +165,12 @@ class PayrollController extends Controller
             (int) ($data['days'] ?? 30),
             $actor
         );
+        if (($result['count'] ?? 0) < 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No defined salaries match this selection.',
+            ], 422);
+        }
 
         return response()->json([
             'success' => true,
