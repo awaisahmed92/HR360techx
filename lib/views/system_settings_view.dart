@@ -7,6 +7,7 @@ import '../controllers/app_state.dart';
 import '../core/config/clock_faces.dart';
 import '../core/config/countries.dart';
 import '../core/settings/org_settings_repository.dart';
+import '../core/util/money.dart';
 import '../theme/brand_themes.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_controls.dart';
@@ -123,8 +124,6 @@ class _SystemSettingsViewState extends State<SystemSettingsView> {
     '{Preferred Name}',
     '{Last Name}, {First Name}',
   ];
-
-  static const _currencies = ['USD', 'EUR', 'GBP', 'AED', 'CAD', 'CHF', 'SAR'];
 
   static const _temperatureFormats = ['Celsius (C)', 'Fahrenheit (F)'];
 
@@ -748,11 +747,18 @@ class _GeneralSettingsPanel extends StatelessWidget {
         HrFormRow(
           label: 'Base Currency',
           child: HrDropdown<String>(
-            value: settings.baseCurrency,
-            items: _dropdownItems(_SystemSettingsViewState._currencies),
+            value: payCurrencyCodes(settings.baseCurrency).contains(settings.baseCurrency.toUpperCase())
+                ? settings.baseCurrency.toUpperCase()
+                : payCurrencyCodes(settings.baseCurrency).first,
+            items: [
+              for (final code in payCurrencyCodes(settings.baseCurrency))
+                DropdownMenuItem(value: code, child: Text(moneyLabel(code), overflow: TextOverflow.ellipsis)),
+            ],
             onChanged: (v) {
               if (v == null) return;
               settings.baseCurrency = v;
+              settings.currencySign = moneySymbol(v);
+              currencySign.text = settings.currencySign;
               onChanged();
             },
           ),

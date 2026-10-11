@@ -5,6 +5,7 @@ import '../core/auth/auth_state.dart';
 import '../core/employees/employee_state.dart';
 import '../core/network/api_client.dart';
 import '../core/util/json_maps.dart';
+import '../core/util/money.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
@@ -223,8 +224,10 @@ class _EmployeePayViewState extends State<EmployeePayView> {
           'Salary',
           'Hourly',
         ], (v) => setState(() => _pay['salary_type'] = v))),
-        _field('Currency', _dd(_pay['currency']?.toString() ?? 'USD', ['USD', 'AED', 'EUR', 'GBP', 'CAD'],
-            (v) => setState(() => _pay['currency'] = v))),
+        _field(
+          'Pay currency',
+          _currencyDd(_pay['currency']?.toString() ?? 'USD', (v) => setState(() => _pay['currency'] = v)),
+        ),
         _num('Hours Per Week', 'hours_per_week'),
         _num('Annual Salary', 'annual_salary'),
         _num('Gross Salary', 'gross_salary'),
@@ -426,6 +429,27 @@ class _EmployeePayViewState extends State<EmployeePayView> {
           SizedBox(width: 180, child: Text(label, style: const TextStyle(fontSize: 13))),
           Expanded(child: child),
         ],
+      ),
+    );
+  }
+
+  Widget _currencyDd(String value, ValueChanged<String> onChanged) {
+    final codes = payCurrencyCodes(value);
+    final current = value.trim().toUpperCase();
+    return HrDropdown<String>(
+      value: codes.contains(current) ? current : codes.first,
+      items: [
+        for (final code in codes)
+          DropdownMenuItem(value: code, child: Text(moneyLabel(code), overflow: TextOverflow.ellipsis)),
+      ],
+      onChanged: (v) {
+        if (v != null) onChanged(v);
+      },
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFFF3F3F3),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       ),
     );
   }

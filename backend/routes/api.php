@@ -163,6 +163,7 @@ Route::middleware([TenantAuth::class])->group(function () {
 
     Route::post('/uploads/company-logo', [UploadController::class, 'companyLogo']);
     Route::post('/uploads/employees/{id}/photo', [UploadController::class, 'employeePhoto'])->whereNumber('id');
+    Route::get('/employees/{id}/photo', [UploadController::class, 'showEmployeePhoto'])->whereNumber('id');
 
     Route::get('/employees/{id}/pay', [EmployeePayController::class, 'show'])->whereNumber('id');
     Route::post('/employees/{id}/pay', [EmployeePayController::class, 'save'])->whereNumber('id');

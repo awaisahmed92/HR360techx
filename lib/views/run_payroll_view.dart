@@ -79,8 +79,7 @@ class _RunPayrollViewState extends State<RunPayrollView> {
     return (_ps.stats['currency'] ?? 'USD').toString();
   }
 
-  String _money(num? value) =>
-      NumberFormat.currency(symbol: moneySymbol(_currency), decimalDigits: 2).format(value ?? 0);
+  String _money(num? value) => formatMoney(value, _currency);
 
   List<Map<String, dynamic>> get _countries =>
       ((_ps.meta['countries'] as List?) ?? []).map(asStringKeyedMap).toList();
@@ -342,7 +341,7 @@ class _RunPayrollViewState extends State<RunPayrollView> {
         ],
         if (_rows.isNotEmpty) ...[
           const SizedBox(height: 18),
-          hrQueryBanner(query, visible.length),
+          hrQueryBanner(context, query, visible.length),
           _table(visible),
           const SizedBox(height: 8),
           Align(

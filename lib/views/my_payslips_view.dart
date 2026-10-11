@@ -313,7 +313,7 @@ class _PayslipRecord extends StatelessWidget {
     }).toList();
     final status = '${slip['slip_status'] ?? 'processed'}';
     final open = status == 'processed';
-    final money = NumberFormat.currency(symbol: moneySymbol(currency), decimalDigits: 2);
+    final money = payFormat(currency);
     double n(dynamic v) => (v as num?)?.toDouble() ?? 0;
     var earn = 0.0;
     var extra = 0.0;

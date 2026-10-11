@@ -620,32 +620,53 @@ class _GridSearch extends StatefulWidget {
 
 class _GridSearchState extends State<_GridSearch> {
   late final TextEditingController _ctrl;
+  final _focus = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _ctrl = TextEditingController(text: context.read<AppState>().pageQuery);
+    _focus.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _ctrl.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final page = context.watch<AppState>().pageQuery;
+    if (!_focus.hasFocus && _ctrl.text != page) {
+      _ctrl.text = page;
+    }
     return TextField(
       controller: _ctrl,
+      focusNode: _focus,
       style: TextStyle(color: widget.fg, fontSize: 13),
-      onChanged: context.read<AppState>().setPageQuery,
+      onChanged: (value) {
+        context.read<AppState>().setPageQuery(value);
+        setState(() {});
+      },
       decoration: InputDecoration(
         hintText: 'Search Employees, Module, Help',
         hintStyle: TextStyle(fontSize: 12, color: widget.muted),
         filled: true,
         fillColor: widget.field,
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        suffixIcon: Icon(Icons.search, size: 18, color: widget.muted),
+        suffixIcon: _ctrl.text.isEmpty
+            ? Icon(Icons.search, size: 18, color: widget.muted)
+            : IconButton(
+                tooltip: 'Clear search',
+                onPressed: () {
+                  _ctrl.clear();
+                  context.read<AppState>().setPageQuery('');
+                  setState(() {});
+                },
+                icon: Icon(Icons.close, size: 18, color: widget.muted),
+              ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: widget.fieldLine),

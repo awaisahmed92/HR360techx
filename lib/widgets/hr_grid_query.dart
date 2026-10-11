@@ -10,7 +10,7 @@ String hrSearchQuery(BuildContext context, [String local = '']) {
   final page = context.watch<AppState>().pageQuery.trim();
   final own = local.trim();
   if (own.isEmpty) return page;
-  if (page.isEmpty) return own;
+  if (page.isEmpty || page.toLowerCase() == own.toLowerCase()) return own;
   return '$own $page';
 }
 
@@ -128,7 +128,12 @@ class _HrGridQueryState extends State<HrGridQuery> {
   }
 }
 
-Widget hrQueryBanner(String query, int count) {
+void clearGridSearch(BuildContext context, {VoidCallback? also}) {
+  context.read<AppState>().setPageQuery('');
+  also?.call();
+}
+
+Widget hrQueryBanner(BuildContext context, String query, int count, {VoidCallback? onClear}) {
   final q = query.trim();
   if (q.isEmpty) return const SizedBox.shrink();
   final label = count == 0
@@ -153,8 +158,98 @@ Widget hrQueryBanner(String query, int count) {
               style: const TextStyle(fontWeight: FontWeight.w700, color: Color(0xFF92400E), fontSize: 12.5),
             ),
           ),
+          TextButton.icon(
+            onPressed: () => clearGridSearch(context, also: onClear),
+            icon: const Icon(Icons.close, size: 16, color: Color(0xFF92400E)),
+            label: const Text('Clear', style: TextStyle(color: Color(0xFF92400E), fontWeight: FontWeight.w800)),
+          ),
         ],
       ),
     ),
   );
+}
+
+/// Search box with a clear button. Clears the top-bar filter as well as this field.
+class HrSearchField extends StatefulWidget {
+  const HrSearchField({
+    super.key,
+    required this.onChanged,
+    this.value = '',
+    this.hint = 'Search',
+    this.width = 220,
+  });
+
+  final ValueChanged<String> onChanged;
+  final String value;
+  final String hint;
+  final double width;
+
+  @override
+  State<HrSearchField> createState() => _HrSearchFieldState();
+}
+
+class _HrSearchFieldState extends State<HrSearchField> {
+  late final TextEditingController _ctrl;
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.value);
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void didUpdateWidget(HrSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_focus.hasFocus && _ctrl.text != widget.value) {
+      _ctrl.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _clear() {
+    _ctrl.clear();
+    clearGridSearch(context, also: () => widget.onChanged(''));
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasText = _ctrl.text.isNotEmpty;
+    return SizedBox(
+      width: widget.width,
+      height: 38,
+      child: TextField(
+        controller: _ctrl,
+        focusNode: _focus,
+        onChanged: (value) {
+          context.read<AppState>().setPageQuery(value);
+          widget.onChanged(value);
+          setState(() {});
+        },
+        decoration: InputDecoration(
+          hintText: widget.hint,
+          isDense: true,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          suffixIcon: hasText
+              ? IconButton(
+                  tooltip: 'Clear search',
+                  onPressed: _clear,
+                  icon: const Icon(Icons.close, size: 18),
+                )
+              : const Icon(Icons.search, size: 18),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(20)),
+        ),
+      ),
+    );
+  }
 }

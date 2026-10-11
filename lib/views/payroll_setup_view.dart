@@ -287,7 +287,7 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
         const SizedBox(height: 8),
         _h('Salary currency'),
         const Text(
-          'Open Payroll, then Payroll Options. This is where salary currency is set. Save US Dollar and payslips, certificates, and salary screens show \$.',
+          'This is the company payroll currency. Payslips, certificates, and salary screens format amounts from the code you save. US Dollar shows \$, Euro shows €, Yen shows ¥.',
           style: TextStyle(color: Color(0xFF6B7280), fontSize: 12),
         ),
         const SizedBox(height: 8),
@@ -692,8 +692,8 @@ class _PayrollSetupViewState extends State<PayrollSetupView> {
       );
 
   Widget _currencyField() {
-    const codes = ['USD', 'EUR', 'GBP', 'AED', 'CAD', 'CHF', 'SAR', 'PKR'];
     final current = '${_setup['payroll_currencies'] ?? 'USD'}'.toUpperCase();
+    final codes = payCurrencyCodes(current);
     final items = [
       if (!codes.contains(current)) current,
       ...codes,

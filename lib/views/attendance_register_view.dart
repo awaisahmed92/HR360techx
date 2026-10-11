@@ -113,6 +113,7 @@ class _AttendanceRegisterViewState extends State<AttendanceRegisterView> {
                 const Center(child: CircularProgressIndicator())
               else ...[
                 hrQueryBanner(
+                  context,
                   query,
                   hrQueryRows([
                     for (final r in _state.registerRows)

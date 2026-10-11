@@ -10,9 +10,7 @@ import '../core/util/money.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
-String _money(String currency, num? value) {
-  return NumberFormat.currency(symbol: moneySymbol(currency), decimalDigits: 2).format(value ?? 0);
-}
+String _money(String currency, num? value) => formatMoney(value, currency);
 
 /// Opens the generated payslip. Print shows the page (browser Print / Save PDF).
 /// Download saves the same payslip as an HTML file.

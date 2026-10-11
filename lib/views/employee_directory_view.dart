@@ -67,33 +67,16 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
                       ),
                     ),
                   ),
-                  SizedBox(
+                  HrSearchField(
                     width: 260,
-                    height: 38,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search employees',
-                        hintStyle: TextStyle(fontSize: 13, color: HrUi.muted(context)),
-                        suffixIcon: Icon(Icons.search, size: 18, color: HrUi.muted(context)),
-                        filled: true,
-                        fillColor: HrUi.card(context),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(color: HrUi.border(context)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(color: HrUi.border(context)),
-                        ),
-                      ),
-                      onChanged: (v) => setState(() => _query = v),
-                    ),
+                    hint: 'Search employees',
+                    value: query,
+                    onChanged: (v) => setState(() => _query = v),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              hrQueryBanner(query, filtered.length),
+              hrQueryBanner(context, query, filtered.length, onClear: () => setState(() => _query = '')),
               Text(
                 '${filtered.length} people',
                 style: TextStyle(color: HrUi.muted(context), fontSize: 12),
@@ -175,7 +158,11 @@ class _DirectoryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          PersonPhoto(path: row['profile_picture']?.toString(), size: 72),
+          PersonPhoto(
+            path: row['profile_picture']?.toString(),
+            employeeId: (row['employee_id'] as num?)?.toInt(),
+            size: 72,
+          ),
           const SizedBox(height: 10),
           Text(
             name.isEmpty ? 'Employee' : name,

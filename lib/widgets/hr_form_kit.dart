@@ -710,38 +710,23 @@ class HrDataGridPage extends StatelessWidget {
               const SizedBox(width: 8),
               IconButton(
                 tooltip: 'Refresh',
-                onPressed: onRefresh,
+                onPressed: () {
+                  setLocal('');
+                  clearGridSearch(context);
+                  onRefresh?.call();
+                },
                 icon: Icon(Icons.refresh, color: HrUi.muted(context)),
               ),
               const SizedBox(width: 8),
-              SizedBox(
-                width: 220,
-                height: 38,
-                child: TextField(
-                  onChanged: setLocal,
-                  style: TextStyle(color: textPrimary, fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: searchHint,
-                    hintStyle: TextStyle(color: HrUi.muted(context)),
-                    filled: true,
-                    fillColor: HrUi.card(context),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                    suffixIcon: Icon(Icons.search, size: 18, color: HrUi.muted(context)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: HrUi.border(context)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: HrUi.border(context)),
-                    ),
-                  ),
-                ),
+              HrSearchField(
+                hint: searchHint,
+                value: query,
+                onChanged: setLocal,
               ),
             ],
           ),
           const SizedBox(height: 14),
-          hrQueryBanner(query, shown.length),
+          hrQueryBanner(context, query, shown.length, onClear: () => setLocal('')),
           Container(
             decoration: BoxDecoration(
               color: HrUi.card(context),

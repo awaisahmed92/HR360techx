@@ -142,7 +142,7 @@ class _EmployeesViewState extends State<EmployeesView> {
           const SizedBox(height: 16),
           _statsRow(),
           const SizedBox(height: 16),
-          _toolbar(),
+          _toolbar(query),
           const SizedBox(height: 12),
           _dataTable(_state.rows, query),
         ],
@@ -217,7 +217,7 @@ class _EmployeesViewState extends State<EmployeesView> {
     );
   }
 
-  Widget _toolbar() {
+  Widget _toolbar(String query) {
     return Row(
       children: [
         Flexible(
@@ -234,32 +234,17 @@ class _EmployeesViewState extends State<EmployeesView> {
         ),
         IconButton(
           tooltip: 'Refresh',
-          onPressed: () => _state.load(q: _query),
+          onPressed: () {
+            setState(() => _query = '');
+            clearGridSearch(context);
+            _state.load();
+          },
           icon: Icon(Icons.refresh, color: HrUi.muted(context)),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-          width: 220,
-          height: 38,
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'Search',
-              hintStyle: TextStyle(fontSize: 13, color: HrUi.muted(context)),
-              suffixIcon: Icon(Icons.search, size: 18, color: HrUi.muted(context)),
-              filled: true,
-              fillColor: HrUi.card(context),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide(color: HrUi.border(context)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
-                borderSide: BorderSide(color: HrUi.border(context)),
-              ),
-            ),
-            onChanged: (v) => setState(() => _query = v),
-          ),
+        HrSearchField(
+          value: query,
+          onChanged: (v) => setState(() => _query = v),
         ),
       ],
     );
@@ -298,7 +283,11 @@ class _EmployeesViewState extends State<EmployeesView> {
                 onTap: () => setState(() => _viewRow = rows[i]),
                 child: Row(
                   children: [
-                    PersonPhoto(path: '${rows[i]['profile_picture'] ?? ''}', size: 28),
+                    PersonPhoto(
+                      path: '${rows[i]['profile_picture'] ?? ''}',
+                      employeeId: (rows[i]['employee_id'] as num?)?.toInt(),
+                      size: 28,
+                    ),
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
@@ -345,7 +334,7 @@ class _EmployeesViewState extends State<EmployeesView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        hrQueryBanner(query, visible.length),
+        hrQueryBanner(context, query, visible.length, onClear: () => setState(() => _query = '')),
         Container(
       decoration: BoxDecoration(
         color: card,

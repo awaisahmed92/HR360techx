@@ -61,6 +61,18 @@ class UploadController extends Controller
         ]);
     }
 
+    public function showEmployeePhoto(int $id)
+    {
+        $emp = DB::table('employee')->where('employee_id', $id)->first();
+        $path = trim((string) ($emp->profile_picture ?? ''));
+        $abs = $path === '' ? '' : public_path($path);
+        if (!$emp || $path === '' || !is_file($abs)) {
+            return response()->json(['success' => false, 'message' => 'Photo not found.'], 404);
+        }
+
+        return response()->file($abs);
+    }
+
     protected function store(Request $request, string $prefix): ?string
     {
         $claims = $request->attributes->get('hr_claims') ?? [];

@@ -190,7 +190,10 @@ class PayrollService
         $arrears = $this->arrearsForEmployee($employeeId, $date);
         $arrearsAmount = (float) ($arrears['amount'] ?? 0);
 
-        $grossMonthly = ($allow > 0 ? $allow : $basic) + $otAmount + $arrearsAmount;
+        // App-saved salaries store the full gross in total_allowance.
+        // The demo rows stored only the extra allowance (house rent) next to basic.
+        $earnings = ($allow > 0 && $allow + 0.009 < $basic) ? ($basic + $allow) : ($allow > 0 ? $allow : $basic);
+        $grossMonthly = $earnings + $otAmount + $arrearsAmount;
         $autoAdd = $this->autoAdditionsForEmployee($employeeId, $fullBasic, $grossMonthly);
         $grossMonthly += $autoAdd;
         // PHP calculateTaxMod: monthly → annual progressive → monthly tax
@@ -228,7 +231,14 @@ class PayrollService
 
         $lwpAmount = $this->lwpDeductionForEmployee($employeeId, $date, $fullBasic, $days);
 
-        $totalDeduct = $deductBase + $taxMonthly + $eobi + $sessi + $pf + $advanceAmount + $loanAmount + $lateAmount + $lwpAmount;
+        // The defined salary already includes its tax and loan lines.
+        // Adding those amounts again, on top of a gross that was only the allowance, produced a negative net.
+        $totalDeduct = $deductBase + $advanceAmount + $lateAmount + $lwpAmount;
+        if ($deductBase <= 0) {
+            $totalDeduct += $taxMonthly + $eobi + $sessi + $pf + $loanAmount;
+        } else {
+            $totalDeduct += $eobi + $sessi + $pf;
+        }
         $net = $grossMonthly - $totalDeduct;
 
         $payload = [
@@ -1575,21 +1585,72 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
 
     public function moneySymbol(?string $code = null): string
     {
-        return match (strtoupper(trim((string) ($code ?? $this->companyCurrency())))) {
-            'USD' => '$',
-            'EUR' => '€',
-            'GBP' => '£',
-            'AED' => 'AED ',
-            'CAD' => 'CA$',
-            'CHF' => 'CHF ',
-            'SAR' => 'SAR ',
-            default => strtoupper(trim((string) ($code ?? $this->companyCurrency()))).' ',
-        };
+        $iso = strtoupper(trim((string) ($code ?? $this->companyCurrency())));
+        if ($iso === '') {
+            $iso = 'USD';
+        }
+        if (class_exists(\NumberFormatter::class)) {
+            $fmt = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+            $sample = $fmt->formatCurrency(0, $iso);
+            if (is_string($sample) && $sample !== '') {
+                $symbol = trim(str_replace(['0', ',', '.', ' '], '', $sample));
+                if ($symbol !== '') {
+                    return $symbol;
+                }
+            }
+        }
+
+        return $iso.' ';
     }
 
     public function formatMoney(float $amount, ?string $code = null): string
     {
-        return $this->moneySymbol($code).number_format($amount, 2);
+        $iso = strtoupper(trim((string) ($code ?? $this->companyCurrency())));
+        if ($iso === '') {
+            $iso = 'USD';
+        }
+        if (class_exists(\NumberFormatter::class)) {
+            $fmt = new \NumberFormatter('en_US', \NumberFormatter::CURRENCY);
+            $text = $fmt->formatCurrency($amount, $iso);
+            if (is_string($text) && $text !== '') {
+                return $text;
+            }
+        }
+
+        return $this->moneySymbol($iso).number_format($amount, 2);
+    }
+
+    /** @return list<array{code:string,name:string}> */
+    public function currencyCatalog(): array
+    {
+        return [
+            ['code' => 'USD', 'name' => 'US Dollar'],
+            ['code' => 'EUR', 'name' => 'Euro'],
+            ['code' => 'GBP', 'name' => 'British Pound'],
+            ['code' => 'AED', 'name' => 'UAE Dirham'],
+            ['code' => 'SAR', 'name' => 'Saudi Riyal'],
+            ['code' => 'CAD', 'name' => 'Canadian Dollar'],
+            ['code' => 'AUD', 'name' => 'Australian Dollar'],
+            ['code' => 'CHF', 'name' => 'Swiss Franc'],
+            ['code' => 'JPY', 'name' => 'Japanese Yen'],
+            ['code' => 'CNY', 'name' => 'Chinese Yuan'],
+            ['code' => 'INR', 'name' => 'Indian Rupee'],
+            ['code' => 'SGD', 'name' => 'Singapore Dollar'],
+            ['code' => 'HKD', 'name' => 'Hong Kong Dollar'],
+            ['code' => 'NZD', 'name' => 'New Zealand Dollar'],
+            ['code' => 'QAR', 'name' => 'Qatari Riyal'],
+            ['code' => 'KWD', 'name' => 'Kuwaiti Dinar'],
+            ['code' => 'BHD', 'name' => 'Bahraini Dinar'],
+            ['code' => 'OMR', 'name' => 'Omani Rial'],
+            ['code' => 'ZAR', 'name' => 'South African Rand'],
+            ['code' => 'SEK', 'name' => 'Swedish Krona'],
+            ['code' => 'NOK', 'name' => 'Norwegian Krone'],
+            ['code' => 'DKK', 'name' => 'Danish Krone'],
+            ['code' => 'MXN', 'name' => 'Mexican Peso'],
+            ['code' => 'BRL', 'name' => 'Brazilian Real'],
+            ['code' => 'TRY', 'name' => 'Turkish Lira'],
+            ['code' => 'PKR', 'name' => 'Pakistani Rupee'],
+        ];
     }
 
     /** @return list<array{code:string,name:string,station_ids:list<int>}> */
@@ -1856,6 +1917,7 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
                 : [],
             'countries' => $this->payrollCountries(),
             'currency' => $this->companyCurrency(),
+            'currencies' => $this->currencyCatalog(),
             'items' => Schema::hasTable('hr_payroll_item')
                 ? DB::table('hr_payroll_item')->where('status', 1)->orderBy('name')->get(['id', 'code', 'name', 'category', 'default_value'])
                 : [],

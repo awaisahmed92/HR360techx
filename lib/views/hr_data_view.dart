@@ -99,25 +99,17 @@ class _HrDataViewState extends State<HrDataView> {
                 children: [
                   const Text('Users List', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                   const Spacer(),
-                  SizedBox(
-                    width: 220,
-                    child: TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Search',
-                        isDense: true,
-                        prefixIcon: Icon(Icons.search, size: 18),
-                        border: OutlineInputBorder(),
-                      ),
-                      onChanged: (v) => setState(() => _q = v),
-                    ),
+                  HrSearchField(
+                    value: query,
+                    onChanged: (v) => setState(() => _q = v),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              hrQueryBanner(query, _rows.where((r) {
+              hrQueryBanner(context, query, _rows.where((r) {
                 final blob = '${r['name']} ${r['employee_code']} ${r['designation_name']} ${r['department_name']} ${r['station_name']}';
                 return hrMatchesQuery(blob, query);
-              }).length),
+              }).length, onClear: () => setState(() => _q = '')),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(

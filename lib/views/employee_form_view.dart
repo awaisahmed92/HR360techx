@@ -1,11 +1,14 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../core/auth/auth_state.dart';
-import '../core/config/app_config.dart';
 import '../core/employees/employee_state.dart';
 import '../core/uploads/upload_service.dart';
+import '../widgets/person_photo.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
@@ -34,7 +37,9 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
   int _step = 0;
   bool _loading = false;
   int? _editId;
-  String? _photoUrl;
+  String? _photoPath;
+  String? _photoName;
+  Uint8List? _photoBytes;
 
   // Account / identity
   final _name = TextEditingController();
@@ -275,7 +280,9 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
     _eobi.text = '${e['eobi'] ?? ''}';
     _sessi.text = '${e['sessi'] ?? ''}';
     _totalExp.text = '${e['total_experience'] ?? ''}';
-    _photoUrl = AppConfig.resolveMediaUrl(e['profile_picture']?.toString());
+    _photoPath = e['profile_picture']?.toString();
+    _photoBytes = null;
+    _photoName = null;
   }
 
   int? _nz(dynamic v) {
@@ -379,7 +386,12 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
       'experience': _exp.map((e) => e.toJson()).toList(),
     };
     if (_password.text.isNotEmpty) body['password'] = _password.text;
+    if (_photoPath != null && _photoPath!.trim().isNotEmpty) {
+      body['profile_picture'] = _photoPath;
+    }
 
+    final editing = _editId != null;
+    final auth = context.read<AuthState>();
     setState(() => _loading = true);
     String? err;
     if (_editId == null) {
@@ -392,7 +404,19 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
           _code.text = r.code!;
         }
       }
-    } else {
+    }
+    if (err == null && _photoBytes != null && _photoName != null && _editId != null && (_photoPath == null || _photoPath!.isEmpty)) {
+      final uploaded = await UploadService(auth).uploadEmployeePhoto(_editId!, _photoBytes!, _photoName!);
+      if (!mounted) return;
+      if (uploaded.error != null) {
+        setState(() => _loading = false);
+        _toast(uploaded.error!);
+        return;
+      }
+      _photoPath = uploaded.path;
+      body['profile_picture'] = _photoPath;
+    }
+    if (err == null && editing && _editId != null) {
       err = await widget.state.update(_editId!, body);
     }
     if (!mounted) return;
@@ -401,8 +425,17 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
       _toast(err);
       return;
     }
-    _toast('Employee saved.');
+    if (!editing) {
+      await widget.state.load();
+    }
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
     widget.onDone();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(editing ? 'Record has been updated successfully.' : 'Record has been added successfully.'),
+      ),
+    );
   }
 
   String? _emptyNull(String v) => v.trim().isEmpty ? null : v.trim();
@@ -799,31 +832,45 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
         Container(
           width: 110,
           height: 110,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.grey.shade100,
             border: Border.all(color: Colors.grey.shade300),
-            image: _photoUrl != null && _photoUrl!.isNotEmpty
-                ? DecorationImage(image: NetworkImage(_photoUrl!), fit: BoxFit.cover)
-                : null,
           ),
-          child: _photoUrl == null || _photoUrl!.isEmpty
-              ? Icon(Icons.person, size: 52, color: Colors.grey.shade400)
-              : null,
+          clipBehavior: Clip.antiAlias,
+          child: _photoBytes != null
+              ? Image.memory(_photoBytes!, width: 110, height: 110, fit: BoxFit.cover)
+              : PersonPhoto(path: _photoPath, employeeId: _editId, size: 110),
         ),
         const SizedBox(height: 8),
         OutlinedButton(
           onPressed: () async {
-            if (_editId == null) {
-              _toast('Save employee first, then upload photo.');
+            final picked = await FilePicker.platform.pickFiles(type: FileType.image, withData: true);
+            if (!mounted || picked == null || picked.files.isEmpty) return;
+            final file = picked.files.first;
+            final bytes = file.bytes;
+            if (bytes == null) {
+              _toast('Could not read that image.');
               return;
             }
-            final r = await UploadService(context.read<AuthState>()).pickAndUploadEmployeePhoto(_editId!);
+            setState(() {
+              _photoBytes = bytes;
+              _photoName = file.name;
+              _photoPath = null;
+            });
+            if (_editId == null) {
+              _toast('Photo selected. Save the employee to store it.');
+              return;
+            }
+            final r = await UploadService(context.read<AuthState>()).uploadEmployeePhoto(_editId!, bytes, file.name);
+            if (!mounted) return;
             if (r.error != null) {
               _toast(r.error!);
               return;
             }
-            if (r.url != null) setState(() => _photoUrl = r.url);
+            setState(() => _photoPath = r.path);
+            await widget.state.load();
           },
           child: const Text('Upload Photo'),
         ),

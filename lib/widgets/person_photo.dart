@@ -1,37 +1,101 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../core/config/app_config.dart';
+import '../core/auth/auth_state.dart';
+import '../core/network/api_client.dart';
 
-/// Employee photo. A missing or broken upload shows the same default portrait.
-class PersonPhoto extends StatelessWidget {
-  const PersonPhoto({super.key, this.path, this.size = 64});
+/// Employee photo loaded through the API so the grid shows the saved file.
+class PersonPhoto extends StatefulWidget {
+  const PersonPhoto({super.key, this.path, this.employeeId, this.size = 64});
 
   final String? path;
+  final int? employeeId;
   final double size;
 
   @override
+  State<PersonPhoto> createState() => _PersonPhotoState();
+}
+
+class _PersonPhotoState extends State<PersonPhoto> {
+  static final Map<String, Uint8List> _cache = {};
+  Uint8List? _bytes;
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(PersonPhoto oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.path != widget.path || oldWidget.employeeId != widget.employeeId) {
+      _load();
+    }
+  }
+
+  Future<void> _load() async {
+    final path = (widget.path ?? '').trim();
+    final id = widget.employeeId ?? 0;
+    if (path.isEmpty || id < 1) {
+      if (mounted) setState(() => _bytes = null);
+      return;
+    }
+    final key = '$id|$path';
+    final cached = _cache[key];
+    if (cached != null) {
+      if (mounted) setState(() => _bytes = cached);
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      final token = context.read<AuthState>().session?.token;
+      final api = ApiClient(tokenProvider: () async => token);
+      final res = await api.dio.get<List<int>>(
+        '/employees/$id/photo',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = res.data;
+      if (data != null && data.isNotEmpty) {
+        final bytes = Uint8List.fromList(data);
+        _cache[key] = bytes;
+        if (mounted) setState(() => _bytes = bytes);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _bytes = null);
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final url = AppConfig.resolveMediaUrl(path);
     final fallback = ClipOval(
       child: CustomPaint(
-        size: Size.square(size),
+        size: Size.square(widget.size),
         painter: const _DefaultPortraitPainter(),
       ),
     );
-    if (url.isEmpty) {
-      return SizedBox(width: size, height: size, child: fallback);
+    if (_bytes == null) {
+      return SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: _loading
+            ? const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)))
+            : fallback,
+      );
     }
     return ClipOval(
-      child: Image.network(
-        url,
-        width: size,
-        height: size,
+      child: Image.memory(
+        _bytes!,
+        width: widget.size,
+        height: widget.size,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => fallback,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return fallback;
-        },
+        gaplessPlayback: true,
       ),
     );
   }

@@ -30,6 +30,18 @@ class UploadService {
     );
   }
 
+  Future<({String? path, String? url, String? error})> uploadEmployeePhoto(
+    int employeeId,
+    List<int> bytes,
+    String filename,
+  ) {
+    return _postMultipart(
+      '/uploads/employees/$employeeId/photo',
+      filename: filename,
+      bytes: bytes,
+    );
+  }
+
   Future<({String? path, String? url, String? error})> pickAndUploadEmployeePhoto(int employeeId) async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.image,
