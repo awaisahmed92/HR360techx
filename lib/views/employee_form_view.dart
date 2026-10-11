@@ -854,6 +854,10 @@ class _EmployeeFormViewState extends State<EmployeeFormView> {
               _toast('Could not read that image.');
               return;
             }
+            if (bytes.length > pictureSizeLimit) {
+              _toast(pictureSizeMessage);
+              return;
+            }
             setState(() {
               _photoBytes = bytes;
               _photoName = file.name;

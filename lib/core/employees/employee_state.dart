@@ -46,19 +46,34 @@ class EmployeeState extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final results = await Future.wait([
-        _api.dio.get('/employees', queryParameters: {if (q.isNotEmpty) 'q': q}),
-        _api.dio.get('/employees/stats'),
-        _api.dio.get('/employees/meta'),
-      ]);
-
-      final listData = results[0].data;
+      final listRes = await _api.dio.get('/employees', queryParameters: {if (q.isNotEmpty) 'q': q});
+      final listData = listRes.data;
       if (listData is! Map || listData['success'] != true) {
         throw Exception((listData is Map ? listData['message'] : null) ?? 'List failed');
       }
       rows = ((listData['rows'] as List?) ?? []).map((e) => asStringKeyedMap(e)).toList();
+    } on DioException catch (e) {
+      error = _dioMsg(e);
+      rows = [];
+    } catch (e) {
+      error = e.toString();
+      rows = [];
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
+    if (error == null) {
+      await _loadStatsAndMeta();
+    }
+  }
 
-      final statsData = results[1].data;
+  Future<void> _loadStatsAndMeta() async {
+    try {
+      final results = await Future.wait([
+        _api.dio.get('/employees/stats'),
+        _api.dio.get('/employees/meta'),
+      ]);
+      final statsData = results[0].data;
       if (statsData is Map && statsData['success'] == true) {
         final s = asStringKeyedMap(statsData['stats']);
         stats = {
@@ -98,22 +113,16 @@ class EmployeeState extends ChangeNotifier {
         }
       }
 
-      final metaData = results[2].data;
+      final metaData = results[1].data;
       if (metaData is Map && metaData['success'] == true) {
         options = asStringKeyedMap(metaData['options']);
         roleCatalog = ((metaData['role_catalog'] as List?) ?? [])
             .map((e) => asStringKeyedMap(e))
             .toList();
       }
-    } on DioException catch (e) {
-      error = _dioMsg(e);
-      rows = [];
-    } catch (e) {
-      error = e.toString();
-      rows = [];
-    } finally {
-      busy = false;
       notifyListeners();
+    } catch (_) {
+      // The grid is already on screen. Stats and form options can retry on the next refresh.
     }
   }
 

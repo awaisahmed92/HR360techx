@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -17,6 +18,31 @@ class PersonPhoto extends StatefulWidget {
 
   @override
   State<PersonPhoto> createState() => _PersonPhotoState();
+}
+
+class _PhotoGate {
+  static const _max = 4;
+  static int _active = 0;
+  static final List<void Function()> _waiters = [];
+
+  static Future<void> acquire() {
+    if (_active < _max) {
+      _active++;
+      return Future.value();
+    }
+    final done = Completer<void>();
+    _waiters.add(done.complete);
+    return done.future.then((_) {
+      _active++;
+    });
+  }
+
+  static void release() {
+    if (_active > 0) _active--;
+    if (_waiters.isNotEmpty) {
+      _waiters.removeAt(0)();
+    }
+  }
 }
 
 class _PersonPhotoState extends State<PersonPhoto> {
@@ -52,8 +78,9 @@ class _PersonPhotoState extends State<PersonPhoto> {
       return;
     }
     setState(() => _loading = true);
+    final token = context.read<AuthState>().session?.token;
+    await _PhotoGate.acquire();
     try {
-      final token = context.read<AuthState>().session?.token;
       final api = ApiClient(tokenProvider: () async => token);
       final res = await api.dio.get<List<int>>(
         '/employees/$id/photo',
@@ -68,6 +95,7 @@ class _PersonPhotoState extends State<PersonPhoto> {
     } catch (_) {
       if (mounted) setState(() => _bytes = null);
     } finally {
+      _PhotoGate.release();
       if (mounted) setState(() => _loading = false);
     }
   }

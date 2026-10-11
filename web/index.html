@@ -105,26 +105,28 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      text-align: center;
-      background: #fff;
-      padding: 36px;
+      text-align: left;
+      background: linear-gradient(135deg, #0e3a4a, #14687a);
+      color: #fff;
+      padding: 56px 48px;
+      box-sizing: border-box;
     }
-    #boot-login .hero h2 { margin: 0; font-size: 50px; line-height: 1.15; font-weight: 700; }
-    #boot-login .hero p { max-width: 640px; margin: 16px 0 0; color: #6b7280; font-size: 20px; }
-    #boot-login .art {
-      width: min(520px, 100%);
-      height: 290px;
-      margin-top: 34px;
-      border-radius: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #f4f7fb, #e7eef6);
-      border: 1px solid rgba(30, 75, 140, .15);
-      color: #1e4b8c;
-      font-size: 72px;
+    #boot-login .hero .kicker { margin: 0 0 18px; color: #b7e0ea; font-size: 14px; font-weight: 700; letter-spacing: 1.2px; }
+    #boot-login .hero h2 { margin: 0; font-size: 40px; line-height: 1.12; font-weight: 700; }
+    #boot-login .hero p { max-width: 520px; margin: 22px 0 0; color: #e6f4f7; font-size: 18px; line-height: 1.45; }
+    #boot-login .who { margin-top: 18px; }
+    #boot-login .who strong { display: block; }
+    #boot-login .who span { color: #b7e0ea; font-size: 14px; }
+    #boot-login .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+    #boot-login .chips span {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      font-size: 12px;
     }
     #boot-login.restoring .split { display: none; }
     #boot-login.restoring { align-items: center; justify-content: center; }
@@ -153,7 +155,7 @@
         <div class="card">
           <div class="brand-row"><img src="logo-mark.svg" alt=""> HR360</div>
           <h1>Welcome Back</h1>
-          <p class="sub">Sign in to continue</p>
+          <p class="sub">Sign in to the people, payroll, and attendance desk.</p>
           <label>Company Name</label>
           <input id="boot-company" type="text" value="" readonly tabindex="-1">
           <label>UserName</label>
@@ -167,9 +169,11 @@
         </div>
       </div>
       <aside class="hero">
-        <h2>People, payroll,<br>and attendance<br>made simple</h2>
-        <p>HR360 helps companies manage employees, leave, payroll, and approvals in one place.</p>
-        <div class="art" aria-hidden="true">360</div>
+        <p class="kicker">HR360</p>
+        <h2>Run people operations<br>with a calmer desk</h2>
+        <p>Payroll, attendance, and approvals finally sit in one place. The team stopped chasing spreadsheets.</p>
+        <div class="who"><strong>Amina Rahman</strong><span>People lead, multi-country team</span></div>
+        <div class="chips"><span>Payroll</span><span>Attendance</span><span>Leave</span><span>Org chart</span></div>
       </aside>
     </div>
     <div class="hold" aria-hidden="true"></div>

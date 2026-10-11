@@ -9,8 +9,9 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
   export APP_KEY="$(php -r "echo 'base64:'.base64_encode(random_bytes(32));")"
 fi
 
-mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache /run/nginx
-chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache public/uploads /run/nginx
+chown -R www-data:www-data storage bootstrap/cache public/uploads 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache public/uploads 2>/dev/null || true
 
 # Clear config cache so Coolify env vars are picked up on each start
 php artisan config:clear 2>/dev/null || true

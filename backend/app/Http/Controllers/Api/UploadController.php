@@ -11,8 +11,15 @@ class UploadController extends Controller
 {
     public function companyLogo(Request $request)
     {
-        $request->validate(['file' => 'required|file|mimes:jpg,jpeg,png,gif,webp|max:4096']);
-        $path = $this->store($request, 'logo');
+        $request->validate(
+            ['file' => 'required|file|max:2048'],
+            ['file.max' => 'Picture size must not be more than 2 MB.']
+        );
+        try {
+            $path = $this->store($request, 'logo');
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
         if (!$path) {
             return response()->json(['success' => false, 'message' => 'Upload failed.'], 500);
         }
@@ -42,12 +49,19 @@ class UploadController extends Controller
 
     public function employeePhoto(Request $request, int $id)
     {
-        $request->validate(['file' => 'required|file|mimes:jpg,jpeg,png,gif,webp|max:4096']);
+        $request->validate(
+            ['file' => 'required|file|max:2048'],
+            ['file.max' => 'Picture size must not be more than 2 MB.']
+        );
         $emp = DB::table('employee')->where('employee_id', $id)->first();
         if (!$emp) {
             return response()->json(['success' => false, 'message' => 'Employee not found.'], 404);
         }
-        $path = $this->store($request, 'photo_'.$id);
+        try {
+            $path = $this->store($request, 'photo_'.$id);
+        } catch (\Throwable $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
         if (!$path) {
             return response()->json(['success' => false, 'message' => 'Upload failed.'], 500);
         }
@@ -83,10 +97,17 @@ class UploadController extends Controller
         }
         $ext = strtolower($file->getClientOriginalExtension() ?: 'jpg');
         $name = $prefix.'_'.time().'.'.$ext;
+        $extOk = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true);
+        if (!$extOk) {
+            throw new \RuntimeException('Use a JPG, PNG, GIF, or WebP image.');
+        }
         $relDir = 'uploads/'.$sub;
         $absDir = public_path($relDir);
-        if (!is_dir($absDir)) {
-            @mkdir($absDir, 0775, true);
+        if (!is_dir($absDir) && !@mkdir($absDir, 0775, true) && !is_dir($absDir)) {
+            throw new \RuntimeException('The upload folder could not be created.');
+        }
+        if (!is_writable($absDir)) {
+            throw new \RuntimeException('The upload folder is not writable.');
         }
         $file->move($absDir, $name);
 

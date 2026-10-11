@@ -14,6 +14,7 @@ COPY backend/ .
 COPY database ./database-sql
 COPY backend/docker/nginx.conf /etc/nginx/nginx.conf
 COPY backend/docker/www.conf /usr/local/etc/php-fpm.d/zz-hr360.conf
+COPY backend/docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 RUN composer dump-autoload --optimize \
 	&& chown -R www-data:www-data storage bootstrap/cache \

@@ -167,22 +167,11 @@ class _OrgChartViewState extends State<OrgChartView> {
           Expanded(
             child: LayoutBuilder(
               builder: (context, box) {
-                return FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: box.maxWidth, minHeight: box.maxHeight),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          for (final root in roots) _node(root, visible, 0),
-                        ],
-                      ),
-                    ),
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  child: SizedBox(
+                    width: box.maxWidth,
+                    child: _forest(roots, visible, box.maxWidth - 32),
                   ),
                 );
               },
@@ -218,7 +207,18 @@ class _OrgChartViewState extends State<OrgChartView> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       );
 
-  Widget _node(_Person person, List<_Person> people, int depth) {
+  Widget _forest(List<_Person> roots, List<_Person> people, double width) {
+    if (roots.length > 4) {
+      return _cardWrap(roots, people, width);
+    }
+    return Column(
+      children: [
+        for (final root in roots) _node(root, people, 0, width),
+      ],
+    );
+  }
+
+  Widget _node(_Person person, List<_Person> people, int depth, double width) {
     if (depth > 8) return const SizedBox.shrink();
     final kids = _childrenOf(person.id, people);
     return Column(
@@ -227,22 +227,42 @@ class _OrgChartViewState extends State<OrgChartView> {
         _card(person, kids.length),
         if (kids.isNotEmpty) ...[
           Container(width: 2, height: 16, color: const Color(0xFF93C5FD)),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var i = 0; i < kids.length; i++)
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _bar(i, kids.length),
-                    _node(kids[i], people, depth + 1),
-                  ],
-                ),
-            ],
-          ),
+          if (kids.length > 5)
+            _cardWrap(kids, people, width)
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < kids.length; i++)
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _bar(i, kids.length),
+                        _node(kids[i], people, depth + 1, width),
+                      ],
+                    ),
+                ],
+              ),
+            ),
         ],
       ],
+    );
+  }
+
+  Widget _cardWrap(List<_Person> people, List<_Person> all, double width) {
+    return SizedBox(
+      width: width < 280 ? 280 : width,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          for (final person in people) _card(person, _childrenOf(person.id, all).length),
+        ],
+      ),
     );
   }
 
@@ -276,8 +296,8 @@ class _OrgChartViewState extends State<OrgChartView> {
   Widget _card(_Person person, int reports) {
     final photo = AppConfig.resolveMediaUrl(person.raw['profile_picture']?.toString());
     return Container(
-      width: 156,
-      margin: const EdgeInsets.symmetric(horizontal: 6),
+      width: 188,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
       decoration: BoxDecoration(
         color: const Color(0xFFE8F4FC),

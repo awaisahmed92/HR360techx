@@ -5,6 +5,9 @@ import '../auth/auth_state.dart';
 import '../config/app_config.dart';
 import '../network/api_client.dart';
 
+const pictureSizeLimit = 2 * 1024 * 1024;
+const pictureSizeMessage = 'Picture size must not be more than 2 MB.';
+
 class UploadService {
   UploadService(this._auth);
 
@@ -65,6 +68,9 @@ class UploadService {
     required String filename,
     required List<int> bytes,
   }) async {
+    if (bytes.length > pictureSizeLimit) {
+      return (path: null, url: null, error: pictureSizeMessage);
+    }
     try {
       final form = FormData.fromMap({
         'file': MultipartFile.fromBytes(bytes, filename: filename),
@@ -72,7 +78,9 @@ class UploadService {
       final res = await _api.dio.post(
         path,
         data: form,
-        options: Options(contentType: 'multipart/form-data'),
+        options: Options(
+          contentType: 'multipart/form-data; boundary=${form.boundary}',
+        ),
       );
       final d = res.data;
       if (d is Map && d['success'] == true) {
