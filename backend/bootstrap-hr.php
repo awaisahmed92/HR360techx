@@ -114,7 +114,7 @@ if ($optProvision !== null) {
 }
 
 /** Files that must never run against the tenant DB. */
-$skipFiles = ['01_master.sql', '11_reset_employee_passwords.sql', '31_multi_app_registry.sql'];
+$skipFiles = ['01_master.sql', '11_reset_employee_passwords.sql', '31_multi_app_registry.sql', '33_support_inquiries.sql', '34_platform_admins.sql'];
 
 // ── --new=name: scaffold the next migration file and stop ────────────────
 if ($optNew !== null) {
