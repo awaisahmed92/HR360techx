@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employer payroll cost calculator</title>
+  <meta name="description" content="Estimate the employer share of Social Security and Medicare, plus SUTA at the rate you enter and optional net FUTA of 0.6% on the first $7,000." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://hr360techx.com/us/employer-cost.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://hr360techx.com/us/employer-cost.html" />
+  <meta property="og:title" content="Employer payroll cost calculator" />
+  <meta property="og:description" content="Estimate the employer share of Social Security and Medicare, plus SUTA at the rate you enter and optional net FUTA of 0.6% on the first $7,000." />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Employer payroll cost calculator" />
+  <meta name="twitter:description" content="Estimate the employer share of Social Security and Medicare, plus SUTA at the rate you enter and optional net FUTA of 0.6% on the first $7,000." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="us.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Employer payroll cost calculator",
+    "url": "https://hr360techx.com/us/employer-cost.html",
+    "description": "Estimate the employer share of Social Security and Medicare, plus SUTA at the rate you enter and optional net FUTA of 0.6% on the first $7,000.",
+    "dateModified": "2026-10-20"
+  }
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="index.html">
+        <div class="badge">360</div>
+        <div><strong>HR360 TechX</strong><span>US payroll guides</span></div>
+      </a>
+      <a class="btn" href="../">Open the app</a>
+    </header>
+    <main>
+      <p class="reviewed">Last reviewed: October 20, 2026</p>
+      <h1>Employer payroll cost calculator</h1>
+      
+<p class="lead">Enter one employee’s annual gross pay. Social Security and Medicare use the 2026 employer rates from IRS Publication 15. You type the state unemployment rate. This page does not know it.</p>
+<form id="cost-form">
+  <label for="cost-gross">Annual gross pay (USD)</label>
+  <input id="cost-gross" type="number" min="0" step="0.01" value="52000" />
+  <label for="cost-suta">Your SUTA rate (percent)</label>
+  <input id="cost-suta" type="number" min="0" step="0.01" value="0" />
+  <label for="cost-suta-base">Your state SUTA wage base (USD)</label>
+  <input id="cost-suta-base" type="number" min="0" step="1" value="0" />
+  <label><input id="cost-futa" type="checkbox" style="width:auto;height:auto;" /> Include net FUTA at 0.6% of the first $7,000</label>
+  <button type="submit">Estimate</button>
+  <output id="cost-out"></output>
+</form>
+<p>Publication 15 (2026) sets employer Social Security at 6.2% up to $184,500 and employer Medicare at 1.45% with no wage base. There is no employer share of Additional Medicare Tax. FUTA is 6.0% of the first $7,000, and the 0.6% figure applies only when you are entitled to the full 5.4% state credit. Source: <a href="https://www.irs.gov/publications/p15">IRS Publication 15 (2026)</a>.</p>
+
+      <p class="note">This is general information for employers, not tax, legal, or payroll-filing advice. Rates and deadlines change. Confirm them with the cited agency before you pay people or file a return. HR360 TechX records payroll runs, payslips, time, and leave. It does not file Form 941, Form 940, W-2s, or 1099s.</p>
+    </main>
+    
+<footer>
+  <nav>
+    <a href="index.html">Payroll hub</a>
+    <a href="payroll-runs.html">Payroll runs</a>
+    <a href="california.html">States</a>
+    <a href="form-941.html">Form 941</a>
+    <a href="paycheck.html">Calculators</a>
+    <a href="vs-gusto.html">Vs Gusto</a>
+    <a href="security.html">Security</a>
+    <a href="../">Open the app</a>
+  </nav>
+  <p>HR360 TechX does not file federal or state payroll taxes. These pages are general information, not tax or legal advice.</p>
+</footer>
+
+  </div>
+  <script src="calc.js"></script>
+</body>
+</html>

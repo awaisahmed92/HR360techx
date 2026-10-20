@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paycheck calculator with a state selector</title>
+  <meta name="description" content="Estimate 2026 federal income tax withholding with IRS Publication 15-T, plus Social Security and Medicare. Texas and Florida add no state income tax. Other states are not calculated." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://hr360techx.com/us/paycheck.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://hr360techx.com/us/paycheck.html" />
+  <meta property="og:title" content="Paycheck calculator with a state selector" />
+  <meta property="og:description" content="Estimate 2026 federal income tax withholding with IRS Publication 15-T, plus Social Security and Medicare. Texas and Florida add no state income tax. Other states are not calculated." />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Paycheck calculator with a state selector" />
+  <meta name="twitter:description" content="Estimate 2026 federal income tax withholding with IRS Publication 15-T, plus Social Security and Medicare. Texas and Florida add no state income tax. Other states are not calculated." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="us.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Paycheck calculator with a state selector",
+    "url": "https://hr360techx.com/us/paycheck.html",
+    "description": "Estimate 2026 federal income tax withholding with IRS Publication 15-T, plus Social Security and Medicare. Texas and Florida add no state income tax. Other states are not calculated.",
+    "dateModified": "2026-10-20"
+  }
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="index.html">
+        <div class="badge">360</div>
+        <div><strong>HR360 TechX</strong><span>US payroll guides</span></div>
+      </a>
+      <a class="btn" href="../">Open the app</a>
+    </header>
+    <main>
+      <p class="reviewed">Last reviewed: October 20, 2026</p>
+      <h1>Paycheck calculator with a state selector</h1>
+      
+<p class="lead">This estimate follows Worksheet 1A and the 2026 Percentage Method tables in IRS Publication 15-T for a 2020 or later Form W-4. It assumes no extra withholding, no Step 3 credits, and no other income on Step 4. It is not a filing.</p>
+<form id="pay-form">
+  <label for="pay-wages">Gross wages this paycheck (USD)</label>
+  <input id="pay-wages" type="number" min="0" step="0.01" value="2000" />
+  <label for="pay-freq">Pay periods per year</label>
+  <select id="pay-freq">
+    <option value="52">Weekly (52)</option>
+    <option value="26" selected>Biweekly (26)</option>
+    <option value="24">Semimonthly (24)</option>
+    <option value="12">Monthly (12)</option>
+  </select>
+  <label for="pay-status">Filing status</label>
+  <select id="pay-status">
+    <option value="single">Single or married filing separately</option>
+    <option value="mfj">Married filing jointly</option>
+    <option value="hoh">Head of household</option>
+  </select>
+  <label for="pay-ytd">Wages already paid this year, before this check (USD)</label>
+  <input id="pay-ytd" type="number" min="0" step="0.01" value="0" />
+  <label for="pay-state">State</label>
+  <select id="pay-state">
+    <option value="CA">California</option>
+    <option value="TX">Texas</option>
+    <option value="FL">Florida</option>
+    <option value="NY">New York</option>
+    <option value="IL">Illinois</option>
+    <option value="PA">Pennsylvania</option>
+    <option value="OH">Ohio</option>
+    <option value="GA">Georgia</option>
+    <option value="NC">North Carolina</option>
+    <option value="NJ">New Jersey</option>
+  </select>
+  <label><input id="pay-step2" type="checkbox" style="width:auto;height:auto;" /> Form W-4 Step 2 checkbox is checked</label>
+  <button type="submit">Estimate</button>
+  <output id="pay-out"></output>
+</form>
+<p>Federal method: <a href="https://www.irs.gov/publications/p15t">Publication 15-T (2026)</a>. Social Security is 6.2% of wages until the $184,500 wage base. Medicare is 1.45%, plus 0.9% Additional Medicare Tax on wages over $200,000 in the year. Source: <a href="https://www.irs.gov/publications/p15">Publication 15 (2026)</a>.</p>
+<p>Texas and Florida have no personal income-tax withholding. For every other state in the list, use the withholding pages linked from that <a href="index.html">state guide</a>. This tool does not apply state brackets.</p>
+
+      <p class="note">This is general information for employers, not tax, legal, or payroll-filing advice. Rates and deadlines change. Confirm them with the cited agency before you pay people or file a return. HR360 TechX records payroll runs, payslips, time, and leave. It does not file Form 941, Form 940, W-2s, or 1099s.</p>
+    </main>
+    
+<footer>
+  <nav>
+    <a href="index.html">Payroll hub</a>
+    <a href="payroll-runs.html">Payroll runs</a>
+    <a href="california.html">States</a>
+    <a href="form-941.html">Form 941</a>
+    <a href="paycheck.html">Calculators</a>
+    <a href="vs-gusto.html">Vs Gusto</a>
+    <a href="security.html">Security</a>
+    <a href="../">Open the app</a>
+  </nav>
+  <p>HR360 TechX does not file federal or state payroll taxes. These pages are general information, not tax or legal advice.</p>
+</footer>
+
+  </div>
+  <script src="calc.js"></script>
+</body>
+</html>

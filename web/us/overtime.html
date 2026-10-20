@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overtime calculator</title>
+  <meta name="description" content="Estimate overtime at time and a half after 40 hours in a workweek. A separate option applies California’s daily overtime rules for one day." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://hr360techx.com/us/overtime.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://hr360techx.com/us/overtime.html" />
+  <meta property="og:title" content="Overtime calculator" />
+  <meta property="og:description" content="Estimate overtime at time and a half after 40 hours in a workweek. A separate option applies California’s daily overtime rules for one day." />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Overtime calculator" />
+  <meta name="twitter:description" content="Estimate overtime at time and a half after 40 hours in a workweek. A separate option applies California’s daily overtime rules for one day." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="us.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Overtime calculator",
+    "url": "https://hr360techx.com/us/overtime.html",
+    "description": "Estimate overtime at time and a half after 40 hours in a workweek. A separate option applies California’s daily overtime rules for one day.",
+    "dateModified": "2026-10-20"
+  }
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="index.html">
+        <div class="badge">360</div>
+        <div><strong>HR360 TechX</strong><span>US payroll guides</span></div>
+      </a>
+      <a class="btn" href="../">Open the app</a>
+    </header>
+    <main>
+      <p class="reviewed">Last reviewed: October 20, 2026</p>
+      <h1>Overtime calculator</h1>
+      
+<p class="lead">The federal estimate pays straight time for the first 40 hours in the workweek and time and a half after that. The California option is a one-day estimate only.</p>
+<form id="ot-form">
+  <label for="ot-rate">Hourly rate (USD)</label>
+  <input id="ot-rate" type="number" min="0" step="0.01" value="16" />
+  <label for="ot-hours">Hours (this week, or this day if California is checked)</label>
+  <input id="ot-hours" type="number" min="0" step="0.25" value="45" />
+  <label><input id="ot-ca" type="checkbox" style="width:auto;height:auto;" /> Use California daily overtime for one day</label>
+  <button type="submit">Estimate</button>
+  <output id="ot-out"></output>
+</form>
+<p>Federal source: <a href="https://www.dol.gov/agencies/whd/overtime">DOL overtime</a>. California daily overtime source: <a href="https://www.dir.ca.gov/dlse/faq_overtime.htm">DIR overtime FAQ</a>. This calculator does not combine a long day with a long week, and it ignores seventh-day rules.</p>
+
+      <p class="note">This is general information for employers, not tax, legal, or payroll-filing advice. Rates and deadlines change. Confirm them with the cited agency before you pay people or file a return. HR360 TechX records payroll runs, payslips, time, and leave. It does not file Form 941, Form 940, W-2s, or 1099s.</p>
+    </main>
+    
+<footer>
+  <nav>
+    <a href="index.html">Payroll hub</a>
+    <a href="payroll-runs.html">Payroll runs</a>
+    <a href="california.html">States</a>
+    <a href="form-941.html">Form 941</a>
+    <a href="paycheck.html">Calculators</a>
+    <a href="vs-gusto.html">Vs Gusto</a>
+    <a href="security.html">Security</a>
+    <a href="../">Open the app</a>
+  </nav>
+  <p>HR360 TechX does not file federal or state payroll taxes. These pages are general information, not tax or legal advice.</p>
+</footer>
+
+  </div>
+  <script src="calc.js"></script>
+</body>
+</html>
