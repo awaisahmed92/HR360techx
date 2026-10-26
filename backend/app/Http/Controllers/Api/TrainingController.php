@@ -134,10 +134,17 @@ class TrainingController extends Controller
         $rows = DB::table('training as t')
             ->leftJoin('training_type as tt', 'tt.id', '=', 't.training_type_id')
             ->leftJoin('trainers as tr', 'tr.id', '=', 't.trainer_id')
-            ->whereDate('t.start_date', '>=', $from)
-            ->whereDate('t.start_date', '<=', $to)
-            ->where(function ($w) {
-                $w->where('t.is_cancelled', 0)->orWhereNull('t.is_cancelled');
+            ->where(function ($w) use ($from, $to) {
+                $w->whereBetween('t.start_date', [$from, $to])
+                    ->orWhereBetween('t.end_date', [$from, $to])
+                    ->orWhere(function ($span) use ($from, $to) {
+                        $span->where('t.start_date', '<=', $from)->where('t.end_date', '>=', $to);
+                    });
+            })
+            ->when(Schema::hasColumn('training', 'is_cancelled'), function ($q) {
+                $q->where(function ($w) {
+                    $w->where('t.is_cancelled', 0)->orWhereNull('t.is_cancelled');
+                });
             })
             ->orderBy('t.start_date')
             ->get([

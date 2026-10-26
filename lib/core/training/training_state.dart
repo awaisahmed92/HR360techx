@@ -38,10 +38,14 @@ class TrainingState extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final meta = await _api.dio.get('/training/meta');
-      final md = meta.data;
-      if (md is Map && md['success'] == true) {
-        options = asStringKeyedMap(md['options']);
+      try {
+        final meta = await _api.dio.get('/training/meta');
+        final md = meta.data;
+        if (md is Map && md['success'] == true) {
+          options = asStringKeyedMap(md['options']);
+        }
+      } on DioException catch (e) {
+        error = _msg(e);
       }
 
       if (tab == 0) {

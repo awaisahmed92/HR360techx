@@ -59,8 +59,8 @@ CREATE TABLE IF NOT EXISTS `employee_settlements` (
   KEY `idx_settle_emp` (`employee`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Align hr_payroll_item categories with PHP (General / EOBI / SESSI / Provident Fund)
-UPDATE `hr_payroll_item` SET `category` = 'General' WHERE `category` IN ('allowance','earning','bonus','commission','adjustment') AND `code` NOT IN ('EOBI','EOBI_E','SESSI','PF','TAX');
+-- Keep allowance, earning, bonus, commission, and adjustment categories.
+-- Those values are what the Bonuses, Allowances, Earnings, Adjustments, and Cost to Company screens filter on.
 UPDATE `hr_payroll_item` SET `category` = 'EOBI' WHERE `code` IN ('EOBI','EOBI_E');
 UPDATE `hr_payroll_item` SET `category` = 'SESSI' WHERE `code` = 'SESSI';
 UPDATE `hr_payroll_item` SET `category` = 'Provident Fund' WHERE `code` = 'PF';

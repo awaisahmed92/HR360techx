@@ -333,6 +333,366 @@ if (Schema::hasTable('attendance')) {
     }
 }
 
+$projectId = $projectId > 0 ? $projectId : (int) (Schema::hasTable('project') ? (DB::table('project')->orderBy('project_id')->value('project_id') ?? 0) : 0);
+$stationId = Schema::hasTable('station') ? (int) (DB::table('station')->orderBy('station_id')->value('station_id') ?? 0) : 0;
+$stationTo = Schema::hasTable('station') ? (int) (DB::table('station')->orderByDesc('station_id')->value('station_id') ?? 0) : 0;
+$departmentId = Schema::hasTable('department') ? (int) (DB::table('department')->orderBy('department_id')->value('department_id') ?? 0) : 0;
+$designationFrom = Schema::hasTable('designation') ? (int) (DB::table('designation')->orderBy('designation_id')->value('designation_id') ?? 0) : 0;
+$designationTo = Schema::hasTable('designation') ? (int) (DB::table('designation')->orderByDesc('designation_id')->value('designation_id') ?? 0) : 0;
+
+if (Schema::hasTable('hr_payroll_item')) {
+    foreach ([
+        'BASIC' => 'earning',
+        'HRA' => 'allowance',
+        'ARREARS' => 'allowance',
+        'BONUS' => 'bonus',
+        'COMM' => 'commission',
+        'ADJ' => 'adjustment',
+    ] as $code => $category) {
+        $changed = DB::table('hr_payroll_item')->where('code', $code)->where('category', '!=', $category)->update([
+            'category' => $category,
+            'status' => 1,
+        ]);
+        $added += $changed;
+    }
+    foreach ([
+        ['ALLOW_MEAL', 'Meal Allowance', 'allowance', 'fixed', 180],
+        ['ALLOW_TRANS', 'Transport Allowance', 'allowance', 'fixed', 150],
+        ['BONUS_SPOT', 'Spot Bonus', 'bonus', 'fixed', 500],
+        ['BONUS_Q', 'Quarterly Bonus', 'bonus', 'percent', 8],
+        ['COMM_NEW', 'New Business Commission', 'commission', 'percent', 5],
+        ['EARN_SHIFT', 'Shift Differential', 'earning', 'fixed', 200],
+        ['EARN_CTC', 'Employer Benefits', 'earning', 'fixed', 350],
+        ['ADJ_ROUND', 'Payroll Adjustment', 'adjustment', 'fixed', 25],
+    ] as [$code, $name, $category, $calc, $value]) {
+        if (DB::table('hr_payroll_item')->where('code', $code)->exists()) {
+            continue;
+        }
+        if (demoInsert('hr_payroll_item', [
+            'code' => $code,
+            'name' => $name,
+            'category' => $category,
+            'calc_type' => $calc,
+            'default_value' => $value,
+            'taxable' => 1,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('hr_overtime_entry') && (int) DB::table('hr_overtime_entry')->count() === 0) {
+    foreach ([2.5, 3, 1.5, 4] as $i => $hours) {
+        if (demoInsert('hr_overtime_entry', [
+            'employee_id' => $pick($i + 1),
+            'work_date' => '2026-10-'.str_pad((string) (6 + $i * 4), 2, '0', STR_PAD_LEFT),
+            'hours' => $hours,
+            'rate_multiplier' => $i % 2 === 0 ? 1.5 : 2,
+            'status' => $i === 3 ? 0 : 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (!demoHas('hr_advance', 'remarks', $marker)) {
+    foreach ([800, 1200, 500] as $i => $amount) {
+        if (demoInsert('hr_advance', [
+            'employee_id' => $pick($i + 2),
+            'amount' => $amount,
+            'request_date' => '2026-10-'.str_pad((string) (3 + $i), 2, '0', STR_PAD_LEFT),
+            'recover_months' => 2 + $i,
+            'status' => $i === 0 ? 0 : 1,
+            'remarks' => $marker.' Salary advance for the month.',
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('employee_settlements') && (int) DB::table('employee_settlements')->count() === 0) {
+        foreach ([[4200, 1800, 6000], [3100, 900, 4000]] as $i => [$pf, $gratuity, $net]) {
+            if (demoInsert('employee_settlements', [
+                'employee' => $pick($i + 10),
+                'date_of_joining' => '2022-03-01',
+                'last_working_date' => '2026-11-30',
+                'employee_pf' => $pf / 2,
+                'employer_pf' => $pf / 2,
+                'total_pf' => $pf,
+                'gratuity_eligibility' => 1,
+                'gratuity_amount' => $gratuity,
+                'outstanding_loan' => 0,
+                'loan_deduction' => 0,
+                'assets_returned' => $i === 0 ? 1 : 0,
+                'clearance_status' => $i === 0 ? 'Cleared' : 'Pending',
+                'total_payable' => $net,
+                'net_payable' => $net,
+            ])) {
+                $added++;
+            }
+        }
+}
+
+if (!demoHas('hr_contract', 'notes', $marker)) {
+    foreach (['Permanent', 'Contract', 'Consultant'] as $i => $type) {
+        if (demoInsert('hr_contract', [
+            'employee_id' => $pick($i + 1),
+            'contract_no' => 'CTR-2026-'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT),
+            'contract_type' => $type,
+            'start_date' => '2026-01-01',
+            'end_date' => $type === 'Permanent' ? null : '2026-12-31',
+            'project_id' => $projectId > 0 ? $projectId : null,
+            'station_id' => $stationId > 0 ? $stationId : null,
+            'status' => 1,
+            'notes' => $marker.' Active employment contract.',
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (!demoHas('hr_assignment', 'role_title', 'Client Lead') && Schema::hasTable('hr_assignment') && (int) DB::table('hr_assignment')->count() === 0) {
+    foreach (['Client Lead', 'Payroll Analyst', 'People Partner'] as $i => $role) {
+        if (demoInsert('hr_assignment', [
+            'employee_id' => $pick($i + 2),
+            'project_id' => $projectId > 0 ? $projectId : null,
+            'station_id' => $stationId > 0 ? $stationId : null,
+            'department_id' => $departmentId > 0 ? $departmentId : null,
+            'role_title' => $role,
+            'start_date' => '2026-02-01',
+            'end_date' => '2026-12-31',
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (!demoHas('hr_transfer', 'reason', $marker)) {
+    foreach (['Office move for the account team.', 'Project handover to the new site.'] as $i => $reason) {
+        if (demoInsert('hr_transfer', [
+            'employee_id' => $pick($i + 4),
+            'from_station_id' => $stationId > 0 ? $stationId : null,
+            'to_station_id' => $stationTo > 0 ? $stationTo : null,
+            'from_project_id' => $projectId > 0 ? $projectId : null,
+            'to_project_id' => $projectId > 0 ? $projectId : null,
+            'effective_date' => '2026-11-01',
+            'reason' => $marker.' '.$reason,
+            'status' => $i,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (!demoHas('hr_promotion', 'remarks', $marker)) {
+    foreach (['Annual review promotion.', 'Acting role made permanent.'] as $i => $remarks) {
+        if (demoInsert('hr_promotion', [
+            'employee_id' => $pick($i + 3),
+            'from_designation_id' => $designationFrom > 0 ? $designationFrom : null,
+            'to_designation_id' => $designationTo > 0 ? $designationTo : null,
+            'effective_date' => '2026-12-01',
+            'remarks' => $marker.' '.$remarks,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (!demoHas('hr_complaint', 'detail', $marker)) {
+    foreach (['Workplace schedule dispute', 'Equipment request delay'] as $i => $subject) {
+        if (demoInsert('hr_complaint', [
+            'employee_id' => $pick($i + 5),
+            'against_employee_id' => $pick($i + 8),
+            'subject' => $subject,
+            'detail' => $marker.' Logged for the demo review queue.',
+            'status' => $i,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (!demoHas('hr_discipline', 'detail', $marker)) {
+    foreach (['Warning', 'Written Warning'] as $i => $action) {
+        if (demoInsert('hr_discipline', [
+            'employee_id' => $pick($i + 7),
+            'action_type' => $action,
+            'action_date' => '2026-09-'.str_pad((string) (12 + $i), 2, '0', STR_PAD_LEFT),
+            'detail' => $marker.' Recorded after a manager discussion. The employee remains active.',
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('termination') && (int) DB::table('termination')->count() === 0) {
+    if (demoInsert('termination', [
+        'employee' => $pick(12),
+        'termination_type' => 'Contract End',
+        'termination_date' => '2026-11-30',
+        'notice_date' => '2026-10-31',
+        'reason' => $marker.' Sample final-settlement case. The employee record is not removed.',
+    ])) {
+        $added++;
+    }
+}
+
+if (Schema::hasTable('training_type')) {
+    foreach ([
+        ['Leadership Workshop', 'Development', 0],
+        ['Payroll Close', 'Finance', 1],
+        ['Customer Handling', 'Development', 0],
+    ] as [$name, $category, $mandatory]) {
+        if (DB::table('training_type')->where('name', $name)->exists()) {
+            continue;
+        }
+        if (demoInsert('training_type', [
+            'name' => $name,
+            'category' => $category,
+            'renewal_months' => 12,
+            'is_mandatory' => $mandatory,
+            'description' => $marker.' '.$name,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('trainers')) {
+    foreach ([
+        ['Noah', 'Bennett', 'Facilitator', 'noah.bennett@demo.local'],
+        ['Maya', 'Chen', 'External Coach', 'maya.chen@demo.local'],
+    ] as [$first, $last, $role, $email]) {
+        if (DB::table('trainers')->where('email', $email)->exists()) {
+            continue;
+        }
+        if (demoInsert('trainers', [
+            'first_name' => $first,
+            'last_name' => $last,
+            'role' => $role,
+            'internal_external' => $role === 'External Coach' ? 'external' : 'internal',
+            'email' => $email,
+            'phone' => '+1 202 555 0148',
+            'description' => $marker,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('training') && !demoHas('training', 'description', $marker)) {
+    $typeId = (int) (DB::table('training_type')->orderBy('id')->value('id') ?? 0);
+    $trainerId = (int) (DB::table('trainers')->orderBy('id')->value('id') ?? 0);
+    $sessions = [
+        ['October Leadership', '2026-10-08', '2026-10-09', 'Board room', 'Scheduled'],
+        ['Payroll Close Lab', '2026-10-15', '2026-10-15', 'Training room B', 'Completed'],
+        ['Customer Handling', '2026-10-22', '2026-10-23', 'Online', 'In Progress'],
+        ['November Safety', '2026-11-05', '2026-11-06', 'Main hall', 'Scheduled'],
+    ];
+    foreach ($sessions as $i => [$batch, $start, $end, $venue, $status]) {
+        if (!demoInsert('training', [
+            'training_type_id' => $typeId > 0 ? $typeId : null,
+            'trainer_id' => $trainerId > 0 ? $trainerId : null,
+            'employee_id' => $pick($i + 1),
+            'start_date' => $start,
+            'end_date' => $end,
+            'cost' => 750 + ($i * 120),
+            'description' => $marker.' '.$batch,
+            'status' => 1,
+            'venue' => $venue,
+            'training_status' => $status,
+            'batch_name' => $batch,
+            'agenda' => 'Welcome, practice, and close.',
+            'is_cancelled' => 0,
+        ])) {
+            continue;
+        }
+        $added++;
+        $trainingId = (int) DB::table('training')->where('batch_name', $batch)->value('id');
+        if ($trainingId > 0 && Schema::hasTable('training_participants')) {
+            foreach ([$pick($i + 2), $pick($i + 3), $pick($i + 4)] as $employeeId) {
+                $exists = DB::table('training_participants')
+                    ->where('training_id', $trainingId)
+                    ->where('employee_id', $employeeId)
+                    ->exists();
+                if ($exists) {
+                    continue;
+                }
+                demoInsert('training_participants', [
+                    'training_id' => $trainingId,
+                    'employee_id' => $employeeId,
+                    'enrollment_date' => $start,
+                    'completed' => $status === 'Completed' ? 1 : 0,
+                ]);
+            }
+        }
+    }
+}
+
+if (Schema::hasTable('performance_review') && !demoHas('performance_review', 'comments', $marker)) {
+    $indicatorId = (int) (DB::table('performance_indicator')->orderBy('id')->value('id') ?? 0);
+    foreach ([4.5, 4.0, 3.8, 4.2] as $i => $rating) {
+        if (demoInsert('performance_review', [
+            'employee_id' => $pick($i + 1),
+            'indicator_id' => $indicatorId > 0 ? $indicatorId : null,
+            'review_date' => '2026-10-'.str_pad((string) (2 + $i), 2, '0', STR_PAD_LEFT),
+            'rating' => $rating,
+            'comments' => $marker.' Mid-year review note.',
+            'reviewer_id' => $pick(0),
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('performance_appraisal') && !demoHas('performance_appraisal', 'manager_comments', $marker)) {
+    $cycleId = Schema::hasTable('performance_cycle') ? (int) (DB::table('performance_cycle')->orderBy('id')->value('id') ?? 0) : 0;
+    foreach (['Exceeds', 'Meets', 'Exceeds'] as $i => $rating) {
+        if (demoInsert('performance_appraisal', [
+            'employee_id' => $pick($i + 2),
+            'manager_id' => $pick(0),
+            'cycle_id' => $cycleId > 0 ? $cycleId : null,
+            'period' => '2026 H1',
+            'overall_score' => 80 + ($i * 5),
+            'final_rating' => $rating,
+            'self_comments' => $marker.' Self review.',
+            'manager_comments' => $marker.' Manager review for the demo cycle.',
+            'status' => $i === 2 ? 1 : 2,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('performance_goal') && !demoHas('performance_goal', 'employee_comment', $marker)) {
+    $goalTypeId = (int) (DB::table('performance_goal_types')->orderBy('id')->value('id') ?? 0);
+    foreach (['Close the quarter with no payroll exceptions', 'Lift client satisfaction', 'Complete the leadership workshop'] as $i => $title) {
+        if (demoInsert('performance_goal', [
+            'employee_id' => $pick($i + 1),
+            'goal_type_id' => $goalTypeId > 0 ? $goalTypeId : null,
+            'title' => $title,
+            'metric' => 'Percent complete',
+            'weight' => 30,
+            'target_value' => '100',
+            'achievement_value' => (string) (70 + ($i * 10)),
+            'score' => 70 + ($i * 10),
+            'period' => '2026 H2',
+            'status' => 0,
+            'employee_comment' => $marker,
+            'manager_comment' => $marker.' On track.',
+        ])) {
+            $added++;
+        }
+    }
+}
+
 echo "Demo showcase rows added: {$added}\n";
 echo "Employees used: ".count($ids)."\n";
 echo "Existing employees, salaries, and payslips were left as they are.\n";
