@@ -30,15 +30,25 @@ class ReportStudioController extends Controller
     {
         $report = (string) $request->query('report', 'people');
         $built = match ($report) {
+            'headcount' => $this->headcount($request),
+            'new_hires' => $this->newHires($request),
             'attendance' => $this->attendance($request),
+            'attendance_summary' => $this->attendanceSummary($request),
             'late_starts' => $this->lateStarts($request),
             'open_punches' => $this->openPunches($request),
+            'absent_days' => $this->absentDays($request),
+            'timesheet_detail' => $this->timesheetDetail($request),
+            'timesheet_summary' => $this->timesheetSummary($request),
             'leave_activity' => $this->leaveActivity($request),
+            'leave_summary' => $this->leaveSummary($request),
             'pay_profile' => $this->payProfile($request),
             'processed_pay' => $this->processedPay($request),
+            'payroll_summary' => $this->payrollSummary($request),
             'additions' => $this->additions($request),
             'deductions' => $this->deductions($request),
             'overtime' => $this->overtime($request),
+            'advances' => $this->advances($request),
+            'settlements' => $this->settlements($request),
             default => $this->people($request),
         };
 
@@ -90,6 +100,61 @@ class ReportStudioController extends Controller
         ];
     }
 
+    private function headcount(Request $request): array
+    {
+        $rows = $this->peopleBase($request)
+            ->selectRaw("COALESCE(d.name, 'Unassigned') as group_name")
+            ->selectRaw('COUNT(DISTINCT e.employee_id) as headcount')
+            ->groupBy('d.name')
+            ->orderByDesc('headcount')
+            ->get()
+            ->map(fn ($r) => [
+                'department' => (string) $r->group_name,
+                'headcount' => (int) $r->headcount,
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'department', 'label' => 'Department'],
+                ['key' => 'headcount', 'label' => 'People', 'numeric' => true],
+            ],
+            'rows' => $this->numbered($rows),
+            'totals' => ['headcount' => array_sum(array_column($rows, 'headcount'))],
+        ];
+    }
+
+    private function newHires(Request $request): array
+    {
+        if (!Schema::hasColumn('employee', 'joining_date')) {
+            return $this->emptyGrid(['Name', 'Code', 'Joining date', 'Department', 'Designation']);
+        }
+        [$from, $to] = $this->range($request);
+        $rows = $this->peopleBase($request)
+            ->whereBetween('e.joining_date', [$from, $to])
+            ->orderByDesc('e.joining_date')
+            ->get([
+                'e.name', 'e.employee_code', 'e.joining_date',
+                'd.name as department_name', 'dg.name as designation_name',
+            ])->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'code' => (string) ($r->employee_code ?? ''),
+                'joining_date' => (string) ($r->joining_date ?? ''),
+                'department' => (string) ($r->department_name ?? ''),
+                'designation' => (string) ($r->designation_name ?? ''),
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'name', 'label' => 'Name'],
+                ['key' => 'code', 'label' => 'Code'],
+                ['key' => 'joining_date', 'label' => 'Joining date'],
+                ['key' => 'department', 'label' => 'Department'],
+                ['key' => 'designation', 'label' => 'Designation'],
+            ],
+            'rows' => $this->numbered($rows),
+        ];
+    }
+
     private function attendance(Request $request): array
     {
         if (!Schema::hasTable('attendance')) {
@@ -129,6 +194,44 @@ class ReportStudioController extends Controller
             ],
             'rows' => $this->numbered($out),
             'totals' => ['hours' => round($hours, 2)],
+        ];
+    }
+
+    private function attendanceSummary(Request $request): array
+    {
+        if (!Schema::hasTable('attendance')) {
+            return $this->emptyGrid(['Date', 'Present', 'Absent', 'Leave', 'Hours']);
+        }
+        [$from, $to] = $this->range($request);
+        $hasStatus = Schema::hasColumn('attendance', 'status');
+        $rows = DB::table('attendance as a')
+            ->whereIn('a.employee_id', $this->scopedIds($request))
+            ->whereBetween('a.date', [$from, $to])
+            ->selectRaw('a.date, COUNT(*) as records')
+            ->selectRaw($hasStatus ? 'SUM(a.status = 1) as present' : 'SUM(a.punch_in IS NOT NULL) as present')
+            ->selectRaw($hasStatus ? 'SUM(a.status = 0) as absent' : '0 as absent')
+            ->selectRaw($hasStatus ? 'SUM(a.status = 2) as leave_count' : '0 as leave_count')
+            ->selectRaw('ROUND(COALESCE(SUM(a.total_minutes), 0) / 60, 2) as hours')
+            ->groupBy('a.date')
+            ->orderByDesc('a.date')
+            ->get()
+            ->map(fn ($r) => [
+                'date' => (string) $r->date,
+                'present' => (int) $r->present,
+                'absent' => (int) $r->absent,
+                'leave' => (int) $r->leave_count,
+                'hours' => (float) $r->hours,
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'date', 'label' => 'Date'],
+                ['key' => 'present', 'label' => 'Present', 'numeric' => true],
+                ['key' => 'absent', 'label' => 'Absent', 'numeric' => true],
+                ['key' => 'leave', 'label' => 'Leave', 'numeric' => true],
+                ['key' => 'hours', 'label' => 'Hours', 'numeric' => true],
+            ],
+            'rows' => $this->numbered($rows),
         ];
     }
 
@@ -207,6 +310,112 @@ class ReportStudioController extends Controller
         ];
     }
 
+    private function absentDays(Request $request): array
+    {
+        if (!Schema::hasTable('attendance') || !Schema::hasColumn('attendance', 'status')) {
+            return $this->emptyGrid(['Name', 'Code', 'Date', 'Notes']);
+        }
+        [$from, $to] = $this->range($request);
+        $rows = DB::table('attendance as a')
+            ->join('employee as e', 'e.employee_id', '=', 'a.employee_id')
+            ->whereIn('a.employee_id', $this->scopedIds($request))
+            ->whereBetween('a.date', [$from, $to])
+            ->where('a.status', 0)
+            ->orderByDesc('a.date')
+            ->get(['e.name', 'e.employee_code', 'a.date', 'a.notes'])
+            ->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'code' => (string) ($r->employee_code ?? ''),
+                'date' => (string) $r->date,
+                'notes' => (string) ($r->notes ?? ''),
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'name', 'label' => 'Name'],
+                ['key' => 'code', 'label' => 'Code'],
+                ['key' => 'date', 'label' => 'Date'],
+                ['key' => 'notes', 'label' => 'Notes'],
+            ],
+            'rows' => $this->numbered($rows),
+        ];
+    }
+
+    private function timesheetDetail(Request $request): array
+    {
+        if (!Schema::hasTable('timesheet')) {
+            return $this->emptyGrid(['Name', 'Project', 'From', 'To', 'Hours', 'Status']);
+        }
+        [$from, $to] = $this->range($request);
+        $rows = DB::table('timesheet as t')
+            ->join('employee as e', 'e.employee_id', '=', 't.employee_id')
+            ->leftJoin('project as p', 'p.project_id', '=', 't.project_id')
+            ->whereIn('t.employee_id', $this->scopedIds($request))
+            ->whereDate('t.from_date', '<=', $to)
+            ->whereDate('t.to_date', '>=', $from)
+            ->orderByDesc('t.from_date')
+            ->get(['e.name', 'e.employee_code', 'p.name as project_name', 't.from_date', 't.to_date', 't.hours', 't.status'])
+            ->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'code' => (string) ($r->employee_code ?? ''),
+                'project' => (string) ($r->project_name ?? ''),
+                'from' => (string) $r->from_date,
+                'to' => (string) $r->to_date,
+                'hours' => (float) $r->hours,
+                'status' => $this->approvalLabel($r->status),
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'name', 'label' => 'Name'],
+                ['key' => 'code', 'label' => 'Code'],
+                ['key' => 'project', 'label' => 'Project'],
+                ['key' => 'from', 'label' => 'From'],
+                ['key' => 'to', 'label' => 'To'],
+                ['key' => 'hours', 'label' => 'Hours', 'numeric' => true],
+                ['key' => 'status', 'label' => 'Status'],
+            ],
+            'rows' => $this->numbered($rows),
+            'totals' => ['hours' => round(array_sum(array_column($rows, 'hours')), 2)],
+        ];
+    }
+
+    private function timesheetSummary(Request $request): array
+    {
+        if (!Schema::hasTable('timesheet')) {
+            return $this->emptyGrid(['Name', 'Code', 'Entries', 'Hours']);
+        }
+        [$from, $to] = $this->range($request);
+        $rows = DB::table('timesheet as t')
+            ->join('employee as e', 'e.employee_id', '=', 't.employee_id')
+            ->whereIn('t.employee_id', $this->scopedIds($request))
+            ->whereDate('t.from_date', '<=', $to)
+            ->whereDate('t.to_date', '>=', $from)
+            ->groupBy('t.employee_id', 'e.name', 'e.employee_code')
+            ->orderBy('e.name')
+            ->get([
+                'e.name', 'e.employee_code',
+                DB::raw('COUNT(*) as entries'),
+                DB::raw('ROUND(SUM(t.hours), 2) as hours'),
+            ])->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'code' => (string) ($r->employee_code ?? ''),
+                'entries' => (int) $r->entries,
+                'hours' => (float) $r->hours,
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'name', 'label' => 'Name'],
+                ['key' => 'code', 'label' => 'Code'],
+                ['key' => 'entries', 'label' => 'Entries', 'numeric' => true],
+                ['key' => 'hours', 'label' => 'Hours', 'numeric' => true],
+            ],
+            'rows' => $this->numbered($rows),
+            'totals' => ['hours' => round(array_sum(array_column($rows, 'hours')), 2)],
+        ];
+    }
+
     private function leaveActivity(Request $request): array
     {
         if (!Schema::hasTable('leave')) {
@@ -253,6 +462,40 @@ class ReportStudioController extends Controller
             ],
             'rows' => $this->numbered($out),
             'totals' => ['days' => $days],
+        ];
+    }
+
+    private function leaveSummary(Request $request): array
+    {
+        if (!Schema::hasTable('leave')) {
+            return $this->emptyGrid(['Leave type', 'Requests', 'Days']);
+        }
+        [$from, $to] = $this->range($request);
+        $rows = DB::table('leave as l')
+            ->leftJoin('leave_type as lt', 'lt.id', '=', 'l.leave_type')
+            ->whereIn('l.employee', $this->scopedIds($request))
+            ->whereDate('l.from', '<=', $to)
+            ->whereDate('l.to', '>=', $from)
+            ->groupBy('lt.name')
+            ->orderByDesc('days')
+            ->get([
+                DB::raw("COALESCE(lt.name, 'Unspecified') as type_name"),
+                DB::raw('COUNT(*) as requests'),
+                DB::raw('ROUND(SUM(l.days), 2) as days'),
+            ])->map(fn ($r) => [
+                'type' => (string) $r->type_name,
+                'requests' => (int) $r->requests,
+                'days' => (float) $r->days,
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'type', 'label' => 'Leave type'],
+                ['key' => 'requests', 'label' => 'Requests', 'numeric' => true],
+                ['key' => 'days', 'label' => 'Days', 'numeric' => true],
+            ],
+            'rows' => $this->numbered($rows),
+            'totals' => ['days' => round(array_sum(array_column($rows, 'days')), 2)],
         ];
     }
 
@@ -397,6 +640,38 @@ class ReportStudioController extends Controller
         ];
     }
 
+    private function payrollSummary(Request $request): array
+    {
+        $detail = $this->processedPay($request);
+        $months = [];
+        foreach ($detail['rows'] as $row) {
+            $month = substr((string) ($row['pay_date'] ?? ''), 0, 7);
+            $months[$month] ??= ['month' => $month, 'people' => 0, 'gross' => 0.0, 'deductions' => 0.0, 'net' => 0.0];
+            $months[$month]['people']++;
+            $months[$month]['gross'] += (float) ($row['allowances'] ?? 0);
+            $months[$month]['deductions'] += (float) ($row['deductions'] ?? 0);
+            $months[$month]['net'] += (float) ($row['net'] ?? 0);
+        }
+        krsort($months);
+        $rows = array_values($months);
+        foreach ($rows as &$row) {
+            $row['gross'] = round($row['gross'], 2);
+            $row['deductions'] = round($row['deductions'], 2);
+            $row['net'] = round($row['net'], 2);
+        }
+
+        return [
+            'columns' => [
+                ['key' => 'month', 'label' => 'Pay month'],
+                ['key' => 'people', 'label' => 'People', 'numeric' => true],
+                ['key' => 'gross', 'label' => 'Gross', 'numeric' => true],
+                ['key' => 'deductions', 'label' => 'Deductions', 'numeric' => true],
+                ['key' => 'net', 'label' => 'Net', 'numeric' => true],
+            ],
+            'rows' => $this->numbered($rows),
+        ];
+    }
+
     private function additions(Request $request): array
     {
         return $this->payLines($request, 'allowance', 'Addition');
@@ -493,6 +768,76 @@ class ReportStudioController extends Controller
             ],
             'rows' => $this->numbered($out),
             'totals' => ['hours' => round($hours, 2)],
+        ];
+    }
+
+    private function advances(Request $request): array
+    {
+        if (!Schema::hasTable('hr_advance')) {
+            return $this->emptyGrid(['Name', 'Code', 'Request date', 'Amount', 'Recovery months', 'Status']);
+        }
+        [$from, $to] = $this->range($request);
+        $rows = DB::table('hr_advance as a')
+            ->join('employee as e', 'e.employee_id', '=', 'a.employee_id')
+            ->whereIn('a.employee_id', $this->scopedIds($request))
+            ->whereBetween('a.request_date', [$from, $to])
+            ->orderByDesc('a.request_date')
+            ->get(['e.name', 'e.employee_code', 'a.request_date', 'a.amount', 'a.recover_months', 'a.status'])
+            ->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'code' => (string) ($r->employee_code ?? ''),
+                'date' => (string) ($r->request_date ?? ''),
+                'amount' => round((float) $r->amount, 2),
+                'months' => (int) $r->recover_months,
+                'status' => $this->approvalLabel($r->status),
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'name', 'label' => 'Name'],
+                ['key' => 'code', 'label' => 'Code'],
+                ['key' => 'date', 'label' => 'Request date'],
+                ['key' => 'amount', 'label' => 'Amount', 'numeric' => true],
+                ['key' => 'months', 'label' => 'Recovery months', 'numeric' => true],
+                ['key' => 'status', 'label' => 'Status'],
+            ],
+            'rows' => $this->numbered($rows),
+            'totals' => ['amount' => round(array_sum(array_column($rows, 'amount')), 2)],
+        ];
+    }
+
+    private function settlements(Request $request): array
+    {
+        if (!Schema::hasTable('employee_settlements')) {
+            return $this->emptyGrid(['Name', 'Last working date', 'Clearance', 'Total payable', 'Net payable']);
+        }
+        [$from, $to] = $this->range($request);
+        $rows = DB::table('employee_settlements as s')
+            ->join('employee as e', 'e.employee_id', '=', 's.employee')
+            ->whereIn('s.employee', $this->scopedIds($request))
+            ->whereBetween('s.last_working_date', [$from, $to])
+            ->orderByDesc('s.last_working_date')
+            ->get(['e.name', 'e.employee_code', 's.last_working_date', 's.clearance_status', 's.total_payable', 's.net_payable'])
+            ->map(fn ($r) => [
+                'name' => (string) $r->name,
+                'code' => (string) ($r->employee_code ?? ''),
+                'last_day' => (string) ($r->last_working_date ?? ''),
+                'clearance' => (string) ($r->clearance_status ?? ''),
+                'total' => round((float) $r->total_payable, 2),
+                'net' => round((float) $r->net_payable, 2),
+            ])->all();
+
+        return [
+            'columns' => [
+                ['key' => 'name', 'label' => 'Name'],
+                ['key' => 'code', 'label' => 'Code'],
+                ['key' => 'last_day', 'label' => 'Last working date'],
+                ['key' => 'clearance', 'label' => 'Clearance'],
+                ['key' => 'total', 'label' => 'Total payable', 'numeric' => true],
+                ['key' => 'net', 'label' => 'Net payable', 'numeric' => true],
+            ],
+            'rows' => $this->numbered($rows),
+            'totals' => ['net' => round(array_sum(array_column($rows, 'net')), 2)],
         ];
     }
 
@@ -609,6 +954,16 @@ class ReportStudioController extends Controller
         }
 
         return $text;
+    }
+
+    private function approvalLabel(mixed $status): string
+    {
+        return match ((int) $status) {
+            1 => 'Approved',
+            2 => 'Rejected',
+            3 => 'Closed',
+            default => 'Pending',
+        };
     }
 
     private function minutesAfter(mixed $punch, string $start): int
