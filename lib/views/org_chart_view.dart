@@ -335,8 +335,7 @@ class _OrgChartViewState extends State<OrgChartView> {
         title: const Text('Org Chart Report'),
         content: SizedBox(
           width: 720,
-          child: SingleChildScrollView(
-            child: DataTable(
+          child: HrPagedDataTable(
               columns: const [
                 DataColumn(label: Text('User')),
                 DataColumn(label: Text('Job Title')),
@@ -355,7 +354,6 @@ class _OrgChartViewState extends State<OrgChartView> {
                   ]),
               ],
             ),
-          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),

@@ -83,8 +83,11 @@ class SelfServiceRepository {
   Future<Map<String, dynamic>> attendanceToday() => _get('/attendance/today');
   Future<Map<String, dynamic>> attendanceMonth(String month) =>
       _get('/attendance?month=$month');
-  Future<void> punch(String action) =>
-      _post('/attendance/punch', {'action': action}).then((_) {});
+  Future<void> punch(String action, {bool workFromHome = false}) =>
+      _post('/attendance/punch', {
+        'action': action,
+        if (workFromHome) 'wfh': true,
+      }).then((_) {});
 
   Future<List<Map<String, dynamic>>> travels() async {
     final d = await _get('/travel');

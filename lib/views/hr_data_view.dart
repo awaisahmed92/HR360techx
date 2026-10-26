@@ -110,9 +110,7 @@ class _HrDataViewState extends State<HrDataView> {
                 final blob = '${r['name']} ${r['employee_code']} ${r['designation_name']} ${r['department_name']} ${r['station_name']}';
                 return hrMatchesQuery(blob, query);
               }).length, onClear: () => setState(() => _q = '')),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
+              HrPagedDataTable(
                   headingRowColor: WidgetStateProperty.all(const Color(0xFF8D6E63)),
                   headingTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
                   columns: const [
@@ -134,7 +132,6 @@ class _HrDataViewState extends State<HrDataView> {
                         DataCell(Text('${_rows[i]['station_name'] ?? ''}')),
                       ]),
                   ], query),
-                ),
               ),
             ],
           ),

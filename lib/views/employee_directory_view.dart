@@ -19,6 +19,8 @@ class EmployeeDirectoryView extends StatefulWidget {
 class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
   late final EmployeeState _state;
   String _query = '';
+  int _page = 1;
+  int _perPage = 20;
 
   @override
   void initState() {
@@ -47,6 +49,11 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
               '${r['name']} ${r['job_title']} ${r['department_name']} ${r['email']} ${r['user_name']} ${r['employee_code']} ${r['station_name']}';
           return hrMatchesQuery(blob, query);
         }).toList();
+        final pages = filtered.isEmpty ? 1 : (filtered.length / _perPage).ceil();
+        final page = _page.clamp(1, pages);
+        final start = (page - 1) * _perPage;
+        final end = (start + _perPage) > filtered.length ? filtered.length : start + _perPage;
+        final pageRows = filtered.isEmpty ? filtered : filtered.sublist(start, end);
 
         return ColoredBox(
           color: HrUi.pageBg(context),
@@ -71,12 +78,18 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
                     width: 260,
                     hint: 'Search employees',
                     value: query,
-                    onChanged: (v) => setState(() => _query = v),
+                    onChanged: (v) => setState(() {
+                      _query = v;
+                      _page = 1;
+                    }),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              hrQueryBanner(context, query, filtered.length, onClear: () => setState(() => _query = '')),
+              hrQueryBanner(context, query, filtered.length, onClear: () => setState(() {
+                _query = '';
+                _page = 1;
+              })),
               Text(
                 '${filtered.length} people',
                 style: TextStyle(color: HrUi.muted(context), fontSize: 12),
@@ -90,31 +103,72 @@ class _EmployeeDirectoryViewState extends State<EmployeeDirectoryView> {
                   ),
                 )
               else
-                LayoutBuilder(
-                  builder: (context, c) {
-                    final cols = c.maxWidth >= 1200
-                        ? 4
-                        : c.maxWidth >= 880
-                            ? 3
-                            : c.maxWidth >= 560
-                                ? 2
-                                : 1;
-                    final gap = 12.0;
-                    final w = (c.maxWidth - gap * (cols - 1)) / cols;
-                    return Wrap(
-                      spacing: gap,
-                      runSpacing: gap,
-                      children: [
-                        for (final row in filtered)
-                          SizedBox(width: w, child: _DirectoryCard(row: row, highlighted: query.isNotEmpty)),
-                      ],
-                    );
-                  },
+                Column(
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, c) {
+                        final cols = c.maxWidth >= 1200
+                            ? 4
+                            : c.maxWidth >= 880
+                                ? 3
+                                : c.maxWidth >= 560
+                                    ? 2
+                                    : 1;
+                        final gap = 12.0;
+                        final w = (c.maxWidth - gap * (cols - 1)) / cols;
+                        return Wrap(
+                          spacing: gap,
+                          runSpacing: gap,
+                          children: [
+                            for (final row in pageRows)
+                              SizedBox(width: w, child: _DirectoryCard(row: row, highlighted: query.isNotEmpty)),
+                          ],
+                        );
+                      },
+                    ),
+                    _directoryPager(context, start, end, filtered.length, page, pages),
+                  ],
                 ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _directoryPager(BuildContext context, int start, int end, int total, int page, int pages) {
+    const sizes = [10, 20, 50, 100];
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Text('${start + 1}–$end of $total', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          const SizedBox(width: 12),
+          Text('Rows', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          const SizedBox(width: 6),
+          DropdownButton<int>(
+            value: _perPage,
+            items: [for (final size in sizes) DropdownMenuItem(value: size, child: Text('$size'))],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() {
+                _perPage = value;
+                _page = 1;
+              });
+            },
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: page > 1 ? () => setState(() => _page = page - 1) : null,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Text('$page / $pages', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          IconButton(
+            onPressed: page < pages ? () => setState(() => _page = page + 1) : null,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -162,7 +162,14 @@ class PayrollService
     {
         $defines = DB::table('define_salary')->where('project_id', $projectId)->get();
         $runs = [];
+        $seen = [];
         foreach ($defines as $def) {
+            $employeeId = (int) ($def->employee_id ?? 0);
+            if ($employeeId < 1 || isset($seen[$employeeId]) || $this->employeeAlreadyPaid($employeeId, $date)) {
+                $seen[$employeeId] = true;
+                continue;
+            }
+            $seen[$employeeId] = true;
             $runs[] = $this->processOne($def, $date, $days, $actorId);
         }
 
@@ -641,7 +648,22 @@ class PayrollService
             $q->where('ps.employee_id', $employeeId);
         }
 
-        return $q->limit(500)->get()->map(fn ($r) => $this->mapProcess($r))->all();
+        $best = [];
+        foreach ($q->limit(2000)->get() as $r) {
+            $month = substr((string) ($r->date ?? ''), 0, 7);
+            $key = ((int) $r->employee_id).'|'.$month;
+            $open = !in_array((string) ($r->slip_status ?? 'processed'), ['cancelled', 'reversed'], true);
+            if (!isset($best[$key])) {
+                $best[$key] = $r;
+                continue;
+            }
+            $keptOpen = !in_array((string) ($best[$key]->slip_status ?? 'processed'), ['cancelled', 'reversed'], true);
+            if ($open && !$keptOpen) {
+                $best[$key] = $r;
+            }
+        }
+
+        return array_map(fn ($r) => $this->mapProcess($r), array_values($best));
     }
 
     public function payslip(int $processId): ?array
@@ -1888,7 +1910,17 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
     public function processFiltered(array $filters, string $date, int $days, int $actorId): array
     {
         $runs = [];
+        $seen = [];
         foreach ($this->filteredDefines($filters) as $def) {
+            $employeeId = (int) ($def->employee_id ?? 0);
+            if ($employeeId < 1 || isset($seen[$employeeId])) {
+                continue;
+            }
+            if ($this->employeeAlreadyPaid($employeeId, $date)) {
+                $seen[$employeeId] = true;
+                continue;
+            }
+            $seen[$employeeId] = true;
             $runs[] = $this->processOne($def, $date, $days, $actorId);
         }
 
@@ -2031,5 +2063,25 @@ button{margin-bottom:12px;padding:8px 14px;background:#8d6e63;color:#fff;border:
         }
 
         return $date;
+    }
+
+    protected function employeeAlreadyPaid(int $employeeId, string $date): bool
+    {
+        $stamp = strtotime($date);
+        if ($stamp === false || !Schema::hasTable('process_salary')) {
+            return false;
+        }
+        $q = DB::table('process_salary')
+            ->where('employee_id', $employeeId)
+            ->whereBetween('date', [date('Y-m-01', $stamp), date('Y-m-t', $stamp)]);
+        if (Schema::hasColumn('process_salary', 'slip_status')) {
+            $q->where(function ($w) {
+                $w->whereNull('slip_status')
+                    ->orWhere('slip_status', '')
+                    ->orWhereNotIn('slip_status', ['cancelled', 'reversed']);
+            });
+        }
+
+        return $q->exists();
     }
 }

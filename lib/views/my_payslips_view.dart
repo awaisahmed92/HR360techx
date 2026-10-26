@@ -9,6 +9,7 @@ import '../core/util/money.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/company_logo.dart';
 import '../widgets/hr_form_kit.dart';
+import '../widgets/hr_grid_query.dart';
 import 'payroll_phase3_view.dart';
 
 final _day = DateFormat('MMMM d, yyyy');
@@ -24,6 +25,9 @@ class MyPayslipsView extends StatefulWidget {
 class _MyPayslipsViewState extends State<MyPayslipsView> {
   late final PayrollState _ps;
   int? _openId;
+  String _query = '';
+  int _page = 1;
+  int _perPage = 20;
 
   @override
   void initState() {
@@ -84,6 +88,24 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
                   Text(_ps.error!, style: const TextStyle(color: Colors.redAccent)),
                 ],
                 const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Text(
+                      '${_visible(context).length} payslips · one per person each month',
+                      style: TextStyle(color: HrUi.muted(context), fontSize: 12),
+                    ),
+                    const Spacer(),
+                    HrSearchField(
+                      hint: 'Search employee, date, status',
+                      value: _query,
+                      onChanged: (value) => setState(() {
+                        _query = value;
+                        _page = 1;
+                      }),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 Expanded(child: _grid(context, currency)),
               ],
             ),
@@ -93,11 +115,24 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
     );
   }
 
+  List<Map<String, dynamic>> _visible(BuildContext context) {
+    final query = hrSearchQuery(context, _query);
+    return [
+      for (final row in _ps.myPayslips)
+        if (hrMatchesQuery(
+          '${row['employee_name']} ${row['employee_code']} ${row['date']} ${row['period_start']} ${row['period_end']} ${row['status']} ${row['net_salary']} ${row['project_name']}',
+          query,
+        ))
+          row,
+    ];
+  }
+
   Widget _grid(BuildContext context, String currency) {
+    final visible = _visible(context);
     if (_ps.busy && _ps.myPayslips.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_ps.myPayslips.isEmpty) {
+    if (visible.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -106,11 +141,18 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
           border: Border.all(color: HrUi.border(context)),
         ),
         child: Text(
-          'No payslips yet. They appear here after payroll is processed for you.',
+          _ps.myPayslips.isEmpty
+              ? 'No payslips yet. They appear here after payroll is processed for you.'
+              : 'No payslips match this search.',
           style: TextStyle(color: HrUi.muted(context)),
         ),
       );
     }
+    final pages = (visible.length / _perPage).ceil().clamp(1, 9999);
+    if (_page > pages) _page = pages;
+    final start = (_page - 1) * _perPage;
+    final end = (start + _perPage) > visible.length ? visible.length : start + _perPage;
+    final pageRows = visible.sublist(start, end);
     final brand = HrTheme.brand(context);
     final onBrand = HrTheme.onBrand(context);
     final money = NumberFormat('#,##0.00');
@@ -168,9 +210,13 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: _ps.myPayslips.length,
-                itemBuilder: (context, i) {
-                  final r = _ps.myPayslips[i];
+                itemCount: pageRows.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == pageRows.length) {
+                    return _pager(context, start, end, visible.length, pages);
+                  }
+                  final i = start + index;
+                  final r = pageRows[index];
                   final id = (r['id'] as num?)?.toInt() ?? 0;
                   final net = (r['net_salary'] as num?)?.toDouble() ?? 0;
                   return ColoredBox(
@@ -228,6 +274,42 @@ class _MyPayslipsViewState extends State<MyPayslipsView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _pager(BuildContext context, int start, int end, int total, int pages) {
+    const sizes = [10, 20, 50, 100];
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        children: [
+          Text('${start + 1}–$end of $total', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          const SizedBox(width: 12),
+          Text('Rows', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          const SizedBox(width: 6),
+          DropdownButton<int>(
+            value: _perPage,
+            items: [for (final size in sizes) DropdownMenuItem(value: size, child: Text('$size'))],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() {
+                _perPage = value;
+                _page = 1;
+              });
+            },
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: _page > 1 ? () => setState(() => _page -= 1) : null,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Text('$_page / $pages', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          IconButton(
+            onPressed: _page < pages ? () => setState(() => _page += 1) : null,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
       ),
     );
   }

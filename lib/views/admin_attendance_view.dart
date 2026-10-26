@@ -109,8 +109,7 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else
-                HrFitDataTableHost(
-                  child: DataTable(
+                HrPagedDataTable(
                     headingRowColor: WidgetStateProperty.all(HrTheme.brand(context)),
                     headingTextStyle: TextStyle(
                       color: HrTheme.onBrand(context),
@@ -161,7 +160,6 @@ class _AdminAttendanceViewState extends State<AdminAttendanceView> {
                           )),
                         ]),
                     ], hrSearchQuery(context)),
-                  ),
                 ),
             ],
           ),

@@ -329,9 +329,7 @@ class _ReportStudioViewState extends State<ReportStudioView> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: HrUi.border(context)),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
+      child: HrPagedDataTable(
           headingRowColor: WidgetStatePropertyAll(brand),
           headingTextStyle: TextStyle(color: HrTheme.onBrand(context), fontWeight: FontWeight.w700),
           columns: [
@@ -355,7 +353,6 @@ class _ReportStudioViewState extends State<ReportStudioView> {
               ]),
           ],
         ),
-      ),
     );
   }
 }

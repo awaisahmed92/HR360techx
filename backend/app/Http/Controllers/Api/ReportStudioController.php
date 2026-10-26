@@ -326,19 +326,38 @@ class ReportStudioController extends Controller
             return $this->emptyGrid(['Name', 'Pay date', 'Basic', 'Allowances', 'Deductions', 'Net']);
         }
         [$from, $to] = $this->range($request);
+        $select = [
+            'ps.employee_id', 'e.name', 'e.employee_code', 'ps.date', 'ps.basic_salary', 'ps.total_allowance',
+            'ps.total_deduction', 'ps.tax_amount', 'ps.net_salary',
+        ];
+        if (Schema::hasColumn('process_salary', 'slip_status')) {
+            $select[] = 'ps.slip_status';
+        }
         $rows = DB::table('process_salary as ps')
             ->join('employee as e', 'e.employee_id', '=', 'ps.employee_id')
             ->whereIn('ps.employee_id', $this->scopedIds($request))
             ->whereBetween('ps.date', [$from, $to])
             ->orderByDesc('ps.date')
-            ->limit(500)
-            ->get([
-                'e.name', 'e.employee_code', 'ps.date', 'ps.basic_salary', 'ps.total_allowance',
-                'ps.total_deduction', 'ps.tax_amount', 'ps.net_salary',
-            ]);
+            ->orderByDesc('ps.id')
+            ->limit(2000)
+            ->get($select);
+        $kept = [];
+        foreach ($rows as $r) {
+            $month = substr((string) ($r->date ?? ''), 0, 7);
+            $key = ((int) $r->employee_id).'|'.$month;
+            $open = !in_array((string) ($r->slip_status ?? 'processed'), ['cancelled', 'reversed'], true);
+            if (!isset($kept[$key])) {
+                $kept[$key] = $r;
+                continue;
+            }
+            $keptOpen = !in_array((string) ($kept[$key]->slip_status ?? 'processed'), ['cancelled', 'reversed'], true);
+            if ($open && !$keptOpen) {
+                $kept[$key] = $r;
+            }
+        }
         $out = [];
         $totals = ['basic' => 0.0, 'allowances' => 0.0, 'deductions' => 0.0, 'net' => 0.0];
-        foreach ($rows as $r) {
+        foreach ($kept as $r) {
             $basic = round((float) $r->basic_salary, 2);
             $allow = round((float) $r->total_allowance, 2);
             $ded = round((float) $r->total_deduction, 2);

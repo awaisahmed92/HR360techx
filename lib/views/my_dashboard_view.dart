@@ -11,6 +11,8 @@ import '../core/self_service/self_service_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/dashboard_clock_face.dart';
+import '../widgets/dashboard_punch.dart';
+import 'alerts_list_view.dart';
 import '../widgets/hr_form_kit.dart';
 
 /// HR360tech-style My Dashboard: hero profile, status feed, My Alerts, celebrations.
@@ -39,6 +41,7 @@ class _MyDashboardViewState extends State<MyDashboardView> {
       final ss = context.read<SelfServiceState>();
       ss.loadNotifications();
       ss.loadApprovals();
+      ss.loadAttendance();
       context.read<AppState>().loadStatusFeed();
     });
     _feedPoll = Timer.periodic(const Duration(seconds: 25), (_) {
@@ -116,8 +119,6 @@ class _MyDashboardViewState extends State<MyDashboardView> {
       notifications: notifs,
       approvals: approvals,
       relative: _relative,
-      onAllApprovals: () =>
-          app.openScreen(moduleId: 'dashboard', subId: 'approvals'),
     );
     final celebrations = _CelebrationsCard(
       brand: brand,
@@ -205,7 +206,7 @@ class _HeroBanner extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: SizedBox(
-        height: 168,
+        height: 196,
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -325,6 +326,8 @@ class _HeroBanner extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const DashboardSignBar(),
+                  const SizedBox(width: 12),
                   DashboardClockFace(
                     face: app.selectedClockFace,
                     clockType: app.orgSettings.clockType,
@@ -959,7 +962,6 @@ class _AlertsCard extends StatelessWidget {
     required this.notifications,
     required this.approvals,
     required this.relative,
-    required this.onAllApprovals,
   });
 
   final Color brand;
@@ -970,7 +972,12 @@ class _AlertsCard extends StatelessWidget {
   final List<Map<String, dynamic>> notifications;
   final List<Map<String, dynamic>> approvals;
   final String Function(String?) relative;
-  final VoidCallback onAllApprovals;
+
+  void _openList(BuildContext context, String mode) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => AlertsListView(mode: mode)),
+    );
+  }
 
   static const _badge = Color(0xFF8B6B4A);
 
@@ -994,7 +1001,7 @@ class _AlertsCard extends StatelessWidget {
                     )),
                 const Spacer(),
                 TextButton(
-                  onPressed: onAllApprovals,
+                  onPressed: () => _openList(context, 'approvals'),
                   child: Text('All Approvals >',
                       style: TextStyle(color: brand, fontWeight: FontWeight.w700)),
                 ),
@@ -1012,33 +1019,52 @@ class _AlertsCard extends StatelessWidget {
             if (tab == 'actions') ...[
               if (notifications.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Text('No alerts right now.',
-                      style: TextStyle(color: HrUi.muted(context))),
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  child: Text('Nothing to do today.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: HrUi.muted(context), fontSize: 16)),
                 )
-              else
-                for (final n in notifications.take(8))
+              else ...[
+                for (final n in notifications.take(4))
                   _alertRow(
                     context,
                     title: _alertTitle(n),
                     time: relative((n['created_at'] ?? '').toString()),
                     unread: n['is_read'] != true,
                   ),
+                if (notifications.isNotEmpty)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => _openList(context, 'actions'),
+                      child: const Text('See more'),
+                    ),
+                  ),
+              ],
             ] else ...[
               if (approvals.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  child: Text('No pending approvals.',
-                      style: TextStyle(color: HrUi.muted(context))),
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  child: Text('Nothing to do today.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: HrUi.muted(context), fontSize: 16)),
                 )
-              else
-                for (final a in approvals.take(8))
+              else ...[
+                for (final a in approvals.take(4))
                   _alertRow(
                     context,
                     title: _approvalTitle(a),
                     time: relative((a['created_at'] ?? a['submitted_at'] ?? '').toString()),
                     unread: true,
                   ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => _openList(context, 'approvals'),
+                    child: Text('See more (${approvals.length})'),
+                  ),
+                ),
+              ],
             ],
           ],
         ),

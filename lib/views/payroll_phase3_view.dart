@@ -264,8 +264,7 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
             height: 400,
             child: rows.isEmpty
                 ? const Text('No define-salary records.')
-                : SingleChildScrollView(
-                    child: DataTable(
+                : HrPagedDataTable(
                       columns: const [
                         DataColumn(label: Text('Employee')),
                         DataColumn(label: Text('Project')),
@@ -284,7 +283,6 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                           ]),
                       ],
                     ),
-                  ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
@@ -329,8 +327,7 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
               ),
               const SizedBox(height: 8),
               Expanded(
-                child: SingleChildScrollView(
-                  child: DataTable(
+                child: HrPagedDataTable(
                     columns: const [
                       DataColumn(label: Text('Employee')),
                       DataColumn(label: Text('Gross')),
@@ -347,7 +344,6 @@ class _PayrollProcessViewState extends State<PayrollProcessView> {
                         ]),
                     ],
                   ),
-                ),
               ),
             ],
           ),

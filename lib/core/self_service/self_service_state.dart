@@ -88,10 +88,10 @@ class SelfServiceState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String?> punch(String action) async {
+  Future<String?> punch(String action, {bool workFromHome = false}) async {
     if (_auth.isDemo) return 'Sign in with live API to punch.';
     try {
-      await _repo.punch(action);
+      await _repo.punch(action, workFromHome: workFromHome);
       await loadAttendance();
       return null;
     } catch (e) {

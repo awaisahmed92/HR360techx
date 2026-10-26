@@ -760,17 +760,7 @@ class HrDataGridPage extends StatelessWidget {
               border: Border.all(color: HrUi.border(context)),
             ),
             clipBehavior: Clip.antiAlias,
-            child: HrFitDataTableHost(
-              child: Theme(
-                data: Theme.of(context).copyWith(
-                  dataTableTheme: DataTableThemeData(
-                    dataTextStyle: GoogleFonts.plusJakartaSans(
-                      fontSize: columns.length > 6 ? 12 : 13,
-                      color: textPrimary,
-                    ),
-                  ),
-                ),
-                child: DataTable(
+            child: HrPagedDataTable(
                   headingRowColor: WidgetStateProperty.all(header),
                   headingTextStyle: GoogleFonts.plusJakartaSans(
                     color: HrUi.onHeader(context),
@@ -814,8 +804,6 @@ class HrDataGridPage extends StatelessWidget {
                             ),
                         ],
                 ),
-              ),
-            ),
           ),
           if (page != null &&
               totalPages != null &&
@@ -885,6 +873,122 @@ class HrStatusPill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Data table with 20 rows per page, and a choice of 10, 20, 50, or 100.
+class HrPagedDataTable extends StatefulWidget {
+  const HrPagedDataTable({
+    super.key,
+    required this.columns,
+    required this.rows,
+    this.headingRowColor,
+    this.headingTextStyle,
+    this.dataTextStyle,
+    this.columnSpacing = 22,
+    this.horizontalMargin = 14,
+  });
+
+  final List<DataColumn> columns;
+  final List<DataRow> rows;
+  final WidgetStateProperty<Color?>? headingRowColor;
+  final TextStyle? headingTextStyle;
+  final TextStyle? dataTextStyle;
+  final double columnSpacing;
+  final double horizontalMargin;
+
+  @override
+  State<HrPagedDataTable> createState() => _HrPagedDataTableState();
+}
+
+class _HrPagedDataTableState extends State<HrPagedDataTable> {
+  static const _sizes = [10, 20, 50, 100];
+  int _page = 1;
+  int _perPage = 20;
+
+  @override
+  void didUpdateWidget(HrPagedDataTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final pages = _pages;
+    if (_page > pages) _page = pages;
+  }
+
+  int get _pages {
+    if (widget.rows.isEmpty) return 1;
+    return (widget.rows.length / _perPage).ceil();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = _pages;
+    final start = (_page - 1) * _perPage;
+    final end = (start + _perPage) > widget.rows.length ? widget.rows.length : start + _perPage;
+    final slice = widget.rows.isEmpty ? widget.rows : widget.rows.sublist(start, end);
+    final table = HrFitDataTableHost(
+      child: DataTable(
+        headingRowColor: widget.headingRowColor,
+        headingTextStyle: widget.headingTextStyle,
+        dataTextStyle: widget.dataTextStyle,
+        columnSpacing: widget.columnSpacing,
+        horizontalMargin: widget.horizontalMargin,
+        columns: widget.columns,
+        rows: slice,
+      ),
+    );
+    final pager = Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+      child: Row(
+        children: [
+          Text(
+            widget.rows.isEmpty ? '0 records' : '${start + 1}–$end of ${widget.rows.length}',
+            style: TextStyle(color: HrUi.muted(context), fontSize: 12),
+          ),
+          const SizedBox(width: 12),
+          Text('Rows', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          const SizedBox(width: 6),
+          DropdownButton<int>(
+            value: _perPage,
+            items: [
+              for (final size in _sizes) DropdownMenuItem(value: size, child: Text('$size')),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() {
+                _perPage = value;
+                _page = 1;
+              });
+            },
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: _page > 1 ? () => setState(() => _page -= 1) : null,
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Text('$_page / $pages', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+          IconButton(
+            onPressed: _page < pages ? () => setState(() => _page += 1) : null,
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
+      ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.maxHeight.isFinite) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [table, pager],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: SingleChildScrollView(child: table)),
+            pager,
+          ],
+        );
+      },
     );
   }
 }

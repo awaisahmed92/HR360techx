@@ -294,8 +294,12 @@ class AppState extends ChangeNotifier {
   DateTime get clockInTime => _clockInTime;
 
   void toggleClock() {
-    _isClockedIn = !_isClockedIn;
-    if (_isClockedIn) {
+    setClockedIn(!_isClockedIn);
+  }
+
+  void setClockedIn(bool value) {
+    _isClockedIn = value;
+    if (value) {
       _clockInTime = DateTime.now();
     }
     notifyListeners();

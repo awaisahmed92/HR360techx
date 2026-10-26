@@ -342,8 +342,7 @@ class _EmployeesViewState extends State<EmployeesView> {
         border: Border.all(color: HrUi.border(context)),
       ),
       clipBehavior: Clip.antiAlias,
-      child: HrFitDataTableHost(
-        child: DataTable(
+      child: HrPagedDataTable(
           headingRowColor: WidgetStateProperty.all(brand),
           headingTextStyle: TextStyle(
             color: onBrand,
@@ -365,7 +364,6 @@ class _EmployeesViewState extends State<EmployeesView> {
             DataColumn(label: Text('')),
           ],
           rows: visible,
-        ),
       ),
         ),
       ],

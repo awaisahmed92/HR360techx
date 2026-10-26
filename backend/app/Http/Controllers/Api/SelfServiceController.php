@@ -190,12 +190,19 @@ class SelfServiceController extends Controller
             if (Schema::hasColumn('attendance', 'status')) {
                 $payload['status'] = 1;
             }
+            if ($request->boolean('wfh') && Schema::hasColumn('attendance', 'notes')) {
+                $payload['notes'] = 'Work from home';
+            }
             if ($row) {
                 DB::table('attendance')->where('id', $row->id)->update($payload);
             } else {
                 $payload['employee_id'] = $uid;
                 $payload['date'] = $today;
                 DB::table('attendance')->insert($payload);
+            }
+
+            if ($request->boolean('wfh')) {
+                $this->markWorkFromHome($uid, $today);
             }
 
             return response()->json(['success' => true, 'message' => 'Punched in.', 'punch_in' => $now, 'late_minutes' => $late]);
@@ -218,6 +225,27 @@ class SelfServiceController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'action must be in or out.'], 422);
+    }
+
+    private function markWorkFromHome(int $employeeId, string $today): void
+    {
+        if ($employeeId < 1 || !Schema::hasTable('hr_wfh_request')) {
+            return;
+        }
+        $exists = DB::table('hr_wfh_request')
+            ->where('employee_id', $employeeId)
+            ->where('from_date', $today)
+            ->exists();
+        if ($exists) {
+            return;
+        }
+        DB::table('hr_wfh_request')->insert([
+            'employee_id' => $employeeId,
+            'from_date' => $today,
+            'to_date' => $today,
+            'reason' => 'Signed in from home',
+            'status' => 1,
+        ]);
     }
 
     public function leaveTypes(Request $request)

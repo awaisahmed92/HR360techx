@@ -125,8 +125,7 @@ class _AttendanceRegisterViewState extends State<AttendanceRegisterView> {
                       ]),
                   ], query).length,
                 ),
-                HrFitDataTableHost(
-                  child: DataTable(
+                HrPagedDataTable(
                     headingRowColor: WidgetStateProperty.all(HrTheme.brand(context)),
                     headingTextStyle: TextStyle(
                       color: HrTheme.onBrand(context),
@@ -155,7 +154,6 @@ class _AttendanceRegisterViewState extends State<AttendanceRegisterView> {
                           DataCell(Text('${r['status_label']}')),
                         ]),
                     ], query),
-                  ),
                 ),
               ],
             ],

@@ -298,8 +298,7 @@ class _HrReportsViewState extends State<HrReportsView> {
     final columns = _columnsForTab();
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: HrFitDataTableHost(
-        child: DataTable(
+      child: HrPagedDataTable(
           headingRowColor: WidgetStatePropertyAll(HrTheme.brand(context)),
           headingTextStyle: TextStyle(
             color: HrTheme.onBrand(context),
@@ -324,7 +323,6 @@ class _HrReportsViewState extends State<HrReportsView> {
             }).toList(),
             hrSearchQuery(context),
           ),
-        ),
       ),
     );
   }

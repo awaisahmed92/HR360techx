@@ -174,8 +174,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
             if (_structure.isEmpty)
               const Text('No define-salary rows yet.')
             else
-              HrFitDataTableHost(
-                child: DataTable(
+              HrPagedDataTable(
                   headingRowColor: WidgetStateProperty.all(HrTheme.brand(context)),
                   headingTextStyle: TextStyle(color: HrTheme.onBrand(context), fontWeight: FontWeight.w600),
                   columnSpacing: 14,
@@ -198,7 +197,6 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                         ]),
                       )
                       .toList(), hrSearchQuery(context)),
-                ),
               ),
           ],
         ),
@@ -248,8 +246,7 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
             if (_sheet.isEmpty)
               const Text('No processed rows for this month.')
             else
-              HrFitDataTableHost(
-                child: DataTable(
+              HrPagedDataTable(
                   headingRowColor: WidgetStateProperty.all(HrTheme.brand(context)),
                   headingTextStyle: TextStyle(color: HrTheme.onBrand(context), fontWeight: FontWeight.w600),
                   columnSpacing: 14,
@@ -272,7 +269,6 @@ class _PayrollReportsViewState extends State<PayrollReportsView>
                         ]),
                       )
                       .toList(), hrSearchQuery(context)),
-                ),
               ),
           ],
         ),
