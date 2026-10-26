@@ -693,6 +693,246 @@ if (Schema::hasTable('performance_goal') && !demoHas('performance_goal', 'employ
     }
 }
 
+$companyId = 0;
+if (Schema::hasTable('company')) {
+    $companyPk = Schema::hasColumn('company', 'id') ? 'id' : (Schema::hasColumn('company', 'company_id') ? 'company_id' : null);
+    if ($companyPk !== null) {
+        $companyId = (int) (DB::table('company')->orderBy($companyPk)->value($companyPk) ?? 0);
+    }
+}
+
+if (Schema::hasTable('hr_org_division')) {
+    foreach ([
+        ['DIV-OPS', 'Operations'],
+        ['DIV-TECH', 'Technology'],
+        ['DIV-PEOPLE', 'People and Culture'],
+    ] as [$code, $name]) {
+        if (DB::table('hr_org_division')->where('code', $code)->exists()) {
+            continue;
+        }
+        if (demoInsert('hr_org_division', [
+            'code' => $code,
+            'name' => $name,
+            'company_id' => $companyId > 0 ? $companyId : null,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+$divisionId = Schema::hasTable('hr_org_division')
+    ? (int) (DB::table('hr_org_division')->where('code', 'DIV-OPS')->value('id') ?? DB::table('hr_org_division')->orderBy('id')->value('id') ?? 0)
+    : 0;
+$divisionTech = Schema::hasTable('hr_org_division')
+    ? (int) (DB::table('hr_org_division')->where('code', 'DIV-TECH')->value('id') ?? $divisionId)
+    : 0;
+
+if (Schema::hasTable('hr_cost_center')) {
+    foreach ([
+        ['CC-OPS', 'Operations', $divisionId],
+        ['CC-TECH', 'Technology', $divisionTech],
+        ['CC-ADMIN', 'Administration', $divisionId],
+    ] as [$code, $name, $div]) {
+        if (DB::table('hr_cost_center')->where('code', $code)->exists()) {
+            continue;
+        }
+        if (demoInsert('hr_cost_center', [
+            'code' => $code,
+            'name' => $name,
+            'division_id' => $div > 0 ? $div : null,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('hr_parent_department')) {
+    foreach ([
+        ['PD-OPS', 'Operations', $divisionId],
+        ['PD-TECH', 'Technology', $divisionTech],
+        ['PD-CORP', 'Corporate', $divisionId],
+    ] as [$code, $name, $div]) {
+        if (DB::table('hr_parent_department')->where('code', $code)->exists()) {
+            continue;
+        }
+        if (demoInsert('hr_parent_department', [
+            'code' => $code,
+            'name' => $name,
+            'division_id' => $div > 0 ? $div : null,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+$costCenterId = Schema::hasTable('hr_cost_center')
+    ? (int) (DB::table('hr_cost_center')->where('code', 'CC-OPS')->value('id') ?? 0)
+    : 0;
+$parentDepartmentId = Schema::hasTable('hr_parent_department')
+    ? (int) (DB::table('hr_parent_department')->where('code', 'PD-OPS')->value('id') ?? 0)
+    : 0;
+
+if (Schema::hasTable('department') && $divisionId > 0 && Schema::hasColumn('department', 'division_id')) {
+    $link = ['division_id' => $divisionId];
+    if ($costCenterId > 0 && Schema::hasColumn('department', 'cost_center_id')) {
+        $link['cost_center_id'] = $costCenterId;
+    }
+    if ($parentDepartmentId > 0 && Schema::hasColumn('department', 'parent_department_id')) {
+        $link['parent_department_id'] = $parentDepartmentId;
+    }
+    $added += DB::table('department')->whereNull('division_id')->update($link);
+}
+
+if (Schema::hasTable('hr_team') && Schema::hasTable('department')) {
+    $deptIds = DB::table('department')->orderBy('department_id')->limit(4)->pluck('department_id')->map(fn ($id) => (int) $id)->all();
+    foreach ([
+        ['TEAM-DEL', 'Client Delivery'],
+        ['TEAM-PAY', 'Payroll'],
+        ['TEAM-HR', 'People Operations'],
+        ['TEAM-SUP', 'Support'],
+    ] as $i => [$code, $name]) {
+        if (DB::table('hr_team')->where('code', $code)->exists()) {
+            continue;
+        }
+        if (demoInsert('hr_team', [
+            'code' => $code,
+            'name' => $name,
+            'department_id' => $deptIds[$i % max(1, count($deptIds))] ?? null,
+            'lead_employee_id' => $pick($i + 1),
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('hr_policy')) {
+    foreach ([
+        ['Code of Conduct', 'Code of Conduct', '1.0'],
+        ['Leave Policy', 'Leave', '2.1'],
+        ['Attendance Policy', 'Attendance', '1.4'],
+        ['Workplace Safety', 'Safety', '1.0'],
+        ['Employee Handbook', 'HR', '3.0'],
+    ] as [$title, $category, $version]) {
+        if (DB::table('hr_policy')->where('title', $title)->exists()) {
+            continue;
+        }
+        if (demoInsert('hr_policy', [
+            'title' => $title,
+            'category' => $category,
+            'version' => $version,
+            'status' => 1,
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('attendance')) {
+    foreach ([0, 1] as $i) {
+        $employeeId = $pick($i + 1);
+        $date = '2026-11-0'.(2 + $i);
+        $exists = DB::table('attendance')->where('employee_id', $employeeId)->where('date', $date)->exists();
+        if ($exists) {
+            continue;
+        }
+        if (demoInsert('attendance', [
+            'employee_id' => $employeeId,
+            'date' => $date,
+            'punch_in' => $date.' 09:20:00',
+            'punch_out' => null,
+            'total_minutes' => 0,
+            'notes' => $marker.' open punch',
+        ])) {
+            $added++;
+        }
+    }
+}
+
+if (Schema::hasTable('hr_employee_pay')) {
+    $payPeople = DB::table('employee')->where('status', '>', 0)->orderBy('employee_id')->limit(16)->get();
+    $n = 0;
+    foreach ($payPeople as $person) {
+        $employeeId = (int) $person->employee_id;
+        if (DB::table('hr_employee_pay')->where('employee_id', $employeeId)->exists()) {
+            continue;
+        }
+        $annual = 42000 + ($n * 6500);
+        $monthly = round($annual / 12, 2);
+        $hourly = round($annual / 52 / 40, 2);
+        demoInsert('hr_employee_pay', [
+            'employee_id' => $employeeId,
+            'payroll_setup' => 'General Payroll',
+            'salary_type' => $n % 5 === 0 ? 'Hourly' : 'Salary',
+            'currency' => 'USD',
+            'hours_per_week' => 40,
+            'annual_salary' => $annual,
+            'gross_salary' => $monthly,
+            'hourly_salary' => $hourly,
+            'ot_hourly_salary' => round($hourly * 1.5, 2),
+            'bonus_entitlement' => 500 + ($n * 75),
+        ]);
+        $station = (int) ($person->station ?? 0);
+        $project = (int) ($person->project ?? 0);
+        if (Schema::hasTable('define_salary') && !DB::table('define_salary')->where('employee_id', $employeeId)->exists()) {
+            $basic = round($monthly * 0.7, 2);
+            $allowance = round($monthly * 0.15, 2);
+            $deduction = round($monthly * 0.08, 2);
+            $defineId = DB::table('define_salary')->insertGetId([
+                'station_id' => $station > 0 ? $station : 1,
+                'project_id' => $project > 0 ? $project : 1,
+                'employee_id' => $employeeId,
+                'basic_salary' => $basic,
+                'total_allowance' => $allowance,
+                'total_deduction' => $deduction,
+                'net_salary' => round($basic + $allowance - $deduction, 2),
+            ]);
+            if (Schema::hasTable('define_salary_details') && Schema::hasTable('hr_payroll_item')) {
+                $allowItem = (int) (DB::table('hr_payroll_item')->where('category', 'allowance')->orderBy('id')->value('id') ?? 0);
+                $deductItem = (int) (DB::table('hr_payroll_item')->where('category', 'deduction')->orderBy('id')->value('id') ?? 0);
+                if ($allowItem > 0) {
+                    DB::table('define_salary_details')->insert([
+                        'define_salary_id' => $defineId,
+                        'payroll_item_id' => $allowItem,
+                        'allowance' => $allowance,
+                        'deduction' => 0,
+                    ]);
+                }
+                if ($deductItem > 0) {
+                    DB::table('define_salary_details')->insert([
+                        'define_salary_id' => $defineId,
+                        'payroll_item_id' => $deductItem,
+                        'allowance' => 0,
+                        'deduction' => $deduction,
+                    ]);
+                }
+            }
+            $added++;
+        }
+        if (Schema::hasTable('process_salary') && !DB::table('process_salary')->where('employee_id', $employeeId)->where('date', '2026-10-31')->exists()) {
+            $basic = round($monthly * 0.7, 2);
+            $allowance = round($monthly * 0.15, 2);
+            $deduction = round($monthly * 0.08, 2);
+            demoInsert('process_salary', [
+                'project_id' => $project > 0 ? $project : 1,
+                'employee_id' => $employeeId,
+                'days' => 22,
+                'basic_salary' => $basic,
+                'total_allowance' => $allowance,
+                'total_deduction' => $deduction,
+                'tax_amount' => round($monthly * 0.05, 2),
+                'net_salary' => round($basic + $allowance - $deduction, 2),
+                'date' => '2026-10-31',
+            ]);
+        }
+        $added++;
+        $n++;
+    }
+}
+
 echo "Demo showcase rows added: {$added}\n";
 echo "Employees used: ".count($ids)."\n";
 echo "Existing employees, salaries, and payslips were left as they are.\n";

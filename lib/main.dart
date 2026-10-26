@@ -32,7 +32,7 @@ import 'views/run_payroll_view.dart';
 import 'views/my_payslips_view.dart';
 import 'views/payroll_setup_view.dart';
 import 'views/payroll_reports_view.dart';
-import 'views/hr_reports_view.dart';
+import 'views/report_studio_view.dart';
 import 'views/employee_pay_view.dart';
 import 'views/payroll_view.dart';
 import 'views/attendance_view.dart';
@@ -385,7 +385,7 @@ class _MainShellState extends State<MainShell> {
       case 'payroll_reports':
         return const PayrollReportsView();
       case 'hr_reports':
-        return const HrReportsView();
+        return const ReportStudioView();
       case 'attendance':
         return const AttendanceView();
       case 'admin_attendance':

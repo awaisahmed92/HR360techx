@@ -207,7 +207,7 @@ class ModuleCatalog {
       children: [
         HrSubNav(id: 'att_register_rpt', label: 'Attendance Register', icon: Icons.assignment_outlined, screen: 'attendance_register'),
         HrSubNav(id: 'payroll_reports_nav', label: 'Payroll Reports', icon: Icons.payments_outlined, screen: 'payroll_reports'),
-        HrSubNav(id: 'reports', label: 'HR Reports', icon: Icons.assessment_outlined, screen: 'hr_reports'),
+        HrSubNav(id: 'reports', label: 'Generated Reports', icon: Icons.assessment_outlined, screen: 'hr_reports'),
       ],
     ),
   ];

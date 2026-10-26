@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\LeaveThresholdController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\HrReportController;
+use App\Http\Controllers\Api\ReportStudioController;
 use App\Http\Controllers\Api\InsightsController;
 use App\Http\Controllers\Api\PerformanceController;
 use App\Http\Controllers\Api\RecruitmentController;
@@ -230,6 +231,8 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/performance/cycles/{id}', [PerformanceController::class, 'cyclesUpdate'])->whereNumber('id');
     Route::post('/performance/cycles/{id}/delete', [PerformanceController::class, 'cyclesDelete'])->whereNumber('id');
 
+    Route::get('/reports/studio/meta', [ReportStudioController::class, 'meta']);
+    Route::get('/reports/studio/run', [ReportStudioController::class, 'run']);
     Route::get('/reports/hr/meta', [HrReportController::class, 'meta']);
     Route::get('/reports/hr/leave', [HrReportController::class, 'leave']);
     Route::get('/reports/hr/leave/balance', [HrReportController::class, 'leaveBalance']);
