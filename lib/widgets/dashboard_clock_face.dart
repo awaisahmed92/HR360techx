@@ -17,6 +17,7 @@ class DashboardClockFace extends StatefulWidget {
     required this.timeFormat,
     required this.isClockedIn,
     required this.onTap,
+    this.size = 108,
   });
 
   final ClockFaceOption face;
@@ -25,6 +26,9 @@ class DashboardClockFace extends StatefulWidget {
   final String timeFormat;
   final bool isClockedIn;
   final VoidCallback onTap;
+
+  /// Outer box. The face, type, and flag badge scale with this.
+  final double size;
 
   @override
   State<DashboardClockFace> createState() => _DashboardClockFaceState();
@@ -57,6 +61,8 @@ class _DashboardClockFaceState extends State<DashboardClockFace> {
             : (twelve ? 'h:mm' : 'HH:mm'))
         .format(now);
     final date = DateFormat('EEE, MMM d').format(now);
+    final scale = widget.size / 108;
+    final face = widget.size * (102 / 108);
 
     return Tooltip(
       message: '${widget.country.flag} ${widget.country.name} · ${widget.country.gmtLabel}',
@@ -64,15 +70,15 @@ class _DashboardClockFaceState extends State<DashboardClockFace> {
         onTap: widget.onTap,
         customBorder: const CircleBorder(),
         child: SizedBox(
-          width: 108,
-          height: 108,
+          width: widget.size,
+          height: widget.size,
           child: Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
               Container(
-                width: 102,
-                height: 102,
+                width: face,
+                height: face,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -89,7 +95,7 @@ class _DashboardClockFaceState extends State<DashboardClockFace> {
                                 : const Color(0xFF00D4FF),
                           ],
                   ),
-                  border: Border.all(color: Colors.white24, width: 3),
+                  border: Border.all(color: Colors.white24, width: 3 * scale),
                   boxShadow: [
                     BoxShadow(
                       color: (widget.face.colors.isNotEmpty
@@ -105,69 +111,86 @@ class _DashboardClockFaceState extends State<DashboardClockFace> {
                   alignment: Alignment.center,
                   children: [
                     Icon(widget.face.icon,
-                        size: 64, color: Colors.white.withValues(alpha: 0.12)),
+                        size: 64 * scale, color: Colors.white.withValues(alpha: 0.12)),
                     if (!digital)
                       CustomPaint(
-                        size: const Size(102, 102),
+                        size: Size(face, face),
                         painter: _AnalogHandsPainter(now),
                       ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (digital)
-                          Text(
-                            time,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: twelve ? 18 : 24,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.4,
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8 * scale),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (digital)
+                            SizedBox(
+                              height: (twelve ? 22 : 28) * scale,
+                              width: double.infinity,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  time,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: (twelve ? 18 : 24) * scale,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            SizedBox(height: 32 * scale),
+                          SizedBox(
+                            height: 14 * scale,
+                            width: double.infinity,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                date,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10 * scale,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          )
-                        else
-                          const SizedBox(height: 32),
-                        Text(
-                          date,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
                           ),
-                        ),
-                        const SizedBox(height: 3),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
+                          SizedBox(height: 3 * scale),
+                          Text(
                             widget.isClockedIn
                                 ? 'Clocked in'
                                 : 'You have not clocked in today!',
                             textAlign: TextAlign.center,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: widget.isClockedIn
                                   ? const Color(0xFF86EFAC)
                                   : const Color(0xFFFCA5A5),
-                              fontSize: 8,
+                              fontSize: 8 * scale,
                               fontWeight: FontWeight.w700,
+                              height: 1.15,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
               Positioned(
                 right: 0,
-                bottom: 2,
+                bottom: 2 * scale,
                 child: Container(
-                  width: 28,
-                  height: 28,
+                  width: 28 * scale,
+                  height: 28 * scale,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(color: Colors.white, width: 2 * scale),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x66000000),
@@ -178,7 +201,7 @@ class _DashboardClockFaceState extends State<DashboardClockFace> {
                   ),
                   child: Text(
                     widget.country.flag,
-                    style: const TextStyle(fontSize: 15, height: 1),
+                    style: TextStyle(fontSize: 15 * scale, height: 1),
                   ),
                 ),
               ),
@@ -209,14 +232,16 @@ class _AnalogHandsPainter extends CustomPainter {
     final minute = now.minute + now.second / 60.0;
     final hourAngle = (hour / 12) * 2 * math.pi - math.pi / 2;
     final minuteAngle = (minute / 60) * 2 * math.pi - math.pi / 2;
+    final hourLen = size.shortestSide * 0.275;
+    final minuteLen = size.shortestSide * 0.392;
     canvas.drawLine(
       c,
-      Offset(c.dx + 28 * math.cos(hourAngle), c.dy + 28 * math.sin(hourAngle)),
+      Offset(c.dx + hourLen * math.cos(hourAngle), c.dy + hourLen * math.sin(hourAngle)),
       paintH,
     );
     canvas.drawLine(
       c,
-      Offset(c.dx + 40 * math.cos(minuteAngle), c.dy + 40 * math.sin(minuteAngle)),
+      Offset(c.dx + minuteLen * math.cos(minuteAngle), c.dy + minuteLen * math.sin(minuteAngle)),
       paintM,
     );
   }

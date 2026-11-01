@@ -201,147 +201,205 @@ class _HeroBanner extends StatelessWidget {
   final String role;
   final AppState app;
 
+  /// Side-by-side avatar, sign bar, and clock need about this much card width.
+  static const _wideBreakpoint = 700.0;
+
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        height: 196,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image(
-              image: bannerImage,
-              fit: BoxFit.cover,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= _wideBreakpoint;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: wide ? 196 : 0),
+            child: Stack(
               alignment: Alignment.center,
-              errorBuilder: (_, __, ___) => Image.asset(
-                ProfileBackgrounds.assetPath('Profile922.png'),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const ColoredBox(
-                  color: Color(0xFF1A1A1E),
-                ),
-              ),
-            ),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    Color(0xB3000000),
-                    Color(0x66000000),
-                    Color(0x99000000),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: brand,
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+              children: [
+                Positioned.fill(
+                  child: Image(
+                    image: bannerImage,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      ProfileBackgrounds.assetPath('Profile922.png'),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const ColoredBox(
+                        color: Color(0xFF1A1A1E),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: brand,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            role,
-                            style: TextStyle(
-                              color: HrTheme.onBrand(context),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            TextButton.icon(
-                              onPressed: () => app.openScreen(
-                                  moduleId: 'payroll', subId: 'salary_payslips'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white70,
-                                padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              icon: const Icon(Icons.receipt_long_outlined, size: 16),
-                              label: const Text('My Payslips'),
-                            ),
-                            const SizedBox(width: 12),
-                            TextButton.icon(
-                              onPressed: () => app.openScreen(
-                                  moduleId: 'dashboard', subId: 'my_info'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white70,
-                                padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              icon: const Icon(Icons.person_outline, size: 16),
-                              label: const Text('My Info'),
-                            ),
-                            const SizedBox(width: 12),
-                            TextButton.icon(
-                              onPressed: () => app.openScreen(
-                                  moduleId: 'dashboard',
-                                  subId: 'account_settings'),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.white70,
-                                padding: EdgeInsets.zero,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                              icon: const Icon(Icons.settings_outlined, size: 16),
-                              label: const Text('Account Settings'),
-                            ),
-                          ],
-                        ),
-                      ],
+                ),
+                const Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Color(0xB3000000),
+                          Color(0x66000000),
+                          Color(0x99000000),
+                        ],
+                      ),
                     ),
                   ),
-                  const DashboardSignBar(),
-                  const SizedBox(width: 12),
-                  DashboardClockFace(
-                    face: app.selectedClockFace,
-                    clockType: app.orgSettings.clockType,
-                    country: app.selectedClockCountry,
-                    timeFormat: app.orgSettings.timeFormat,
-                    isClockedIn: app.isClockedIn,
-                    onTap: app.toggleClock,
-                  ),
-                ],
-              ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(wide ? 20 : 16, 16, 16, 16),
+                  child: wide ? _wideBody(context) : _compactBody(context, constraints.maxWidth),
+                ),
+              ],
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _wideBody(BuildContext context) {
+    return Row(
+      children: [
+        _avatar(32),
+        const SizedBox(width: 16),
+        Expanded(child: _identity(context, showLinks: true)),
+        const SizedBox(width: 12),
+        const DashboardSignBar(),
+        const SizedBox(width: 12),
+        _clock(108),
+      ],
+    );
+  }
+
+  Widget _compactBody(BuildContext context, double width) {
+    final inner = (width - 32).clamp(160.0, 2000.0);
+    final clock = (inner * 0.30).clamp(72.0, 104.0);
+    final avatarRadius = inner < 280 ? 24.0 : 28.0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            _avatar(avatarRadius),
+            const SizedBox(width: 12),
+            Expanded(child: _identity(context, showLinks: false)),
+            const SizedBox(width: 8),
+            _clock(clock),
           ],
         ),
+        const SizedBox(height: 8),
+        _quickLinks(),
+        const SizedBox(height: 10),
+        const DashboardSignBar(alignEnd: false),
+      ],
+    );
+  }
+
+  Widget _avatar(double radius) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: brand,
+      child: Text(
+        name.isNotEmpty ? name[0].toUpperCase() : 'U',
+        style: TextStyle(
+          fontSize: radius * 0.88,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+        ),
       ),
+    );
+  }
+
+  Widget _identity(BuildContext context, {required bool showLinks}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: brand,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            role,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: HrTheme.onBrand(context),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        if (showLinks) ...[
+          const SizedBox(height: 10),
+          _quickLinks(),
+        ],
+      ],
+    );
+  }
+
+  Widget _quickLinks() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 0,
+      children: [
+        _link(
+          Icons.receipt_long_outlined,
+          'My Payslips',
+          () => app.openScreen(moduleId: 'payroll', subId: 'salary_payslips'),
+        ),
+        _link(
+          Icons.person_outline,
+          'My Info',
+          () => app.openScreen(moduleId: 'dashboard', subId: 'my_info'),
+        ),
+        _link(
+          Icons.settings_outlined,
+          'Account Settings',
+          () => app.openScreen(moduleId: 'dashboard', subId: 'account_settings'),
+        ),
+      ],
+    );
+  }
+
+  Widget _link(IconData icon, String label, VoidCallback onPressed) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white70,
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      icon: Icon(icon, size: 16),
+      label: Text(label),
+    );
+  }
+
+  Widget _clock(double size) {
+    return DashboardClockFace(
+      size: size,
+      face: app.selectedClockFace,
+      clockType: app.orgSettings.clockType,
+      country: app.selectedClockCountry,
+      timeFormat: app.orgSettings.timeFormat,
+      isClockedIn: app.isClockedIn,
+      onTap: app.toggleClock,
     );
   }
 }

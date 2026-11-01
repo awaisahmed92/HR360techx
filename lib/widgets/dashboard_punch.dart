@@ -63,7 +63,11 @@ class _DashboardPunchButtonState extends State<DashboardPunchButton> {
 
 /// Banner control: status line, work-from-home switch, and Sign In / Sign Out.
 class DashboardSignBar extends StatefulWidget {
-  const DashboardSignBar({super.key});
+  const DashboardSignBar({super.key, this.alignEnd = true});
+
+  /// Desktop banner pins the controls to the right. Narrow layouts left-align
+  /// them so the label, switch, and button can wrap inside the card.
+  final bool alignEnd;
 
   @override
   State<DashboardSignBar> createState() => _DashboardSignBarState();
@@ -99,20 +103,25 @@ class _DashboardSignBarState extends State<DashboardSignBar> {
             : 'You have not clocked in today!';
     final label = canOut ? 'Sign Out' : 'Sign In';
 
+    final alignEnd = widget.alignEnd;
     return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 280),
+      constraints: BoxConstraints(maxWidth: alignEnd ? 280 : double.infinity),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
             message,
-            textAlign: TextAlign.right,
+            textAlign: alignEnd ? TextAlign.right : TextAlign.left,
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
           ),
           const SizedBox(height: 6),
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          Wrap(
+            alignment: alignEnd ? WrapAlignment.end : WrapAlignment.start,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            runSpacing: 4,
             children: [
               const Text('Work From Home', style: TextStyle(color: Colors.white, fontSize: 13)),
               Switch(
@@ -121,7 +130,6 @@ class _DashboardSignBarState extends State<DashboardSignBar> {
                 activeTrackColor: const Color(0xFF9A3412),
                 onChanged: canIn && !canOut ? (v) => setState(() => _fromHome = v) : null,
               ),
-              const SizedBox(width: 4),
               FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF9A3412),
