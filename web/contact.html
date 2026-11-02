@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book a demo | HR360 TechX</title>
+  <meta name="description" content="Book an HR360 TechX demo. Tell 360techx your name, work email, and what you want to see. The request is saved for the team to reply.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://hr360techx.com/contact">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://hr360techx.com/contact">
+  <meta property="og:title" content="Book a demo | HR360 TechX">
+  <meta property="og:description" content="Book an HR360 TechX demo. The 360techx team replies with the next step and a quote.">
+  <meta property="og:image" content="https://hr360techx.com/og-cover.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Book a demo | HR360 TechX">
+  <meta name="twitter:description" content="Book an HR360 TechX demo with 360techx.">
+  <meta name="twitter:image" content="https://hr360techx.com/og-cover.png">
+  <link rel="icon" href="/logo-mark.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/marketing.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap bar">
+      <a class="brand" href="/">
+        <img src="/logo-mark.svg" alt="" width="36" height="36">
+        <span><strong>HR360 TechX</strong><em>by 360techx</em></span>
+      </a>
+      <input class="nav-toggle" type="checkbox" id="nav-toggle">
+      <label class="nav-burger" for="nav-toggle">Menu</label>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/payroll">Payroll</a>
+        <a href="/attendance">Attendance</a>
+        <a href="/leave">Leave</a>
+        <a href="/pricing">Pricing</a>
+        <a href="/about">About</a>
+      </nav>
+      <div class="bar-actions">
+        <a class="btn ghost" href="/login">Sign in</a>
+        <a class="btn" href="/contact" aria-current="page">Book a demo</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow">Book a demo</p>
+        <h1>Tell us what you want to see</h1>
+        <p class="lead">Share your name, work email, and whether you care about payroll, attendance, leave, or the whole workspace. The note is saved for HR360 TechX and the 360techx team replies to that email with the next step and a quote.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap split">
+        <form class="form panel" id="demo-form" method="post" action="/support-chat.php">
+          <label>Name
+            <input name="name" type="text" required maxlength="191" autocomplete="name">
+          </label>
+          <label>Work email
+            <input name="email" type="email" required maxlength="191" autocomplete="email">
+          </label>
+          <label>Company
+            <input name="company" type="text" maxlength="120" autocomplete="organization">
+          </label>
+          <label>Team size
+            <select name="team">
+              <option value="">Choose one</option>
+              <option>1–10</option>
+              <option>11–50</option>
+              <option>51–200</option>
+              <option>200+</option>
+            </select>
+          </label>
+          <label>What do you want to see?
+            <textarea name="message" required maxlength="1600" placeholder="Payroll schedule, attendance, leave policy, or the question you want answered."></textarea>
+          </label>
+          <label class="hp" aria-hidden="true">Company website
+            <input name="company_website" type="text" tabindex="-1" autocomplete="off">
+          </label>
+          <button class="btn" type="submit">Send the request</button>
+          <p class="form-status" id="demo-status" role="status"></p>
+        </form>
+        <div>
+          <h2>What happens next</h2>
+          <p>The form posts to the same inbox as other HR360 website messages. Someone at 360techx reads the note and replies to the email address you entered. You can also write directly to <a href="mailto:info@360techx.com">info@360techx.com</a>.</p>
+          <p>Already a customer? <a href="/login">Sign in</a> at the public login, or open your company address, such as yourcompany.hr360techx.com. Support for an existing workspace is <a href="mailto:support@360techx.com">support@360techx.com</a>.</p>
+          <p class="note">Pricing is quoted after we know the team size. There is no payment on this form.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div>
+        <strong>HR360 TechX</strong>
+        <p>A product of 360techx. People, time, leave, and payroll runs in one workspace.</p>
+      </div>
+      <div>
+        <p><a href="/payroll">Payroll</a></p>
+        <p><a href="/attendance">Attendance</a></p>
+        <p><a href="/leave">Leave</a></p>
+        <p><a href="/pricing">Pricing</a></p>
+        <p><a href="/about">About</a></p>
+        <p><a href="/contact">Book a demo</a></p>
+      </div>
+      <div>
+        <p><a href="/us/">US payroll guides</a></p>
+        <p><a href="/login">Sign in</a></p>
+        <p><a href="mailto:info@360techx.com">info@360techx.com</a></p>
+        <p><a href="mailto:support@360techx.com">support@360techx.com</a></p>
+      </div>
+    </div>
+    <p class="fine">HR360 TechX records payroll runs, payslips, time, and leave. It does not file federal or state payroll taxes.</p>
+  </footer>
+  <script src="/marketing/analytics.js"></script>
+  <script>
+    (function () {
+      var form = document.getElementById("demo-form");
+      var status = document.getElementById("demo-status");
+      if (!form || !status) return;
+
+      function say(text, kind) {
+        status.textContent = text;
+        status.className = "form-status" + (kind ? " " + kind : "");
+      }
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var data = new FormData(form);
+        if ((data.get("company_website") || "").toString().trim() !== "") {
+          say("Thanks. The team will reply to your email.", "ok");
+          form.reset();
+          return;
+        }
+
+        var name = (data.get("name") || "").toString().trim();
+        var email = (data.get("email") || "").toString().trim();
+        var company = (data.get("company") || "").toString().trim();
+        var team = (data.get("team") || "").toString().trim();
+        var message = (data.get("message") || "").toString().trim();
+        var lines = [];
+        if (company) lines.push("Company: " + company);
+        if (team) lines.push("Team size: " + team);
+        lines.push(message);
+        var full = lines.join("\n\n");
+
+        if (!name || !email || !message) {
+          say("Name, work email, and a short note are required.", "err");
+          return;
+        }
+        if (full.length > 2000) {
+          say("Please shorten the note so it fits in one message.", "err");
+          return;
+        }
+
+        var button = form.querySelector("button");
+        button.disabled = true;
+        say("Sending…");
+
+        fetch("/support-chat.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            site: "hr360",
+            name: name,
+            email: email,
+            message: full,
+            page_url: location.href,
+            chat: []
+          })
+        }).then(function (response) {
+          return response.json().then(function (body) {
+            return { ok: response.ok, body: body };
+          }).catch(function () {
+            return { ok: false, body: {} };
+          });
+        }).then(function (result) {
+          if (!result.ok) {
+            say((result.body && result.body.error) || "Could not send the request. Email info@360techx.com instead.", "err");
+            return;
+          }
+          form.reset();
+          say("Thanks. The team will reply to your email.", "ok");
+        }).catch(function () {
+          say("Could not send the request. Email info@360techx.com instead.", "err");
+        }).then(function () {
+          button.disabled = false;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

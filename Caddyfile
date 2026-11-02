@@ -1,5 +1,6 @@
 # Flutter SPA. Proxies /api → Laravel (API_UPSTREAM must be host:port, e.g. api:8000).
 # Do NOT put a default with ":" inside {$VAR:default} — Caddy truncates at the first colon.
+# www redirects to the apex. Apex / is the static marketing page. Company subdomains stay on the app.
 {
 	auto_https off
 }
@@ -7,31 +8,50 @@
 :{$PORT:3000} {
 	encode gzip zstd
 
-	handle /api* {
-		reverse_proxy {$API_UPSTREAM} {
-			header_up Host {host}
-			header_up X-Real-IP {remote_host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Forwarded-Host {host}
-			transport http {
-				dial_timeout 10s
-				response_header_timeout 300s
+	route {
+		@www host www.hr360techx.com
+		redir @www https://hr360techx.com{uri} 301
+
+		handle /api* {
+			reverse_proxy {$API_UPSTREAM} {
+				header_up Host {host}
+				header_up X-Real-IP {remote_host}
+				header_up X-Forwarded-For {remote_host}
+				header_up X-Forwarded-Proto {scheme}
+				header_up X-Forwarded-Host {host}
+				transport http {
+					dial_timeout 10s
+					response_header_timeout 300s
+				}
 			}
 		}
-	}
 
-	handle /up {
-		reverse_proxy {$API_UPSTREAM}
-	}
+		handle /up {
+			reverse_proxy {$API_UPSTREAM}
+		}
 
-	handle {
-		root * /srv
-		try_files {path} /index.html
-		file_server
-		header {
-			X-Content-Type-Options nosniff
-			Referrer-Policy strict-origin-when-cross-origin
+		@apexHome {
+			host hr360techx.com
+			path /
+		}
+		handle @apexHome {
+			rewrite * /home.html
+			root * /srv
+			file_server
+			header {
+				X-Content-Type-Options nosniff
+				Referrer-Policy strict-origin-when-cross-origin
+			}
+		}
+
+		handle {
+			root * /srv
+			try_files {path} {path}.html {path}/index.html /index.html
+			file_server
+			header {
+				X-Content-Type-Options nosniff
+				Referrer-Policy strict-origin-when-cross-origin
+			}
 		}
 	}
 }
