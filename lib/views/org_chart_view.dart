@@ -332,7 +332,7 @@ class _OrgChartViewState extends State<OrgChartView> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Org Chart Report'),
+        title: const Text('Team Structure Report'),
         content: SizedBox(
           width: 720,
           child: HrPagedDataTable(

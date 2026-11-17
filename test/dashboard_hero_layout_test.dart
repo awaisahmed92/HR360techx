@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hr360techx/controllers/app_state.dart';
 import 'package:hr360techx/core/auth/auth_state.dart';
 import 'package:hr360techx/core/config/app_config.dart';
+import 'package:hr360techx/core/leave/leave_state.dart';
 import 'package:hr360techx/core/self_service/self_service_state.dart';
 import 'package:hr360techx/views/my_dashboard_view.dart';
 import 'package:hr360techx/widgets/dashboard_clock_face.dart';
@@ -72,6 +73,7 @@ void main() {
           ChangeNotifierProvider.value(value: auth),
           ChangeNotifierProvider.value(value: app),
           ChangeNotifierProvider(create: (_) => SelfServiceState(auth)),
+          ChangeNotifierProvider(create: (_) => LeaveState(auth)),
         ],
         child: const MaterialApp(
           home: Scaffold(body: MyDashboardView()),

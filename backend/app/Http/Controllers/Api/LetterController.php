@@ -87,7 +87,12 @@ class LetterController extends Controller
             }
         }
         if (Schema::hasTable('company')) {
-            $c = DB::table('company')->orderBy('company_id')->value('name');
+            $pk = Schema::hasColumn('company', 'id') ? 'id' : (Schema::hasColumn('company', 'company_id') ? 'company_id' : null);
+            $q = DB::table('company');
+            if ($pk !== null) {
+                $q->orderBy($pk);
+            }
+            $c = $q->value('name');
             if ($c) {
                 $vars['company_name'] = (string) $c;
             }

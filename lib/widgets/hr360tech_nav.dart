@@ -558,7 +558,7 @@ class Hr360techTopBar extends StatelessWidget {
                   children: [
                     Icon(Icons.person_outline, size: 18),
                     SizedBox(width: 10),
-                    Text('My Info'),
+                    Text('Profile'),
                   ],
                 ),
               ),

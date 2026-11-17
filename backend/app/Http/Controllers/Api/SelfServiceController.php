@@ -671,6 +671,27 @@ class SelfServiceController extends Controller
             }
         }
 
+        // HR Letters pending approval
+        if (Schema::hasTable('hr_letter_instances')) {
+            foreach (DB::table('hr_letter_instances as i')
+                ->leftJoin('employee as e', 'e.employee_id', '=', 'i.employee_id')
+                ->where('i.status', 0)
+                ->select('i.*', 'e.name as employee_name', 'e.line_manager')
+                ->orderByDesc('i.id')->limit(50)->get() as $r) {
+                if ($this->approvals->inboxEligible($r, $uid, $isAdmin, 'letter')) {
+                    $items[] = [
+                        'kind' => 'letter',
+                        'module' => 'HR Letters',
+                        'id' => (int) $r->id,
+                        'title' => (string) ($r->name ?? 'HR Letter'),
+                        'employee_name' => (string) ($r->employee_name ?? ''),
+                        'summary' => (string) ($r->reference_number ?? ''),
+                        'created_at' => (string) ($r->created_at ?? ''),
+                    ];
+                }
+            }
+        }
+
         // Employment change pending
         if (Schema::hasTable('hr_employment_change')) {
             foreach (DB::table('hr_employment_change as c')

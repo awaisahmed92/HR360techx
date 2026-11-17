@@ -27,6 +27,7 @@ import 'views/recruitment_view.dart';
 import 'views/training_view.dart';
 import 'views/lifecycle_views.dart';
 import 'views/letters_notifications_view.dart';
+import 'views/hr_letters_view.dart';
 import 'views/payroll_phase3_view.dart';
 import 'views/run_payroll_view.dart';
 import 'views/my_payslips_view.dart';
@@ -326,8 +327,6 @@ class _MainShellState extends State<MainShell> {
         return const WallOfFameView();
       case 'hr_globe':
         return const HrGlobeView();
-      case 'play_space':
-        return const PlaySpaceView();
       case 'profile':
         return const ProfileView();
       case 'settings':
@@ -363,7 +362,20 @@ class _MainShellState extends State<MainShell> {
       case 'loan_applications':
         return const LoanApplicationView();
       case 'letters':
-        return const LettersView();
+      case 'letters_dashboard':
+        return const HrLettersView();
+      case 'letters_designer':
+        return const HrLettersView(initialTab: 1);
+      case 'letters_categories':
+        return const HrLettersView(initialTab: 2);
+      case 'letters_send':
+        return const HrLettersView(initialTab: 3);
+      case 'letters_employee':
+        return const HrLettersView(initialTab: 4);
+      case 'letters_candidate':
+        return const HrLettersView(initialTab: 5);
+      case 'letters_reports':
+        return const HrLettersView(initialTab: 6);
       case 'notifications':
         return const NotificationsView();
       case 'leave':

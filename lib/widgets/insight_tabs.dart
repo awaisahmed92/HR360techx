@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../controllers/app_state.dart';
+import '../theme/hr_theme.dart';
 
-/// Major User Insights tabs: Home, My Info, HR Dashboard, HR Data, Org Chart.
+/// Dashboard tabs. Same destinations as the reference bar, with our own names.
 class InsightTabBar extends StatelessWidget {
   const InsightTabBar({super.key});
 
   static const tabs = <(String, String, IconData)>[
-    ('home', 'Home', Icons.home_outlined),
-    ('my_info', 'My Info', Icons.person_outline),
-    ('hr_dashboard', 'HR Dashboard', Icons.analytics_outlined),
-    ('hr_data', 'HR Data', Icons.table_chart_outlined),
-    ('wall_of_fame', 'Wall Of Fame', Icons.emoji_events_outlined),
-    ('org_chart', 'Org Chart', Icons.account_tree_outlined),
-    ('hr_globe', 'HR Globe', Icons.public_outlined),
-    ('play_space', 'Play Space', Icons.sports_esports_outlined),
+    ('home', 'My Desk', Icons.home_outlined),
+    ('my_info', 'Profile', Icons.person_outline),
+    ('hr_dashboard', 'People Analytics', Icons.analytics_outlined),
+    ('hr_data', 'Workforce Records', Icons.table_chart_outlined),
+    ('wall_of_fame', 'Honors Board', Icons.emoji_events_outlined),
+    ('org_chart', 'Team Structure', Icons.account_tree_outlined),
+    ('hr_globe', 'Office Map', Icons.public_outlined),
   ];
 
   @override
@@ -24,12 +24,14 @@ class InsightTabBar extends StatelessWidget {
     if (app.moduleId != 'dashboard') return const SizedBox.shrink();
     final current = app.subId;
 
+    final brand = HrTheme.brand(context);
+    final idle = HrTheme.textSecondary(context);
     return Material(
-      color: Colors.white,
+      color: HrTheme.card(context),
       child: Container(
         height: 44,
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFE6E8EE))),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: HrTheme.border(context))),
         ),
         child: ListView(
           scrollDirection: Axis.horizontal,
@@ -44,21 +46,21 @@ class InsightTabBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
-                        color: current == tab.$1 ? const Color(0xFF8D6E63) : Colors.transparent,
+                        color: current == tab.$1 ? brand : Colors.transparent,
                         width: 2,
                       ),
                     ),
                   ),
                   child: Row(
                     children: [
-                      Icon(tab.$3, size: 16, color: current == tab.$1 ? const Color(0xFF8D6E63) : const Color(0xFF6B7280)),
+                      Icon(tab.$3, size: 16, color: current == tab.$1 ? brand : idle),
                       const SizedBox(width: 6),
                       Text(
                         tab.$2,
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
-                          color: current == tab.$1 ? const Color(0xFF8D6E63) : const Color(0xFF4B5563),
+                          color: current == tab.$1 ? brand : HrTheme.text(context),
                         ),
                       ),
                     ],

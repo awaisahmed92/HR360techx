@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\EmployeePayController;
 use App\Http\Controllers\Api\LoanApplicationController;
 use App\Http\Controllers\Api\LetterController;
+use App\Http\Controllers\Api\HrLetterController;
 use App\Http\Controllers\Api\LeaveTypeController;
 use App\Http\Controllers\Api\LeaveThresholdController;
 use App\Http\Controllers\Api\MasterDataController;
@@ -278,4 +279,27 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/letters', [LetterController::class, 'store']);
     Route::post('/letters/{id}', [LetterController::class, 'update'])->whereNumber('id');
     Route::post('/letters/{id}/delete', [LetterController::class, 'destroy'])->whereNumber('id');
+
+    // HR Letters module (categories → designer → issue → instances → reports)
+    Route::get('/hr-letters/dashboard', [HrLetterController::class, 'dashboard']);
+    Route::get('/hr-letters/meta', [HrLetterController::class, 'meta']);
+    Route::get('/hr-letters/categories', [HrLetterController::class, 'categoriesIndex']);
+    Route::post('/hr-letters/categories', [HrLetterController::class, 'categoriesStore']);
+    Route::post('/hr-letters/categories/{id}', [HrLetterController::class, 'categoriesUpdate'])->whereNumber('id');
+    Route::post('/hr-letters/categories/{id}/delete', [HrLetterController::class, 'categoriesDelete'])->whereNumber('id');
+    Route::get('/hr-letters/types', [HrLetterController::class, 'typesIndex']);
+    Route::get('/hr-letters/types/{id}', [HrLetterController::class, 'typesShow'])->whereNumber('id');
+    Route::post('/hr-letters/types', [HrLetterController::class, 'typesStore']);
+    Route::post('/hr-letters/types/{id}', [HrLetterController::class, 'typesUpdate'])->whereNumber('id');
+    Route::post('/hr-letters/types/{id}/delete', [HrLetterController::class, 'typesDelete'])->whereNumber('id');
+    Route::post('/hr-letters/issue', [HrLetterController::class, 'issue']);
+    Route::get('/hr-letters/instances', [HrLetterController::class, 'instancesIndex']);
+    Route::get('/hr-letters/instances/{id}', [HrLetterController::class, 'instancesShow'])->whereNumber('id');
+    Route::post('/hr-letters/instances/{id}', [HrLetterController::class, 'instancesUpdate'])->whereNumber('id');
+    Route::post('/hr-letters/instances/{id}/acknowledge', [HrLetterController::class, 'acknowledge'])->whereNumber('id');
+    Route::post('/hr-letters/instances/{id}/approve', [HrLetterController::class, 'approve'])->whereNumber('id');
+    Route::post('/hr-letters/instances/{id}/reject', [HrLetterController::class, 'reject'])->whereNumber('id');
+    Route::get('/hr-letters/instances/{id}/print', [HrLetterController::class, 'print'])->whereNumber('id');
+    Route::get('/hr-letters/reports/employee-letters', [HrLetterController::class, 'reportEmployeeLetters']);
+    Route::get('/hr-letters/reports/custom-variables', [HrLetterController::class, 'reportCustomVariables']);
 });

@@ -22,7 +22,6 @@ class NavAccess {
     'wall_of_fame',
     'org_chart',
     'hr_globe',
-    'play_space',
     'notifications',
     'account_settings',
     'attendance',
@@ -30,6 +29,7 @@ class NavAccess {
     'leaves',
     'employee_hours',
     'salary_payslips',
+    'letters_employee',
   };
 
   /// Submenu id → role-catalog module/screen, when the id differs.
@@ -47,6 +47,15 @@ class NavAccess {
     'travels': ('other', 'travel'),
     'payroll_reports_nav': ('reports', 'reports'),
     'att_register_rpt': ('timesheet', 'attendance'),
+    'letters': ('letters_mod', 'letters_dashboard'),
+    'letters_emp': ('letters_mod', 'letters_employee'),
+    'letters_dashboard': ('letters_mod', 'letters_dashboard'),
+    'letters_designer': ('letters_mod', 'letters_designer'),
+    'letters_categories': ('letters_mod', 'letters_categories'),
+    'letters_send': ('letters_mod', 'letters_send'),
+    'letters_employee': ('letters_mod', 'letters_employee'),
+    'letters_candidate': ('letters_mod', 'letters_candidate'),
+    'letters_reports': ('letters_mod', 'letters_reports'),
   };
 
   static bool unrestricted(AuthState auth) =>

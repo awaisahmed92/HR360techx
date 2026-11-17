@@ -994,6 +994,15 @@ class EmployeeController extends Controller
             ['key' => 'reports', 'label' => 'Reports', 'screens' => [
                 ['key' => 'reports', 'label' => 'Reports'],
             ]],
+            ['key' => 'letters_mod', 'label' => 'HR Letters', 'screens' => [
+                ['key' => 'letters_dashboard', 'label' => 'Letters Dashboard'],
+                ['key' => 'letters_designer', 'label' => 'Letter Designer'],
+                ['key' => 'letters_categories', 'label' => 'Letter Categories'],
+                ['key' => 'letters_send', 'label' => 'Send Letter'],
+                ['key' => 'letters_employee', 'label' => 'Employee Letters'],
+                ['key' => 'letters_candidate', 'label' => 'Candidate Letters'],
+                ['key' => 'letters_reports', 'label' => 'Letter Reports'],
+            ]],
             ['key' => 'other', 'label' => 'Other Modules', 'screens' => [
                 ['key' => 'travel', 'label' => 'Travel'],
                 ['key' => 'approvals', 'label' => 'Approvals'],

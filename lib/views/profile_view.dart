@@ -12,7 +12,7 @@ import '../core/util/person_name.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// My Info — clean profile header + grouped fields (skips empty rows).
+/// Profile — clean profile header + grouped fields (skips empty rows).
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
 
@@ -167,7 +167,7 @@ class _ProfileViewState extends State<ProfileView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            name.isEmpty ? 'My Info' : name,
+                            name.isEmpty ? 'Profile' : name,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.plusJakartaSans(
@@ -336,7 +336,7 @@ class _ProfileViewState extends State<ProfileView> {
                       : null,
                 ),
                 const SizedBox(height: 8),
-                Text(name.isEmpty ? 'My Info' : name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                Text(name.isEmpty ? 'Profile' : name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                 if (title.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Container(

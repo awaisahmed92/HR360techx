@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +51,7 @@ class _WallOfFameViewState extends State<WallOfFameView> {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Wall Of Fame', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HrUi.label(context))),
+          Text('Honors Board', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HrUi.label(context))),
           const SizedBox(height: 12),
           if (_rows.isEmpty)
             _empty('No achievements have been recorded yet.')
@@ -126,7 +124,7 @@ class _HrGlobeViewState extends State<HrGlobeView> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              Text('HR Globe', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HrUi.label(context))),
+              Text('Office Map', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HrUi.label(context))),
               const SizedBox(height: 6),
               Text('People by office. Each station is a location your company works from.',
                   style: TextStyle(color: HrUi.muted(context))),
@@ -163,69 +161,6 @@ class _HrGlobeViewState extends State<HrGlobeView> {
           ),
         );
       },
-    );
-  }
-}
-
-class PlaySpaceView extends StatefulWidget {
-  const PlaySpaceView({super.key});
-
-  @override
-  State<PlaySpaceView> createState() => _PlaySpaceViewState();
-}
-
-class _PlaySpaceViewState extends State<PlaySpaceView> {
-  int _left = 60;
-  Timer? _timer;
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  void _start() {
-    _timer?.cancel();
-    setState(() => _left = 60);
-    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) return;
-      if (_left <= 1) {
-        t.cancel();
-        setState(() => _left = 0);
-        return;
-      }
-      setState(() => _left--);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: HrUi.pageBg(context),
-      child: Center(
-        child: Container(
-          width: 360,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.self_improvement, size: 48, color: Color(0xFF8D6E63)),
-              const SizedBox(height: 12),
-              const Text('One minute break', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
-              Text(_left == 0 ? 'Break complete.' : '$_left',
-                  style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: _start, child: const Text('Start')),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

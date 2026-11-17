@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../controllers/app_state.dart';
 import '../core/auth/auth_state.dart';
 import '../core/config/profile_backgrounds.dart';
+import '../core/leave/leave_repository.dart';
+import '../core/leave/leave_state.dart';
 import '../core/self_service/self_service_state.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
@@ -14,6 +16,8 @@ import '../widgets/dashboard_clock_face.dart';
 import '../widgets/dashboard_punch.dart';
 import 'alerts_list_view.dart';
 import '../widgets/hr_form_kit.dart';
+
+part 'my_dashboard_desk.dart';
 
 /// HR360tech-style My Dashboard: hero profile, status feed, My Alerts, celebrations.
 class MyDashboardView extends StatefulWidget {
@@ -42,6 +46,7 @@ class _MyDashboardViewState extends State<MyDashboardView> {
       ss.loadNotifications();
       ss.loadApprovals();
       ss.loadAttendance();
+      context.read<LeaveState>().load();
       context.read<AppState>().loadStatusFeed();
     });
     _feedPoll = Timer.periodic(const Duration(seconds: 25), (_) {
@@ -82,6 +87,7 @@ class _MyDashboardViewState extends State<MyDashboardView> {
     final app = context.watch<AppState>();
     final auth = context.watch<AuthState>();
     final ss = context.watch<SelfServiceState>();
+    final leave = context.watch<LeaveState>();
     final brand = HrTheme.brand(context);
     final isDark = app.isDarkMode;
     final name = auth.user?.name.isNotEmpty == true ? auth.user!.name : 'User';
@@ -95,6 +101,26 @@ class _MyDashboardViewState extends State<MyDashboardView> {
 
     final canBroadcast =
         auth.user?.isAdmin == true || auth.permissions.all;
+    final firstName = name.split(' ').first;
+    final today = DateTime.now();
+    final day = DateTime(today.year, today.month, today.day);
+    bool coversToday(LeaveDto row) {
+      if (row.status != 1 && row.processStatus != 'approved') return false;
+      final from = DateTime.tryParse(row.from);
+      final to = DateTime.tryParse(row.to);
+      if (from == null || to == null) return false;
+      final start = DateTime(from.year, from.month, from.day);
+      final end = DateTime(to.year, to.month, to.day);
+      return !day.isBefore(start) && !day.isAfter(end);
+    }
+
+    final outToday = leave.leaves.where(coversToday).toList();
+    final pendingLeave = leave.leaves.where((row) => row.status == 0).length;
+    final daysLeft = leave.balances.fold<int>(0, (sum, row) => sum + row.available);
+    final celebrationsToday = app.birthdaysToday.length + app.anniversariesToday.length;
+
+    void open(String moduleId, String subId) =>
+        app.openScreen(moduleId: moduleId, subId: subId);
 
     final feed = _FeedCard(
       controller: _status,
@@ -139,6 +165,16 @@ class _MyDashboardViewState extends State<MyDashboardView> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
+          _WelcomeBar(
+            name: firstName,
+            brand: brand,
+            onLeave: () => open('timesheet', 'leaves'),
+            onApprovals: () => open('dashboard', 'approvals'),
+            onProfile: () => open('dashboard', 'my_info'),
+            showPeople: canBroadcast,
+            onPeople: () => open('employees', 'employees'),
+          ),
+          const SizedBox(height: 12),
           _HeroBanner(
             bannerImage: _bannerImage,
             brand: brand,
@@ -146,35 +182,76 @@ class _MyDashboardViewState extends State<MyDashboardView> {
             role: role,
             app: app,
           ),
+          const SizedBox(height: 12),
+          _MetricStrip(
+            brand: brand,
+            pendingApprovals: approvalCount,
+            unread: actionCount,
+            daysLeft: daysLeft,
+            outToday: outToday.length,
+            celebrations: celebrationsToday,
+            pendingLeave: pendingLeave,
+          ),
           const SizedBox(height: 14),
           LayoutBuilder(
             builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 820;
+              final wide = constraints.maxWidth >= 980;
+              final leaveCard = _LeaveBalanceCard(
+                brand: brand,
+                balances: leave.balances,
+                onRequest: () => open('timesheet', 'leaves'),
+              );
+              final shortcuts = _ShortcutCard(
+                brand: brand,
+                onOpen: open,
+              );
+              final whosOut = _WhosOutCard(
+                brand: brand,
+                people: outToday,
+                onOpen: () => open('timesheet', 'leaves'),
+              );
+              final side = Column(
+                children: [
+                  leaveCard,
+                  const SizedBox(height: 14),
+                  shortcuts,
+                ],
+              );
               if (!wide) {
                 return Column(
                   children: [
+                    side,
+                    const SizedBox(height: 14),
                     feed,
                     const SizedBox(height: 14),
-                    alerts,
-                    const SizedBox(height: 14),
                     celebrations,
+                    const SizedBox(height: 14),
+                    whosOut,
+                    const SizedBox(height: 14),
+                    alerts,
                   ],
                 );
               }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              return Column(
                 children: [
-                  Expanded(flex: 8, child: feed),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    flex: 4,
-                    child: Column(
-                      children: [
-                        alerts,
-                        const SizedBox(height: 14),
-                        celebrations,
-                      ],
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 4, child: side),
+                      const SizedBox(width: 14),
+                      Expanded(flex: 8, child: feed),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: celebrations),
+                      const SizedBox(width: 14),
+                      Expanded(child: whosOut),
+                      const SizedBox(width: 14),
+                      Expanded(child: alerts),
+                    ],
                   ),
                 ],
               );
@@ -365,7 +442,7 @@ class _HeroBanner extends StatelessWidget {
         ),
         _link(
           Icons.person_outline,
-          'My Info',
+          'Profile',
           () => app.openScreen(moduleId: 'dashboard', subId: 'my_info'),
         ),
         _link(
@@ -494,6 +571,21 @@ class _FeedCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Row(
+              children: [
+                Icon(Icons.campaign_outlined, size: 18, color: brand),
+                const SizedBox(width: 8),
+                Text(
+                  'Company activity',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: HrUi.label(context),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: controller,
               minLines: 2,
@@ -539,8 +631,8 @@ class _FeedCard extends StatelessWidget {
                 ),
                 FilledButton(
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFD6C7A8),
-                    foregroundColor: const Color(0xFF3F3A32),
+                    backgroundColor: brand,
+                    foregroundColor: HrTheme.onBrand(context),
                     padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -1042,7 +1134,7 @@ class _AlertsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _AccentCard(
-      accent: const Color(0xFFC45C4A),
+      accent: brand,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
         child: Column(
@@ -1051,7 +1143,7 @@ class _AlertsCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('My Alerts',
+                Text('Needs attention',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
@@ -1283,7 +1375,7 @@ class _CelebrationsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = tab == 'birthdays' ? birthdays : anniversaries;
     return _AccentCard(
-      accent: const Color(0xFFC45C4A),
+      accent: brand,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         child: Column(

@@ -10,7 +10,7 @@ import '../widgets/analytics_charts.dart';
 import '../widgets/hr_form_kit.dart';
 import '../widgets/hr_grid_query.dart';
 
-/// HR Data — job title, department, and office charts plus the user list.
+/// Workforce Records — job title, department, and office charts plus the user list.
 class HrDataView extends StatefulWidget {
   const HrDataView({super.key});
 
@@ -67,7 +67,7 @@ class _HrDataViewState extends State<HrDataView> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text('HR Data', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HrUi.label(context))),
+              Text('Workforce Records', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HrUi.label(context))),
               const SizedBox(height: 12),
               LayoutBuilder(
                 builder: (context, box) {

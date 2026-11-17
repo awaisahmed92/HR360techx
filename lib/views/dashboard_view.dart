@@ -6,7 +6,7 @@ import '../core/employees/employee_state.dart';
 import '../widgets/analytics_charts.dart';
 import '../widgets/hr_form_kit.dart';
 
-/// HR Dashboard — ratio menu on the left, workforce charts on the right.
+/// People Analytics — ratio menu on the left, workforce charts on the right.
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
 
@@ -51,7 +51,7 @@ class _DashboardViewState extends State<DashboardView> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
           children: [
             Text(
-              _section == 'overview' ? 'HR Dashboard' : _sections.firstWhere((s) => s.$1 == _section).$2,
+              _section == 'overview' ? 'People Analytics' : _sections.firstWhere((s) => s.$1 == _section).$2,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: HrUi.label(context)),
             ),
             const SizedBox(height: 14),

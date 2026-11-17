@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 class ApprovalService
 {
-    public const MODULES = ['travel', 'leave', 'timesheet'];
+    public const MODULES = ['travel', 'leave', 'timesheet', 'letter'];
 
     public function __construct(private HrApprovalResolver $resolver)
     {
@@ -646,6 +646,17 @@ class ApprovalService
                 }
             }
             DB::table('timesheet')->where($pk, $id)->update($allowed);
+
+            return;
+        }
+        if ($module === 'letter' && Schema::hasTable('hr_letter_instances')) {
+            $allowed = array_intersect_key($data, array_flip([
+                'status', 'approval_levels', 'current_approval_level',
+                'level1_approver_id', 'level2_approver_id', 'level3_approver_id',
+                'approval_pending_level',
+            ]));
+            $allowed['updated_at'] = now();
+            DB::table('hr_letter_instances')->where('id', $id)->update($allowed);
         }
     }
 
@@ -726,6 +737,7 @@ class ApprovalService
             'leave', 'leaves' => 'Leaves',
             'travel' => 'Travel',
             'timesheet' => 'Timesheet',
+            'letter', 'hr_letter', 'hr_letters' => 'HR Letters',
             'resignation', 'resignations' => 'Resignations',
             'termination', 'terminations' => 'Termination',
             'loan', 'loan_application' => 'Loan Applications',
