@@ -24,6 +24,50 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/marketing.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "HR360 TechX",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "url": "https://hr360techx.com/attendance",
+        "description": "Time and attendance with shifts, timesheets, and manager approvals that can feed payroll runs.",
+        "provider": { "@type": "Organization", "name": "360techx", "url": "https://www.360techx.com/" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Attendance", "item": "https://hr360techx.com/attendance" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What does HR360 TechX attendance cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Attendance covers daily attendance, shifts, timesheets, and manager approvals. Approved hours can sit next to the payroll run. Missing time is approved first, then the pay run picks it up."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does HR360 TechX decide state overtime rules?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. HR360 TechX stores hours and approvals. It does not decide a state's daily overtime rules for you. Overtime law depends on the place of work."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -51,9 +95,14 @@
   <main>
     <section class="hero">
       <div class="wrap">
+        <ol class="crumbs" aria-label="Breadcrumb">
+          <li><a href="/">Home</a></li>
+          <li>Attendance</li>
+        </ol>
         <p class="eyebrow">Attendance</p>
         <h1>Shifts, timesheets, and approvals before payday</h1>
-        <p class="lead">Time and attendance in HR360 TechX covers attendance, shifts, timesheets, and manager approvals. Those hours can sit next to the payroll run. Missing time is approved first, then the pay run picks it up.</p>
+        <p class="aeo-answer">HR360 TechX attendance covers shifts, timesheets, and manager approvals so approved hours can feed the payroll run. Unapproved time does not silently become pay.</p>
+        <p class="lead">Missing time is approved first, then the pay run picks it up. Daily attendance stays on the employee record.</p>
         <div class="actions">
           <a class="btn" href="/contact">Book an attendance demo</a>
           <a class="btn ghost" href="/us/time-attendance.html">US time and attendance note</a>
@@ -90,6 +139,20 @@
           <p>This is not a certified time clock for every state overtime rule. Overtime law depends on the place of work. HR360 TechX stores the hours and the approval. It does not decide a state's daily overtime rules for you.</p>
           <p class="note">A plain federal estimate is on the <a href="/us/overtime.html">overtime calculator</a>. That page is an estimate, not a filing and not legal advice.</p>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap faq">
+        <h2>Attendance questions</h2>
+        <details open>
+          <summary>What does HR360 TechX attendance cover?</summary>
+          <p>Attendance covers daily attendance, shifts, timesheets, and manager approvals. Approved hours can sit next to the payroll run. Missing time is approved first, then the pay run picks it up.</p>
+        </details>
+        <details>
+          <summary>Does HR360 TechX decide state overtime rules?</summary>
+          <p>No. HR360 TechX stores hours and approvals. It does not decide a state's daily overtime rules for you. Overtime law depends on the place of work.</p>
+        </details>
       </div>
     </section>
   </main>

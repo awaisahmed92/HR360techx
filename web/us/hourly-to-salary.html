@@ -21,11 +21,32 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "Hourly to salary converter",
-    "url": "https://hr360techx.com/us/hourly-to-salary.html",
-    "description": "Convert an hourly wage to annual pay by multiplying the rate by hours per week and by 52. This is arithmetic, not a tax calculation.",
-    "dateModified": "2026-10-20"
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Hourly to salary converter",
+        "name": "Hourly to salary converter",
+        "url": "https://hr360techx.com/us/hourly-to-salary.html",
+        "description": "Convert an hourly wage to annual pay by multiplying the rate by hours per week and by 52. This is arithmetic, not a tax calculation.",
+        "dateModified": "2026-10-20",
+        "author": { "@type": "Organization", "name": "360techx", "url": "https://www.360techx.com/" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "360techx",
+          "url": "https://www.360techx.com/",
+          "logo": { "@type": "ImageObject", "url": "https://hr360techx.com/logo-mark.svg" }
+        },
+        "about": { "@type": "SoftwareApplication", "name": "HR360 TechX", "url": "https://hr360techx.com/" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" },
+          { "@type": "ListItem", "position": 2, "name": "US payroll guides", "item": "https://hr360techx.com/us/" },
+          { "@type": "ListItem", "position": 3, "name": "Hourly to salary converter", "item": "https://hr360techx.com/us/hourly-to-salary.html" }
+        ]
+      }
+    ]
   }
   </script>
 </head>
@@ -63,7 +84,7 @@
     <a href="california.html">States</a>
     <a href="form-941.html">Form 941</a>
     <a href="paycheck.html">Calculators</a>
-    <a href="vs-gusto.html">Vs Gusto</a>
+    <a href="vs-gusto.html">Comparisons</a>
     <a href="security.html">Security</a>
     <a href="../">Open the app</a>
   </nav>
@@ -75,5 +96,6 @@
   <script src="calc.js"></script>
   <link rel="stylesheet" href="../../../shared/translate/translate.css">
   <script src="../../../shared/translate/translate.js"></script>
+  <script src="/marketing/analytics.js"></script>
 </body>
 </html>

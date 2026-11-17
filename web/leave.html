@@ -24,6 +24,50 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/marketing.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "HR360 TechX",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "url": "https://hr360techx.com/leave",
+        "description": "Leave requests and manager approvals kept with the employee record next to attendance and payroll.",
+        "provider": { "@type": "Organization", "name": "360techx", "url": "https://www.360techx.com/" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Leave", "item": "https://hr360techx.com/leave" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does leave work in HR360 TechX?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "People submit leave from self-service. Managers approve in one inbox. Requests and balances sit on the employee record next to attendance and payroll."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does HR360 TechX replace a PTO policy?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Your written policy still decides who can take leave and whether it is paid. The product stores the request and the approval. It does not write the policy or replace a state paid-sick-leave law."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -51,9 +95,14 @@
   <main>
     <section class="hero">
       <div class="wrap">
+        <ol class="crumbs" aria-label="Breadcrumb">
+          <li><a href="/">Home</a></li>
+          <li>Leave</li>
+        </ol>
         <p class="eyebrow">Leave</p>
         <h1>Leave requests and approvals on the employee record</h1>
-        <p class="lead">HR360 TechX keeps leave requests and manager approvals with the employee. The request, the decision, and the balance the workspace is tracking sit next to attendance and pay, so a manager is not approving leave in email and then retyping it into payroll.</p>
+        <p class="aeo-answer">HR360 TechX keeps leave requests and manager approvals with the employee, next to attendance and pay, so managers are not approving leave in email and retyping it into payroll.</p>
+        <p class="lead">The request, the decision, and the balance the workspace is tracking sit on the same person record.</p>
         <div class="actions">
           <a class="btn" href="/contact">Book a leave demo</a>
           <a class="btn ghost" href="/us/leave-pto.html">US leave and PTO note</a>
@@ -94,6 +143,20 @@
           </ul>
           <p class="note">The <a href="/us/leave-pto.html">US leave note</a> says the same thing in the context of US employers. It is general information, not legal advice.</p>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap faq">
+        <h2>Leave questions</h2>
+        <details open>
+          <summary>How does leave work in HR360 TechX?</summary>
+          <p>People submit leave from self-service. Managers approve in one inbox. Requests and balances sit on the employee record next to attendance and payroll.</p>
+        </details>
+        <details>
+          <summary>Does HR360 TechX replace a PTO policy?</summary>
+          <p>No. Your written policy still decides who can take leave and whether it is paid. The product stores the request and the approval. It does not write the policy or replace a state paid-sick-leave law.</p>
+        </details>
       </div>
     </section>
   </main>

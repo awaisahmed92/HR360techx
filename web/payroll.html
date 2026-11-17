@@ -24,6 +24,58 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/marketing.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "HR360 TechX",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "url": "https://hr360techx.com/payroll",
+        "description": "Online payroll software for weekly, biweekly, and monthly payroll runs with payslips. Does not file payroll taxes.",
+        "provider": { "@type": "Organization", "name": "360techx", "url": "https://www.360techx.com/" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Payroll", "item": "https://hr360techx.com/payroll" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is payroll software in HR360 TechX?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "HR360 TechX runs weekly, biweekly, or monthly payroll and keeps payslips on the employee record. It uses pay setup and approved time already in the workspace. It does not file payroll taxes or pay employees for you."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does HR360 TechX file Form 941 or deposit taxes?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. HR360 TechX does not file Form 941, Form 940, W-2s, or 1099s, and it does not deposit payroll taxes. The employer files returns or uses a separate filer."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can HR360 TechX run off-cycle payroll?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. A bonus, correction, or new joiner can be paid on an off-cycle run without replacing the regular salary run."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -51,9 +103,14 @@
   <main>
     <section class="hero">
       <div class="wrap">
+        <ol class="crumbs" aria-label="Breadcrumb">
+          <li><a href="/">Home</a></li>
+          <li>Payroll</li>
+        </ol>
         <p class="eyebrow">Payroll</p>
         <h1>Payroll runs and payslips with the employee record</h1>
-        <p class="lead">HR360 TechX can run a regular or off-cycle payroll and keep the payslip on the employee. A USA payroll type is one option in payroll setup, along with weekly (52), biweekly (26), and monthly (12) schedules. The run uses the pay setup and approved time already in the workspace.</p>
+        <p class="aeo-answer">HR360 TechX is online payroll software for regular and off-cycle runs with payslips on the employee record. Weekly, biweekly, and monthly schedules are supported. It does not file Form 941 or deposit payroll taxes.</p>
+        <p class="lead">A USA payroll type is one option in payroll setup. The run uses the pay setup and approved time already in the workspace.</p>
         <div class="actions">
           <a class="btn" href="/contact">Book a payroll demo</a>
           <a class="btn ghost" href="/us/payroll-runs.html">How a US run is described</a>
@@ -95,6 +152,24 @@
           </ul>
           <p class="note">US employers can read the <a href="/us/form-941.html">Form 941</a>, <a href="/us/form-940.html">Form 940</a>, and <a href="/us/w2-vs-1099.html">W-2 and 1099</a> notes. Those pages are general information, not tax advice.</p>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap faq">
+        <h2>Payroll questions</h2>
+        <details open>
+          <summary>What is payroll software in HR360 TechX?</summary>
+          <p>HR360 TechX runs weekly, biweekly, or monthly payroll and keeps payslips on the employee record. It uses pay setup and approved time already in the workspace. It does not file payroll taxes or pay employees for you.</p>
+        </details>
+        <details>
+          <summary>Does HR360 TechX file Form 941 or deposit taxes?</summary>
+          <p>No. HR360 TechX does not file Form 941, Form 940, W-2s, or 1099s, and it does not deposit payroll taxes. The employer files returns or uses a separate filer.</p>
+        </details>
+        <details>
+          <summary>Can HR360 TechX run off-cycle payroll?</summary>
+          <p>Yes. A bonus, correction, or new joiner can be paid on an off-cycle run without replacing the regular salary run.</p>
+        </details>
       </div>
     </section>
 
