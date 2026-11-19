@@ -1003,12 +1003,31 @@ class EmployeeController extends Controller
                 ['key' => 'letters_candidate', 'label' => 'Candidate Letters'],
                 ['key' => 'letters_reports', 'label' => 'Letter Reports'],
             ]],
+            ['key' => 'recruitment_mod', 'label' => 'Recruitment', 'screens' => [
+                ['key' => 'recruit_dashboard', 'label' => 'Recruitment Dashboard'],
+                ['key' => 'recruit_requests', 'label' => 'Job Requests'],
+                ['key' => 'recruit_posts', 'label' => 'Job Posts'],
+                ['key' => 'recruit_screening', 'label' => 'Screening'],
+                ['key' => 'recruit_candidates', 'label' => 'Candidates'],
+                ['key' => 'recruit_interviews', 'label' => 'Interviews'],
+                ['key' => 'recruit_tests', 'label' => 'Tests'],
+                ['key' => 'recruit_evaluation', 'label' => 'Evaluation'],
+                ['key' => 'recruit_referrals', 'label' => 'Referrals'],
+                ['key' => 'recruit_tasks', 'label' => 'Recruit Tasks'],
+                ['key' => 'recruit_reports', 'label' => 'Recruitment Reports'],
+                ['key' => 'recruit_portal', 'label' => 'Careers Portal'],
+                ['key' => 'recruit_ats', 'label' => 'ATS Integrations'],
+            ]],
             ['key' => 'other', 'label' => 'Other Modules', 'screens' => [
                 ['key' => 'travel', 'label' => 'Travel'],
                 ['key' => 'approvals', 'label' => 'Approvals'],
             ]],
             ['key' => 'calendar', 'label' => 'Calendar', 'screens' => [
-                ['key' => 'calendar', 'label' => 'Calendar'],
+                ['key' => 'calendar_view', 'label' => 'Company Calendar'],
+                ['key' => 'calendar_events', 'label' => 'Events'],
+                ['key' => 'calendar_meetings', 'label' => 'Meetings'],
+                ['key' => 'calendar_settings', 'label' => 'Calendar Settings'],
+                ['key' => 'calendar_reports', 'label' => 'Calendar Reports'],
             ]],
         ];
     }

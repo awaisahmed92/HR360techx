@@ -9,7 +9,10 @@ import '../widgets/hr_form_kit.dart';
 
 /// API-backed talent pipeline (Kanban) + Jobs CRUD.
 class RecruitmentView extends StatefulWidget {
-  const RecruitmentView({super.key});
+  const RecruitmentView({super.key, this.embedded = false});
+
+  /// When true, hide the page title (used inside [RecruitmentModuleView]).
+  final bool embedded;
 
   @override
   State<RecruitmentView> createState() => _RecruitmentViewState();
@@ -53,13 +56,15 @@ class _RecruitmentViewState extends State<RecruitmentView> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Row(
                   children: [
-                    Text('Talent Pipeline',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: HrUi.label(context),
-                        )),
-                    const Spacer(),
+                    if (!widget.embedded)
+                      Text('Talent Pipeline',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: HrUi.label(context),
+                          )),
+                    if (!widget.embedded) const Spacer(),
+                    if (widget.embedded) const Spacer(),
                     SegmentedButton<int>(
                       segments: const [
                         ButtonSegment(value: 0, label: Text('Pipeline')),
@@ -67,8 +72,8 @@ class _RecruitmentViewState extends State<RecruitmentView> {
                         ButtonSegment(value: 2, label: Text('Long List')),
                         ButtonSegment(value: 3, label: Text('Short List')),
                       ],
-                      selected: {_state.tab},
-                      onSelectionChanged: (s) => _state.setTab(s.first),
+                      selected: {_state.tab.clamp(0, 3)},
+                      onSelectionChanged: (s) => _state.setPipelineTab(s.first),
                     ),
                     const SizedBox(width: 12),
                     FilledButton.icon(

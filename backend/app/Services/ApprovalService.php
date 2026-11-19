@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 class ApprovalService
 {
-    public const MODULES = ['travel', 'leave', 'timesheet', 'letter'];
+    public const MODULES = ['travel', 'leave', 'timesheet', 'letter', 'recruit_request', 'calendar_event'];
 
     public function __construct(private HrApprovalResolver $resolver)
     {
@@ -657,6 +657,47 @@ class ApprovalService
             ]));
             $allowed['updated_at'] = now();
             DB::table('hr_letter_instances')->where('id', $id)->update($allowed);
+
+            return;
+        }
+        if ($module === 'recruit_request' && Schema::hasTable('hr_recruit_requisitions')) {
+            $allowed = array_intersect_key($data, array_flip([
+                'status', 'approval_levels', 'current_approval_level',
+                'level1_approver_id', 'level2_approver_id', 'level3_approver_id',
+                'approval_pending_level',
+            ]));
+            // Map ApprovalService status 1/2 onto requisition 2 Approved / 3 Rejected
+            if (isset($allowed['status'])) {
+                $s = (int) $allowed['status'];
+                if ($s === 1) {
+                    $allowed['status'] = 2;
+                } elseif ($s === 2) {
+                    $allowed['status'] = 3;
+                }
+            }
+            $allowed['updated_at'] = now();
+            foreach (array_keys($allowed) as $col) {
+                if (!Schema::hasColumn('hr_recruit_requisitions', $col)) {
+                    unset($allowed[$col]);
+                }
+            }
+            DB::table('hr_recruit_requisitions')->where('id', $id)->update($allowed);
+
+            return;
+        }
+        if ($module === 'calendar_event' && Schema::hasTable('hr_calendar_events')) {
+            $allowed = array_intersect_key($data, array_flip([
+                'status', 'approval_levels', 'current_approval_level',
+                'level1_approver_id', 'level2_approver_id', 'level3_approver_id',
+                'approval_pending_level',
+            ]));
+            $allowed['updated_at'] = now();
+            foreach (array_keys($allowed) as $col) {
+                if (!Schema::hasColumn('hr_calendar_events', $col)) {
+                    unset($allowed[$col]);
+                }
+            }
+            DB::table('hr_calendar_events')->where('id', $id)->update($allowed);
         }
     }
 
@@ -738,6 +779,8 @@ class ApprovalService
             'travel' => 'Travel',
             'timesheet' => 'Timesheet',
             'letter', 'hr_letter', 'hr_letters' => 'HR Letters',
+            'recruit_request', 'recruitment' => 'Job Request',
+            'calendar_event' => 'Calendar Event',
             'resignation', 'resignations' => 'Resignations',
             'termination', 'terminations' => 'Termination',
             'loan', 'loan_application' => 'Loan Applications',

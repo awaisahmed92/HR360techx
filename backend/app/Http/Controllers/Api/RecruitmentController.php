@@ -309,6 +309,24 @@ class RecruitmentController extends Controller
         }
         DB::table('hr_candidate')->where('id', $id)->update($update);
 
+        // Keep parity applications in sync while dual tables coexist.
+        if (Schema::hasTable('hr_recruit_applications')) {
+            $st = (int) $data['status'];
+            $appUpdate = [
+                'stage' => $st < 0 ? 0 : min(max($st, 0), 4),
+                'application_stage' => $st < 0 ? 9 : min(max($st, 0), 9),
+                'status' => $st < 0 ? -1 : ($st === 4 ? 4 : 0),
+                'updated_at' => now(),
+            ];
+            if ($st < 0) {
+                $appUpdate['rejected_at'] = now();
+            }
+            if ($st === 4) {
+                $appUpdate['hired_at'] = now();
+            }
+            DB::table('hr_recruit_applications')->where('candidate_id', $id)->update($appUpdate);
+        }
+
         return response()->json(['success' => true, 'message' => 'Status updated.']);
     }
 

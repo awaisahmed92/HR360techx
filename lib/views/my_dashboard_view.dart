@@ -7,9 +7,12 @@ import 'package:provider/provider.dart';
 import '../controllers/app_state.dart';
 import '../core/auth/auth_state.dart';
 import '../core/config/profile_backgrounds.dart';
+import '../core/employees/employee_state.dart';
 import '../core/leave/leave_repository.dart';
 import '../core/leave/leave_state.dart';
+import '../core/network/api_client.dart';
 import '../core/self_service/self_service_state.dart';
+import '../core/util/json_maps.dart';
 import '../theme/app_theme.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/dashboard_clock_face.dart';
@@ -19,7 +22,7 @@ import '../widgets/hr_form_kit.dart';
 
 part 'my_dashboard_desk.dart';
 
-/// HR360tech-style My Dashboard: hero profile, status feed, My Alerts, celebrations.
+/// My Desk — people pulse, KPIs, approvals, directory, punch, celebrations.
 class MyDashboardView extends StatefulWidget {
   const MyDashboardView({super.key});
 
@@ -35,11 +38,14 @@ class _MyDashboardViewState extends State<MyDashboardView> {
   late final ImageProvider _bannerImage;
   String _postType = 'status';
   Timer? _feedPoll;
+  late final EmployeeState _people;
+  int _openJobs = 0;
 
   @override
   void initState() {
     super.initState();
     _bannerImage = ProfileBackgrounds.randomImage();
+    _people = EmployeeState(context.read<AuthState>());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final ss = context.read<SelfServiceState>();
@@ -48,6 +54,8 @@ class _MyDashboardViewState extends State<MyDashboardView> {
       ss.loadAttendance();
       context.read<LeaveState>().load();
       context.read<AppState>().loadStatusFeed();
+      _people.load();
+      _loadOpenJobs();
     });
     _feedPoll = Timer.periodic(const Duration(seconds: 25), (_) {
       if (!mounted) return;
@@ -55,10 +63,32 @@ class _MyDashboardViewState extends State<MyDashboardView> {
     });
   }
 
+  Future<void> _loadOpenJobs() async {
+    try {
+      final api = ApiClient(tokenProvider: () async => context.read<AuthState>().session?.token);
+      final res = await api.dio.get('/recruitment/jobs');
+      final d = res.data;
+      if (d is Map && d['success'] == true && mounted) {
+        final jobs = ((d['jobs'] as List?) ?? []).whereType<Map>().map(asStringKeyedMap);
+        setState(() {
+          _openJobs = jobs.where((j) {
+            final s = j['status'];
+            if (s is num) return s.toInt() == 1;
+            final t = '$s'.toLowerCase();
+            return t.contains('open') || t == '1' || t == 'active';
+          }).length;
+        });
+      }
+    } catch (_) {
+      // Optional KPI — desk still works without recruiting data.
+    }
+  }
+
   @override
   void dispose() {
     _feedPoll?.cancel();
     _status.dispose();
+    _people.dispose();
     super.dispose();
   }
 
@@ -84,181 +114,243 @@ class _MyDashboardViewState extends State<MyDashboardView> {
 
   @override
   Widget build(BuildContext context) {
-    final app = context.watch<AppState>();
-    final auth = context.watch<AuthState>();
-    final ss = context.watch<SelfServiceState>();
-    final leave = context.watch<LeaveState>();
-    final brand = HrTheme.brand(context);
-    final isDark = app.isDarkMode;
-    final name = auth.user?.name.isNotEmpty == true ? auth.user!.name : 'User';
-    final role = auth.user?.designationName.isNotEmpty == true
-        ? auth.user!.designationName
-        : 'Team Member';
-    final notifs = ss.inboxNotifications;
-    final approvals = ss.approvals;
-    final actionCount = notifs.where((n) => n['is_read'] != true).length;
-    final approvalCount = approvals.length;
+    return AnimatedBuilder(
+      animation: _people,
+      builder: (context, _) {
+        final app = context.watch<AppState>();
+        final auth = context.watch<AuthState>();
+        final ss = context.watch<SelfServiceState>();
+        final leave = context.watch<LeaveState>();
+        final brand = HrTheme.brand(context);
+        final isDark = app.isDarkMode;
+        final name = auth.user?.name.isNotEmpty == true ? auth.user!.name : 'User';
+        final role = auth.user?.designationName.isNotEmpty == true
+            ? auth.user!.designationName
+            : 'Team Member';
+        final notifs = ss.inboxNotifications;
+        final approvals = ss.approvals;
+        final actionCount = notifs.where((n) => n['is_read'] != true).length;
+        final approvalCount = approvals.length;
 
-    final canBroadcast =
-        auth.user?.isAdmin == true || auth.permissions.all;
-    final firstName = name.split(' ').first;
-    final today = DateTime.now();
-    final day = DateTime(today.year, today.month, today.day);
-    bool coversToday(LeaveDto row) {
-      if (row.status != 1 && row.processStatus != 'approved') return false;
-      final from = DateTime.tryParse(row.from);
-      final to = DateTime.tryParse(row.to);
-      if (from == null || to == null) return false;
-      final start = DateTime(from.year, from.month, from.day);
-      final end = DateTime(to.year, to.month, to.day);
-      return !day.isBefore(start) && !day.isAfter(end);
-    }
+        final canBroadcast = auth.user?.isAdmin == true || auth.permissions.all;
+        final firstName = name.split(' ').first;
+        final today = DateTime.now();
+        final day = DateTime(today.year, today.month, today.day);
+        bool coversToday(LeaveDto row) {
+          if (row.status != 1 && row.processStatus != 'approved') return false;
+          final from = DateTime.tryParse(row.from);
+          final to = DateTime.tryParse(row.to);
+          if (from == null || to == null) return false;
+          final start = DateTime(from.year, from.month, from.day);
+          final end = DateTime(to.year, to.month, to.day);
+          return !day.isBefore(start) && !day.isAfter(end);
+        }
 
-    final outToday = leave.leaves.where(coversToday).toList();
-    final pendingLeave = leave.leaves.where((row) => row.status == 0).length;
-    final daysLeft = leave.balances.fold<int>(0, (sum, row) => sum + row.available);
-    final celebrationsToday = app.birthdaysToday.length + app.anniversariesToday.length;
+        final outToday = leave.leaves.where(coversToday).toList();
+        final pendingLeave = leave.leaves.where((row) => row.status == 0).length;
+        final daysLeft = leave.balances.fold<int>(0, (sum, row) => sum + row.available);
+        final celebrationsToday = app.birthdaysToday.length + app.anniversariesToday.length;
+        final total = _people.stats['total'] ?? 0;
+        final active = _people.stats['active'] ?? 0;
+        final retention = total <= 0 ? 0.0 : (active / total) * 100;
+        final attendance = total <= 0
+            ? 0.0
+            : (((total - outToday.length).clamp(0, total)) / total) * 100;
 
-    void open(String moduleId, String subId) =>
-        app.openScreen(moduleId: moduleId, subId: subId);
+        void open(String moduleId, String subId) =>
+            app.openScreen(moduleId: moduleId, subId: subId);
 
-    final feed = _FeedCard(
-      controller: _status,
-      brand: brand,
-      postType: _postType,
-      onType: (t) => setState(() => _postType = t),
-      canBroadcast: canBroadcast,
-      author: name,
-      authorTitle: role,
-      posts: app.statusFeed,
-      relative: _relative,
-      onLike: (id) => app.toggleFeedLike(postId: id, userName: name),
-      onComment: (id, text) =>
-          app.addFeedComment(postId: id, author: name, text: text),
-    );
-    final alerts = _AlertsCard(
-      brand: brand,
-      tab: _alertTab,
-      onTab: (t) => setState(() => _alertTab = t),
-      actionCount: actionCount,
-      approvalCount: approvalCount,
-      notifications: notifs,
-      approvals: approvals,
-      relative: _relative,
-    );
-    final celebrations = _CelebrationsCard(
-      brand: brand,
-      scope: _celebScope,
-      tab: _celebTab,
-      onScope: (s) => setState(() => _celebScope = s),
-      onTab: (t) => setState(() => _celebTab = t),
-      birthdays: _celebScope == 'today'
-          ? app.birthdaysToday
-          : app.upcomingBirthdays,
-      anniversaries: _celebScope == 'today'
-          ? app.anniversariesToday
-          : app.upcomingAnniversaries,
-    );
+        final feed = _FeedCard(
+          controller: _status,
+          brand: brand,
+          postType: _postType,
+          onType: (t) => setState(() => _postType = t),
+          canBroadcast: canBroadcast,
+          author: name,
+          authorTitle: role,
+          posts: app.statusFeed,
+          relative: _relative,
+          onLike: (id) => app.toggleFeedLike(postId: id, userName: name),
+          onComment: (id, text) =>
+              app.addFeedComment(postId: id, author: name, text: text),
+        );
+        final alerts = _AlertsCard(
+          brand: brand,
+          tab: _alertTab,
+          onTab: (t) => setState(() => _alertTab = t),
+          actionCount: actionCount,
+          approvalCount: approvalCount,
+          notifications: notifs,
+          approvals: approvals,
+          relative: _relative,
+        );
+        final celebrations = _CelebrationsCard(
+          brand: brand,
+          scope: _celebScope,
+          tab: _celebTab,
+          onScope: (s) => setState(() => _celebScope = s),
+          onTab: (t) => setState(() => _celebTab = t),
+          birthdays: _celebScope == 'today' ? app.birthdaysToday : app.upcomingBirthdays,
+          anniversaries:
+              _celebScope == 'today' ? app.anniversariesToday : app.upcomingAnniversaries,
+        );
 
-    return ColoredBox(
-      color: isDark ? AppTheme.darkBg : const Color(0xFFF7F7F5),
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
-        children: [
-          _WelcomeBar(
-            name: firstName,
-            brand: brand,
-            onLeave: () => open('timesheet', 'leaves'),
-            onApprovals: () => open('dashboard', 'approvals'),
-            onProfile: () => open('dashboard', 'my_info'),
-            showPeople: canBroadcast,
-            onPeople: () => open('employees', 'employees'),
-          ),
-          const SizedBox(height: 12),
-          _HeroBanner(
-            bannerImage: _bannerImage,
-            brand: brand,
-            name: name,
-            role: role,
-            app: app,
-          ),
-          const SizedBox(height: 12),
-          _MetricStrip(
-            brand: brand,
-            pendingApprovals: approvalCount,
-            unread: actionCount,
-            daysLeft: daysLeft,
-            outToday: outToday.length,
-            celebrations: celebrationsToday,
-            pendingLeave: pendingLeave,
-          ),
-          const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final wide = constraints.maxWidth >= 980;
-              final leaveCard = _LeaveBalanceCard(
+        final pulseInsights = <String>[
+          if (approvalCount > 0) '$approvalCount items are waiting for your review.',
+          if (outToday.isNotEmpty) '${outToday.length} people are away today.',
+          if (celebrationsToday > 0) '$celebrationsToday celebrations are on the calendar today.',
+          if (pendingLeave > 0) '$pendingLeave leave requests are still open.',
+          if (actionCount > 0) '$actionCount unread notices need a look.',
+          if (daysLeft > 0) 'You still have $daysLeft leave days available.',
+        ];
+        if (pulseInsights.isEmpty) {
+          pulseInsights.add('Your desk is clear — no urgent people actions right now.');
+        }
+
+        return ColoredBox(
+          color: isDark ? AppTheme.darkBg : const Color(0xFFF4F6F9),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+            children: [
+              _WelcomeBar(
+                name: firstName,
                 brand: brand,
-                balances: leave.balances,
-                onRequest: () => open('timesheet', 'leaves'),
-              );
-              final shortcuts = _ShortcutCard(
+                onLeave: () => open('timesheet', 'leaves'),
+                onApprovals: () => open('dashboard', 'approvals'),
+                onProfile: () => open('dashboard', 'my_info'),
+                showPeople: canBroadcast,
+                onPeople: () => open('employees', 'employees'),
+              ),
+              const SizedBox(height: 12),
+              _PeoplePulseBanner(
                 brand: brand,
-                onOpen: open,
-              );
-              final whosOut = _WhosOutCard(
+                insights: pulseInsights.take(3).toList(),
+                onAction: () => open('dashboard', 'approvals'),
+                onInsights: () => open('dashboard', 'hr_dashboard'),
+              ),
+              const SizedBox(height: 12),
+              _HeroBanner(
+                bannerImage: _bannerImage,
                 brand: brand,
-                people: outToday,
-                onOpen: () => open('timesheet', 'leaves'),
-              );
-              final side = Column(
-                children: [
-                  leaveCard,
-                  const SizedBox(height: 14),
-                  shortcuts,
-                ],
-              );
-              if (!wide) {
-                return Column(
-                  children: [
-                    side,
-                    const SizedBox(height: 14),
-                    feed,
-                    const SizedBox(height: 14),
-                    celebrations,
-                    const SizedBox(height: 14),
-                    whosOut,
-                    const SizedBox(height: 14),
-                    alerts,
-                  ],
-                );
-              }
-              return Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                name: name,
+                role: role,
+                app: app,
+              ),
+              const SizedBox(height: 12),
+              _WorkforceKpiStrip(
+                brand: brand,
+                headcount: total,
+                retention: retention,
+                attendance: attendance,
+                openJobs: _openJobs,
+                pendingApprovals: approvalCount,
+                outToday: outToday.length,
+              ),
+              const SizedBox(height: 14),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide = constraints.maxWidth >= 980;
+                  final approvalQueue = _ApprovalQueueCard(
+                    brand: brand,
+                    leavePending: leave.pendingApprovals,
+                    inbox: approvals,
+                    onOpenAll: () => open('dashboard', 'approvals'),
+                    onApproveLeave: (id) async {
+                      final err = await leave.approve(id);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(err ?? 'Leave approved.')),
+                      );
+                    },
+                    onRejectLeave: (id) async {
+                      final err = await leave.reject(id);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(err ?? 'Leave declined.')),
+                      );
+                    },
+                  );
+                  final directory = _PeopleSnapshotCard(
+                    brand: brand,
+                    people: _people.rows,
+                    onOpen: () => open('employees', 'employees'),
+                  );
+                  final leaveCard = _LeaveBalanceCard(
+                    brand: brand,
+                    balances: leave.balances,
+                    onRequest: () => open('timesheet', 'leaves'),
+                  );
+                  final whosOut = _WhosOutCard(
+                    brand: brand,
+                    people: outToday,
+                    onOpen: () => open('timesheet', 'leaves'),
+                  );
+                  if (!wide) {
+                    return Column(
+                      children: [
+                        approvalQueue,
+                        const SizedBox(height: 14),
+                        directory,
+                        const SizedBox(height: 14),
+                        leaveCard,
+                        const SizedBox(height: 14),
+                        celebrations,
+                        const SizedBox(height: 14),
+                        whosOut,
+                        const SizedBox(height: 14),
+                        feed,
+                        const SizedBox(height: 14),
+                        alerts,
+                      ],
+                    );
+                  }
+                  return Column(
                     children: [
-                      Expanded(flex: 4, child: side),
-                      const SizedBox(width: 14),
-                      Expanded(flex: 8, child: feed),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 5, child: approvalQueue),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              children: [
+                                leaveCard,
+                                const SizedBox(height: 14),
+                                whosOut,
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      directory,
+                      const SizedBox(height: 14),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(flex: 6, child: feed),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            flex: 4,
+                            child: Column(
+                              children: [
+                                celebrations,
+                                const SizedBox(height: 14),
+                                alerts,
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: celebrations),
-                      const SizedBox(width: 14),
-                      Expanded(child: whosOut),
-                      const SizedBox(width: 14),
-                      Expanded(child: alerts),
-                    ],
-                  ),
-                ],
-              );
-            },
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

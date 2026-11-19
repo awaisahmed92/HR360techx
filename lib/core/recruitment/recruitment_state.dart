@@ -14,7 +14,20 @@ class RecruitmentState extends ChangeNotifier {
   List<Map<String, dynamic>> jobs = [];
   List<Map<String, dynamic>> candidates = [];
   Map<String, dynamic> options = {};
-  int tab = 0; // 0 pipeline, 1 jobs, 2 long list, 3 short list
+  Map<String, dynamic> dashboard = {};
+  List<Map<String, dynamic>> requisitions = [];
+  List<Map<String, dynamic>> posts = [];
+  List<Map<String, dynamic>> applications = [];
+  List<Map<String, dynamic>> interviews = [];
+  List<Map<String, dynamic>> tests = [];
+  List<Map<String, dynamic>> evaluations = [];
+  List<Map<String, dynamic>> evaluationResults = [];
+  List<Map<String, dynamic>> referrals = [];
+  List<Map<String, dynamic>> tasks = [];
+  Map<String, dynamic> reports = {};
+  Map<String, dynamic> portalSettings = {};
+  List<Map<String, dynamic>> atsLog = [];
+  int tab = 0;
   String filterQ = '';
   int? filterJobId;
   int? filterGender;
@@ -23,6 +36,14 @@ class RecruitmentState extends ChangeNotifier {
   String filterDistrict = '';
 
   void setTab(int value) {
+    if (tab == value) return;
+    tab = value;
+    notifyListeners();
+    loadParity();
+  }
+
+  /// Pipeline sub-tabs inside Screening (0–3) without reloading parity lists.
+  void setPipelineTab(int value) {
     if (tab == value) return;
     tab = value;
     notifyListeners();
@@ -110,6 +131,7 @@ class RecruitmentState extends ChangeNotifier {
       if (c is Map && c['success'] == true) {
         candidates = ((c['candidates'] as List?) ?? []).map((e) => asStringKeyedMap(e)).toList();
       }
+      await loadParity(silent: true);
     } on DioException catch (e) {
       error = _msg(e);
     } catch (e) {
@@ -117,6 +139,81 @@ class RecruitmentState extends ChangeNotifier {
     }
     busy = false;
     notifyListeners();
+  }
+
+  Future<void> loadParity({bool silent = false}) async {
+    if (!silent) {
+      busy = true;
+      notifyListeners();
+    }
+    try {
+      final results = await Future.wait([
+        _api.dio.get('/recruitment/dashboard'),
+        _api.dio.get('/recruitment/requisitions'),
+        _api.dio.get('/recruitment/posts'),
+        _api.dio.get('/recruitment/applications'),
+        _api.dio.get('/recruitment/interviews'),
+        _api.dio.get('/recruitment/tests'),
+        _api.dio.get('/recruitment/evaluations'),
+        _api.dio.get('/recruitment/referrals'),
+        _api.dio.get('/recruitment/tasks'),
+        _api.dio.get('/recruitment/reports'),
+        _api.dio.get('/recruitment/portal-settings'),
+        _api.dio.get('/recruitment/ats/log'),
+      ]);
+      void takeList(dynamic data, String key, void Function(List<Map<String, dynamic>>) set) {
+        if (data is Map && data['success'] == true) {
+          set(((data[key] as List?) ?? []).map((e) => asStringKeyedMap(e)).toList());
+        }
+      }
+      final dash = results[0].data;
+      if (dash is Map && dash['success'] == true) {
+        dashboard = asStringKeyedMap(dash['dashboard']);
+      }
+      takeList(results[1].data, 'requisitions', (v) => requisitions = v);
+      takeList(results[2].data, 'posts', (v) => posts = v);
+      takeList(results[3].data, 'applications', (v) => applications = v);
+      takeList(results[4].data, 'interviews', (v) => interviews = v);
+      takeList(results[5].data, 'tests', (v) => tests = v);
+      final ev = results[6].data;
+      if (ev is Map && ev['success'] == true) {
+        evaluations = ((ev['evaluations'] as List?) ?? []).map((e) => asStringKeyedMap(e)).toList();
+        evaluationResults = ((ev['results'] as List?) ?? []).map((e) => asStringKeyedMap(e)).toList();
+      }
+      takeList(results[7].data, 'referrals', (v) => referrals = v);
+      takeList(results[8].data, 'tasks', (v) => tasks = v);
+      final rp = results[9].data;
+      if (rp is Map && rp['success'] == true) {
+        reports = asStringKeyedMap(rp['reports']);
+      }
+      final ps = results[10].data;
+      if (ps is Map && ps['success'] == true) {
+        portalSettings = asStringKeyedMap(ps['settings']);
+      }
+      takeList(results[11].data, 'log', (v) => atsLog = v);
+    } on DioException catch (e) {
+      if (!silent) error = _msg(e);
+    } catch (e) {
+      if (!silent) error = e.toString();
+    }
+    if (!silent) {
+      busy = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> postJson(String path, Map<String, dynamic> body) async {
+    try {
+      final res = await _api.dio.post(path, data: body);
+      final d = res.data;
+      if (d is Map && d['success'] == true) {
+        await load();
+        return null;
+      }
+      return (d is Map ? d['message'] : null)?.toString() ?? 'Save failed';
+    } on DioException catch (e) {
+      return _msg(e);
+    }
   }
 
   List<Map<String, dynamic>> byStage(String stage) =>

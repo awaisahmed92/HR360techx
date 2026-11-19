@@ -20,10 +20,12 @@ import 'widgets/insight_tabs.dart';
 import 'views/employees_dashboard_view.dart';
 import 'views/employee_directory_view.dart';
 import 'views/employees_view.dart';
+import 'views/onboarding_view.dart';
 import 'views/employee_roles_view.dart';
 import 'views/performance_view.dart';
 import 'views/leave_view.dart';
-import 'views/recruitment_view.dart';
+import 'views/recruitment_module_view.dart';
+import 'views/calendar_view.dart';
 import 'views/training_view.dart';
 import 'views/lifecycle_views.dart';
 import 'views/letters_notifications_view.dart';
@@ -339,6 +341,8 @@ class _MainShellState extends State<MainShell> {
         return const ApprovalsInboxView();
       case 'employees':
         return const EmployeesView();
+      case 'onboarding':
+        return const OnboardingView();
       case 'employee_roles':
         return const EmployeeRolesView();
       case 'employees_dashboard':
@@ -348,7 +352,43 @@ class _MainShellState extends State<MainShell> {
       case 'performance':
         return const PerformanceView();
       case 'recruitment':
-        return const RecruitmentView();
+      case 'recruit_screening':
+        return const RecruitmentModuleView(initialTab: 3);
+      case 'recruit_dashboard':
+        return const RecruitmentModuleView(initialTab: 0);
+      case 'recruit_requests':
+        return const RecruitmentModuleView(initialTab: 1);
+      case 'recruit_posts':
+        return const RecruitmentModuleView(initialTab: 2);
+      case 'recruit_candidates':
+        return const RecruitmentModuleView(initialTab: 4);
+      case 'recruit_interviews':
+        return const RecruitmentModuleView(initialTab: 5);
+      case 'recruit_tests':
+        return const RecruitmentModuleView(initialTab: 6);
+      case 'recruit_evaluation':
+        return const RecruitmentModuleView(initialTab: 7);
+      case 'recruit_referrals':
+        return const RecruitmentModuleView(initialTab: 8);
+      case 'recruit_tasks':
+        return const RecruitmentModuleView(initialTab: 9);
+      case 'recruit_reports':
+        return const RecruitmentModuleView(initialTab: 10);
+      case 'recruit_portal':
+        return const RecruitmentModuleView(initialTab: 11);
+      case 'recruit_ats':
+        return const RecruitmentModuleView(initialTab: 12);
+      case 'calendar_view':
+      case 'calendar':
+        return const CalendarView(initialTab: 0);
+      case 'calendar_events':
+        return const CalendarView(initialTab: 1);
+      case 'calendar_meetings':
+        return const CalendarView(initialTab: 2);
+      case 'calendar_settings':
+        return const CalendarView(initialTab: 3);
+      case 'calendar_reports':
+        return const CalendarView(initialTab: 4);
       case 'training':
         return const TrainingView();
       case 'training_calendar':
