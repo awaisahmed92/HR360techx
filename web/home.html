@@ -32,19 +32,49 @@
     "@graph": [
       {
         "@type": "Organization",
+        "@id": "https://www.360techx.com/#organization",
         "name": "360techx",
-        "url": "https://hr360techx.com/",
+        "url": "https://www.360techx.com/",
+        "logo": "https://hr360techx.com/logo-mark.svg",
         "email": "info@360techx.com",
+        "sameAs": [
+          "https://hr360techx.com/",
+          "https://accounts360techx.com/",
+          "https://school360techx.com/",
+          "https://pos360techx.com/"
+        ],
         "brand": { "@type": "Brand", "name": "HR360 TechX" }
       },
       {
         "@type": "SoftwareApplication",
+        "@id": "https://hr360techx.com/#software",
         "name": "HR360 TechX",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
         "url": "https://hr360techx.com/",
-        "description": "Workforce workspace for employee records, attendance, leave, and payroll runs.",
-        "provider": { "@type": "Organization", "name": "360techx" }
+        "description": "Online payroll software workspace from 360techx for employee records, attendance, leave, and payroll runs. Does not file payroll taxes.",
+        "provider": { "@id": "https://www.360techx.com/#organization" },
+        "offers": {
+          "@type": "Offer",
+          "url": "https://hr360techx.com/pricing",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/OnlineOnly",
+          "description": "Quoted pricing for your team size and modules."
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://hr360techx.com/#webpage",
+        "url": "https://hr360techx.com/",
+        "name": "HR360 TechX — People, payroll, attendance, and leave",
+        "isPartOf": { "@id": "https://hr360techx.com/#software" },
+        "about": { "@id": "https://hr360techx.com/#software" },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" }
+          ]
+        }
       },
       {
         "@type": "FAQPage",
@@ -115,7 +145,8 @@
       <div class="wrap">
         <p class="eyebrow">Workforce workspace</p>
         <h1>People, payroll, attendance, and leave in one place</h1>
-        <p class="lead">HR360 TechX is the workspace from 360techx for employee records, time, leave requests, and payroll runs. Managers approve from the same desk. Employees open their own payslips. It does not file your payroll taxes.</p>
+        <p class="aeo-answer">HR360 TechX is online payroll software from 360techx for small and growing teams: employee records, attendance, leave, and payroll runs in one workspace. It records payslips and approved time; it does not file payroll taxes or pay employees for you.</p>
+        <p class="lead">Managers approve from the same desk. Employees open their own payslips. Book a demo to see the workspace with your process.</p>
         <div class="actions">
           <a class="btn" href="/contact">Book a demo</a>
           <a class="btn ghost" href="/login">Sign in</a>
@@ -162,7 +193,7 @@
         <div class="panel">
           <h2>Who it is for</h2>
           <p>Small and growing teams that want people, time, leave, and payroll runs together. A company signs in at its own address, such as <strong>yourcompany.hr360techx.com</strong>.</p>
-          <p>If you need a bureau that calculates tax, deposits it, and files the return, this is a different product. Read the <a href="/us/">US payroll guides</a> for what employers still file themselves, including <a href="/us/vs-gusto.html">how this compares with a payroll bureau</a>.</p>
+          <p>If you need a bureau that calculates tax, deposits it, and files the return, this is a different product. Read the <a href="/us/">US payroll guides</a> for what employers still file themselves, including comparisons with <a href="/us/vs-gusto.html">Gusto</a>, <a href="/us/vs-adp.html">ADP</a>, <a href="/us/vs-rippling.html">Rippling</a>, and <a href="/us/vs-paychex.html">Paychex</a>.</p>
         </div>
       </div>
     </section>

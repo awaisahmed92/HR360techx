@@ -27,11 +27,71 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "360techx",
-    "url": "https://hr360techx.com/about",
-    "email": "info@360techx.com",
-    "brand": { "@type": "Brand", "name": "HR360 TechX" }
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.360techx.com/#organization",
+        "name": "360techx",
+        "url": "https://www.360techx.com/",
+        "logo": "https://hr360techx.com/logo-mark.svg",
+        "email": "info@360techx.com",
+        "sameAs": [
+          "https://hr360techx.com/",
+          "https://accounts360techx.com/",
+          "https://school360techx.com/",
+          "https://pos360techx.com/"
+        ],
+        "brand": { "@type": "Brand", "name": "HR360 TechX" },
+        "contactPoint": [
+          {
+            "@type": "ContactPoint",
+            "contactType": "sales",
+            "email": "info@360techx.com",
+            "url": "https://hr360techx.com/contact"
+          },
+          {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "email": "support@360techx.com"
+          }
+        ]
+      },
+      {
+        "@type": "AboutPage",
+        "name": "About HR360 TechX and 360techx",
+        "url": "https://hr360techx.com/about",
+        "description": "HR360 TechX is the workforce product. 360techx is the company that makes it.",
+        "mainEntity": { "@id": "https://www.360techx.com/#organization" },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" },
+            { "@type": "ListItem", "position": 2, "name": "About", "item": "https://hr360techx.com/about" }
+          ]
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Who makes HR360 TechX?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "360techx builds HR360 TechX. The product name is HR360 TechX. Email, support, and the company behind the product use 360techx."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does 360techx ship in HR360 TechX?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "360techx builds HR360 TechX for teams that want employee records, attendance, leave, and payroll runs in one workspace. It does not file federal or state payroll taxes."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 </head>
@@ -61,9 +121,14 @@
   <main>
     <section class="hero">
       <div class="wrap">
+        <ol class="crumbs" aria-label="Breadcrumb">
+          <li><a href="/">Home</a></li>
+          <li>About</li>
+        </ol>
         <p class="eyebrow">About</p>
         <h1>HR360 TechX is the product. 360techx is the company.</h1>
-        <p class="lead">The app, the sign-in page, and this website use the product name HR360 TechX. Email, support, and the company behind the product use 360techx. Both names refer to the same workforce workspace.</p>
+        <p class="aeo-answer">360techx is the company behind HR360 TechX, online payroll and workforce software for employee records, attendance, leave, and payroll runs. Contact sales at info@360techx.com.</p>
+        <p class="lead">The app, the sign-in page, and this website use the product name HR360 TechX. Email and support use 360techx.</p>
       </div>
     </section>
 
@@ -85,6 +150,20 @@
           </ul>
           <p class="note">A demo request is stored for the HR360 site so the team can answer the address you leave.</p>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap faq">
+        <h2>About questions</h2>
+        <details open>
+          <summary>Who makes HR360 TechX?</summary>
+          <p>360techx builds HR360 TechX. The product name is HR360 TechX. Email, support, and the company behind the product use 360techx.</p>
+        </details>
+        <details>
+          <summary>What does 360techx ship in HR360 TechX?</summary>
+          <p>360techx builds HR360 TechX for teams that want employee records, attendance, leave, and payroll runs in one workspace. It does not file federal or state payroll taxes.</p>
+        </details>
       </div>
     </section>
   </main>

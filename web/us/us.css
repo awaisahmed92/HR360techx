@@ -37,7 +37,8 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 h1 { font-size: clamp(32px, 4vw, 46px); line-height: 1.12; letter-spacing: -0.03em; margin: 8px 0 12px; }
 h2 { font-size: 22px; margin: 28px 0 8px; }
 p, li { color: #e2e8f0; }
-.lead, .reviewed, .note { color: var(--muted); }
+.lead, .reviewed, .note, .aeo-answer { color: var(--muted); }
+.aeo-answer { max-width: 62ch; font-size: 16px; line-height: 1.65; }
 .reviewed { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .card, form, .note {
   background: rgba(30,41,59,.86);

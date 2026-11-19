@@ -21,11 +21,32 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "Payroll requirements in Texas",
-    "url": "https://hr360techx.com/us/texas.html",
-    "description": "Payroll requirements in Texas include no state income tax, TWC unemployment tax, a $7.25 minimum wage, and new-hire reporting within 20 days.",
-    "dateModified": "2026-10-20"
+    "@graph": [
+      {
+        "@type": "Article",
+        "headline": "Payroll requirements in Texas",
+        "name": "Payroll requirements in Texas",
+        "url": "https://hr360techx.com/us/texas.html",
+        "description": "Payroll requirements in Texas include no state income tax, TWC unemployment tax, a $7.25 minimum wage, and new-hire reporting within 20 days.",
+        "dateModified": "2026-10-20",
+        "author": { "@type": "Organization", "name": "360techx", "url": "https://www.360techx.com/" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "360techx",
+          "url": "https://www.360techx.com/",
+          "logo": { "@type": "ImageObject", "url": "https://hr360techx.com/logo-mark.svg" }
+        },
+        "about": { "@type": "SoftwareApplication", "name": "HR360 TechX", "url": "https://hr360techx.com/" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" },
+          { "@type": "ListItem", "position": 2, "name": "US payroll guides", "item": "https://hr360techx.com/us/" },
+          { "@type": "ListItem", "position": 3, "name": "Payroll requirements in Texas", "item": "https://hr360techx.com/us/texas.html" }
+        ]
+      }
+    ]
   }
   </script>
 </head>
@@ -64,7 +85,7 @@
     <a href="california.html">States</a>
     <a href="form-941.html">Form 941</a>
     <a href="paycheck.html">Calculators</a>
-    <a href="vs-gusto.html">Vs Gusto</a>
+    <a href="vs-gusto.html">Comparisons</a>
     <a href="security.html">Security</a>
     <a href="../">Open the app</a>
   </nav>
@@ -75,5 +96,6 @@
   </div>
   <link rel="stylesheet" href="../../../shared/translate/translate.css">
   <script src="../../../shared/translate/translate.js"></script>
+  <script src="/marketing/analytics.js"></script>
 </body>
 </html>

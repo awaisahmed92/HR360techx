@@ -190,6 +190,31 @@ a.card:hover { border-color: var(--blue); }
 ul { margin: 12px 0 0; padding-left: 18px; color: var(--muted); }
 li + li { margin-top: 8px; }
 
+.aeo-answer {
+  margin: 0 0 18px;
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--faint);
+}
+.crumbs a { color: var(--muted); text-decoration: none; }
+.crumbs a:hover { color: var(--cyan); }
+.crumbs li:not(:last-child)::after {
+  content: "/";
+  margin-left: 10px;
+  color: var(--line);
+}
 .faq details {
   border-top: 1px solid var(--line);
   padding: 14px 0;

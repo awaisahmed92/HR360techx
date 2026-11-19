@@ -24,6 +24,54 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/marketing.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "ContactPage",
+        "name": "Book a demo | HR360 TechX",
+        "url": "https://hr360techx.com/contact",
+        "description": "Book an HR360 TechX demo with 360techx. Share your name, work email, and what you want to see.",
+        "mainEntity": {
+          "@type": "Organization",
+          "name": "360techx",
+          "url": "https://www.360techx.com/",
+          "email": "info@360techx.com",
+          "brand": { "@type": "Brand", "name": "HR360 TechX" }
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://hr360techx.com/" },
+          { "@type": "ListItem", "position": 2, "name": "Book a demo", "item": "https://hr360techx.com/contact" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I book an HR360 TechX demo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Send your name, work email, and what you want to see on this page. The request is saved for the 360techx team, who reply to that email with the next step and a quote."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there payment on the demo form?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Pricing is quoted after we know the team size. There is no payment on this form."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -51,9 +99,14 @@
   <main>
     <section class="hero">
       <div class="wrap">
+        <ol class="crumbs" aria-label="Breadcrumb">
+          <li><a href="/">Home</a></li>
+          <li>Book a demo</li>
+        </ol>
         <p class="eyebrow">Book a demo</p>
         <h1>Tell us what you want to see</h1>
-        <p class="lead">Share your name, work email, and whether you care about payroll, attendance, leave, or the whole workspace. The note is saved for HR360 TechX and the 360techx team replies to that email with the next step and a quote.</p>
+        <p class="aeo-answer">Book an HR360 TechX demo by sharing your name, work email, and whether you care about payroll, attendance, leave, or the whole workspace. 360techx replies with the next step and a quote.</p>
+        <p class="lead">The note is saved for HR360 TechX. There is no payment on this form.</p>
       </div>
     </section>
 
@@ -93,6 +146,20 @@
           <p>Already a customer? <a href="/login">Sign in</a> at the public login, or open your company address, such as yourcompany.hr360techx.com. Support for an existing workspace is <a href="mailto:support@360techx.com">support@360techx.com</a>.</p>
           <p class="note">Pricing is quoted after we know the team size. There is no payment on this form.</p>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="wrap faq">
+        <h2>Demo questions</h2>
+        <details open>
+          <summary>How do I book an HR360 TechX demo?</summary>
+          <p>Send your name, work email, and what you want to see on this page. The request is saved for the 360techx team, who reply to that email with the next step and a quote.</p>
+        </details>
+        <details>
+          <summary>Is there payment on the demo form?</summary>
+          <p>No. Pricing is quoted after we know the team size. There is no payment on this form.</p>
+        </details>
       </div>
     </section>
   </main>
