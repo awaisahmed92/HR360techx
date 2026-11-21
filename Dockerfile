@@ -7,9 +7,13 @@ RUN flutter pub get
 COPY . .
 ARG API_BASE_URL=
 RUN if [ -n "$API_BASE_URL" ]; then \
-      flutter build web --release --dart-define=API_BASE_URL=${API_BASE_URL}; \
+      flutter build web --release --base-href=/ --dart-define=API_BASE_URL=${API_BASE_URL}; \
     else \
-      flutter build web --release; \
+      flutter build web --release --base-href=/; \
+    fi \
+ && if grep -q 'FLUTTER_BASE_HREF\|{{flutter_js}}' build/web/index.html; then \
+      echo "ERROR: build/web/index.html still has Flutter template tokens"; \
+      exit 1; \
     fi
 
 FROM caddy:2-alpine

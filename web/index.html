@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="/">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="HR360 TechX is the workforce cloud for people, leave, attendance, payroll, and hiring.">
@@ -238,29 +238,13 @@
     })();
   </script>
 
+  <script src="flutter_bootstrap.js" async></script>
   <script>
-    {{flutter_js}}
-    {{flutter_build_config}}
-
     function removeBootLogin() {
       var el = document.getElementById('boot-login');
       if (el) el.remove();
     }
 
-    _flutter.loader.load({
-      onEntrypointLoaded: function (engineInitializer) {
-        engineInitializer.initializeEngine().then(function (appRunner) {
-          return appRunner.runApp();
-        }).then(function () {
-          // Drop the HTML shell as soon as Flutter has started.
-          setTimeout(removeBootLogin, 50);
-        }).catch(function () {
-          removeBootLogin();
-        });
-      }
-    });
-
-    // Fallback: if Flutter paints a view, remove the shell.
     var observer = new MutationObserver(function () {
       if (document.querySelector('flt-glass-pane, flutter-view, flt-scene-host')) {
         removeBootLogin();
