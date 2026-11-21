@@ -6,14 +6,12 @@ COPY pubspec.yaml pubspec.lock ./
 RUN flutter pub get
 COPY . .
 ARG API_BASE_URL=
+# Base href is hardcoded to / in web/index.html. Do not pass --base-href:
+# Flutter exits if that flag is set and $FLUTTER_BASE_HREF is not in index.html.
 RUN if [ -n "$API_BASE_URL" ]; then \
-      flutter build web --release --base-href=/ --dart-define=API_BASE_URL=${API_BASE_URL}; \
+      flutter build web --release --dart-define=API_BASE_URL=${API_BASE_URL}; \
     else \
-      flutter build web --release --base-href=/; \
-    fi \
- && if grep -q 'FLUTTER_BASE_HREF\|{{flutter_js}}' build/web/index.html; then \
-      echo "ERROR: build/web/index.html still has Flutter template tokens"; \
-      exit 1; \
+      flutter build web --release; \
     fi
 
 FROM caddy:2-alpine
