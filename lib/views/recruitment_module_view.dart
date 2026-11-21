@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/auth/auth_state.dart';
 import '../core/recruitment/recruitment_state.dart';
+import '../theme/hr_theme.dart';
 import '../widgets/hr_record_kit.dart';
 import 'recruitment_forms.dart';
 import 'recruitment_view.dart';
@@ -45,9 +46,10 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
   String? _editor;
   Map<String, dynamic>? _editRow;
 
-  static const _purple = Color(0xFF6D4AFF);
   static const _sideBg = Color(0xFFF4F5F8);
   static const _pageBg = Color(0xFFF7F8FB);
+
+  Color get _accent => HrTheme.brand(context);
   static const _ink = Color(0xFF2A2E3A);
   static const _muted = Color(0xFF8B909E);
 
@@ -174,11 +176,11 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(18, 18, 12, 14),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 12, 14),
             child: Text(
               'Recruitment',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _purple),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _accent),
             ),
           ),
           Expanded(
@@ -200,7 +202,7 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
       child: Material(
-        color: on ? _purple : Colors.transparent,
+        color: on ? _accent : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
@@ -238,21 +240,18 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
       padding: const EdgeInsets.fromLTRB(22, 14, 16, 14),
       child: Row(
         children: [
-          Icon(_nav[_navIndex].icon, color: _purple, size: 22),
+          Icon(_nav[_navIndex].icon, color: _accent, size: 22),
           const SizedBox(width: 8),
           Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: _ink)),
           const Spacer(),
-            if (_editor == null && (_state.tab == 1 || _state.tab == 2 || _state.tab == 5 || _state.tab == 6 || _state.tab == 9 || _nav[_navIndex].label == 'Job Candidates'))
+          // Grids already have their own Add Record. Keep this only for list tabs.
+          if (_editor == null && (_state.tab == 5 || _state.tab == 9))
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: _purple, shape: const StadiumBorder()),
+                style: FilledButton.styleFrom(backgroundColor: _accent, shape: const StadiumBorder()),
                 onPressed: () {
-                  if (_state.tab == 1) _openEditor('request');
-                  else if (_state.tab == 2) _openEditor('post');
-                  else if (_nav[_navIndex].label == 'Job Candidates') _openEditor('candidate');
-                  else if (_state.tab == 6) _openEditor('test');
-                  else if (_state.tab == 5) _editInterview();
+                  if (_state.tab == 5) _editInterview();
                   else if (_state.tab == 9) _editTask();
                 },
                 icon: const Icon(Icons.add, size: 16),
@@ -335,7 +334,7 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
           (r) => '${r['status_label']}',
           cell: (r) => HrStatusPill(
             '${r['status_label']}',
-            color: '${r['status_label']}' == 'Approved' ? const Color(0xFF16A34A) : kRecPurple,
+            color: '${r['status_label']}' == 'Approved' ? const Color(0xFF16A34A) : _accent,
           ),
         ),
         HrGridColumn('Status', (r) => '${r['status_label']}'.toLowerCase() == 'approved' ? 'approve' : '${r['status_label']}'),
@@ -366,7 +365,7 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
         HrGridColumn(
           'Status',
           (r) => '${r['status_label']}',
-          cell: (r) => HrStatusPill('${r['status_label']}', color: kRecPurple),
+          cell: (r) => HrStatusPill('${r['status_label']}', color: _accent),
         ),
       ],
     );
@@ -484,13 +483,13 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: on ? _purple : Colors.transparent, width: 2)),
+          border: Border(bottom: BorderSide(color: on ? _accent : Colors.transparent, width: 2)),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontWeight: on ? FontWeight.w700 : FontWeight.w500,
-            color: on ? _purple : _muted,
+            color: on ? _accent : _muted,
           ),
         ),
       ),
@@ -591,7 +590,7 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
                       minHeight: 10,
                       value: _bar(f['count']),
                       backgroundColor: const Color(0xFFEEF0F4),
-                      color: _purple,
+                      color: _accent,
                     ),
                   ),
                 ),
@@ -685,7 +684,7 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: _purple, padding: const EdgeInsets.symmetric(vertical: 14)),
+            style: FilledButton.styleFrom(backgroundColor: _accent, padding: const EdgeInsets.symmetric(vertical: 14)),
             onPressed: _applySearchFilters,
             icon: const Icon(Icons.filter_alt_outlined, size: 18),
             label: const Text('Apply Filters'),
@@ -935,7 +934,7 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: _purple),
+                  style: FilledButton.styleFrom(backgroundColor: _accent),
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
                     final err = await _state.postJson('/recruitment/portal-settings', {
@@ -964,7 +963,7 @@ class _RecruitmentModuleViewState extends State<RecruitmentModuleView> {
           children: [
             for (final p in ['workable', 'greenhouse', 'jazzhr'])
               FilledButton(
-                style: FilledButton.styleFrom(backgroundColor: _purple),
+                style: FilledButton.styleFrom(backgroundColor: _accent),
                 onPressed: () async {
                   final messenger = ScaffoldMessenger.of(context);
                   final err = await _state.postJson('/recruitment/ats/sync/$p', {});

@@ -92,6 +92,12 @@ class _CalendarViewState extends State<CalendarView> {
                         child: ChoiceChip(
                           label: Text(_tabs[i]),
                           selected: _state.tab == i,
+                          selectedColor: HrTheme.brand(context),
+                          labelStyle: TextStyle(
+                            color: _state.tab == i ? HrTheme.onBrand(context) : HrUi.label(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                          checkmarkColor: HrTheme.onBrand(context),
                           onSelected: (_) => _state.setTab(i),
                         ),
                       ),
@@ -134,6 +140,12 @@ class _CalendarViewState extends State<CalendarView> {
               FilterChip(
                 label: Text(k),
                 selected: _state.overlayToggles.contains(k),
+                selectedColor: HrTheme.brand(context),
+                checkmarkColor: HrTheme.onBrand(context),
+                labelStyle: TextStyle(
+                  color: _state.overlayToggles.contains(k) ? HrTheme.onBrand(context) : HrUi.label(context),
+                  fontWeight: FontWeight.w600,
+                ),
                 onSelected: (_) => _state.toggleOverlay(k),
               ),
           ],

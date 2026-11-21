@@ -442,27 +442,15 @@
 
   function start() {
     build();
+    // Respect an explicit user pick. Otherwise always start in English —
+    // do not geo-force Urdu/Arabic/etc on first visit.
     var saved = readChoice();
     if (known(saved)) {
       activate(saved);
       return;
     }
-    var auto = readAuto();
-    if (known(auto)) {
-      activate(auto);
-      return;
-    }
-    detectCountry().then(function (country) {
-      var lang = country && /^[A-Z]{2}$/.test(country)
-        ? languageForCountry(country)
-        : (browserPrefs()[0] || PAGE);
-      writeAuto(lang);
-      activate(lang);
-    }).catch(function () {
-      var lang = browserPrefs()[0] || PAGE;
-      writeAuto(lang);
-      activate(lang);
-    });
+    try { sessionStorage.removeItem(AUTO_KEY); } catch (err) { /* private mode */ }
+    activate(PAGE);
   }
 
   if (document.body) start();

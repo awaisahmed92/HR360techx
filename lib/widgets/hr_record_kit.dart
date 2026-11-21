@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Purple data grid and left-label forms used by Recruitment (WebHR layout).
+import '../theme/hr_theme.dart';
+
+/// Grid/form kit used by Recruitment and HR Letters (WebHR layout).
+/// Accent always follows the Themes picker via [HrTheme.brand].
+@Deprecated('Use HrTheme.brand(context)')
 const kRecPurple = Color(0xFF6D4AFF);
 const kRecInk = Color(0xFF2C3140);
 const kRecMuted = Color(0xFF8B919E);
 const kRecField = Color(0xFFF2F3F7);
+
+Color hrAccent(BuildContext context) => HrTheme.brand(context);
 
 class HrGridColumn {
   const HrGridColumn(this.label, this.value, {this.flex = 2, this.cell});
@@ -60,6 +66,7 @@ class _HrRecordGridState extends State<HrRecordGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final accent = hrAccent(context);
     final all = _filtered;
     final pages = (all.length / widget.pageSize).ceil().clamp(1, 9999);
     if (_page >= pages) _page = pages - 1;
@@ -83,7 +90,8 @@ class _HrRecordGridState extends State<HrRecordGrid> {
                 ...widget.extraActions,
                 FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: kRecPurple,
+                    backgroundColor: accent,
+                    foregroundColor: HrTheme.onBrand(context),
                     shape: const StadiumBorder(),
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
@@ -115,7 +123,7 @@ class _HrRecordGridState extends State<HrRecordGrid> {
             ),
           ),
           Container(
-            color: kRecPurple,
+            color: accent,
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
             child: Row(
               children: [
@@ -214,7 +222,11 @@ class HrRecordForm extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: kRecPurple, padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14)),
+              style: FilledButton.styleFrom(
+                backgroundColor: hrAccent(context),
+                foregroundColor: HrTheme.onBrand(context),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+              ),
               onPressed: onSave,
               child: const Text('Save Record'),
             ),
@@ -327,7 +339,7 @@ class HrWaSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Switch(value: value, activeThumbColor: kRecPurple, onChanged: onChanged),
+      child: Switch(value: value, activeThumbColor: hrAccent(context), onChanged: onChanged),
     );
   }
 }

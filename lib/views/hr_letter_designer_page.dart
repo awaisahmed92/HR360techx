@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/letters/letter_state.dart';
 import '../widgets/hr_record_kit.dart';
 
-/// HR Letters Designer: purple grid plus the tabbed letter editor.
+/// HR Letters Designer: brand-colored grid plus the tabbed letter editor.
 class LetterDesignerScreen extends StatefulWidget {
   const LetterDesignerScreen({super.key, required this.state});
 
@@ -38,7 +38,7 @@ class _LetterDesignerScreenState extends State<LetterDesignerScreen> {
         Padding(
           padding: const EdgeInsets.only(right: 8),
           child: FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: kRecPurple, shape: const StadiumBorder()),
+            style: FilledButton.styleFrom(backgroundColor: hrAccent(context), shape: const StadiumBorder()),
             onPressed: _sampleDialog,
             child: const Text('Sample HR Letters'),
           ),
@@ -210,7 +210,7 @@ class _LetterDesignerScreenState extends State<LetterDesignerScreen> {
               child: const Text('Preview'),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: kRecPurple),
+              style: FilledButton.styleFrom(backgroundColor: hrAccent(context)),
               onPressed: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 Navigator.pop(ctx);
@@ -246,7 +246,7 @@ class _LetterDesignerScreenState extends State<LetterDesignerScreen> {
         actionsAlignment: MainAxisAlignment.center,
         actions: [
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: kRecPurple),
+            style: FilledButton.styleFrom(backgroundColor: hrAccent(context)),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Add HR Letter'),
           ),
@@ -446,9 +446,9 @@ class _LetterEditorState extends State<_LetterEditor> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      border: Border(bottom: BorderSide(color: _tab == i ? kRecPurple : Colors.transparent, width: 2)),
+                      border: Border(bottom: BorderSide(color: _tab == i ? hrAccent(context) : Colors.transparent, width: 2)),
                     ),
-                    child: Text(_tabs[i], style: TextStyle(color: _tab == i ? kRecPurple : kRecMuted, fontWeight: _tab == i ? FontWeight.w700 : FontWeight.w500)),
+                    child: Text(_tabs[i], style: TextStyle(color: _tab == i ? hrAccent(context) : kRecMuted, fontWeight: _tab == i ? FontWeight.w700 : FontWeight.w500)),
                   ),
                 ),
             ],
@@ -523,7 +523,7 @@ class _LetterEditorState extends State<_LetterEditor> {
         const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerRight,
-          child: FilledButton(style: FilledButton.styleFrom(backgroundColor: kRecPurple), onPressed: _save, child: const Text('Save')),
+          child: FilledButton(style: FilledButton.styleFrom(backgroundColor: hrAccent(context)), onPressed: _save, child: const Text('Save')),
         ),
       ],
     );
@@ -567,7 +567,7 @@ class _LetterEditorState extends State<_LetterEditor> {
           decoration: const InputDecoration(border: OutlineInputBorder(), alignLabelWithHint: true),
         ),
         const SizedBox(height: 12),
-        Align(alignment: Alignment.centerRight, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: kRecPurple), onPressed: _save, child: const Text('Save'))),
+        Align(alignment: Alignment.centerRight, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: hrAccent(context)), onPressed: _save, child: const Text('Save'))),
       ],
     );
   }
@@ -596,7 +596,7 @@ class _LetterEditorState extends State<_LetterEditor> {
         const SizedBox(height: 8),
         TextField(controller: _footer, minLines: 5, maxLines: 8, decoration: const InputDecoration(border: OutlineInputBorder())),
         const SizedBox(height: 16),
-        Center(child: FilledButton(style: FilledButton.styleFrom(backgroundColor: kRecPurple), onPressed: _save, child: const Text('Save'))),
+        Center(child: FilledButton(style: FilledButton.styleFrom(backgroundColor: hrAccent(context)), onPressed: _save, child: const Text('Save'))),
       ],
     );
   }
@@ -610,7 +610,7 @@ class _LetterEditorState extends State<_LetterEditor> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(kRecPurple),
+            headingRowColor: WidgetStateProperty.all(hrAccent(context)),
             headingTextStyle: const TextStyle(color: Colors.white, fontSize: 12),
             columns: const [
               DataColumn(label: Text('#')),
@@ -637,7 +637,7 @@ class _LetterEditorState extends State<_LetterEditor> {
           ),
         ),
         const SizedBox(height: 12),
-        Align(alignment: Alignment.centerRight, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: kRecPurple), onPressed: _save, child: const Text('Save'))),
+        Align(alignment: Alignment.centerRight, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: hrAccent(context)), onPressed: _save, child: const Text('Save'))),
       ],
     );
   }
@@ -650,7 +650,7 @@ class _LetterEditorState extends State<_LetterEditor> {
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerLeft,
-          child: FilledButton(style: FilledButton.styleFrom(backgroundColor: kRecPurple), onPressed: () {}, child: const Text('Upload Logo')),
+          child: FilledButton(style: FilledButton.styleFrom(backgroundColor: hrAccent(context)), onPressed: () {}, child: const Text('Upload Logo')),
         ),
         HrField(
           label: 'Header Logo Alignment',
@@ -662,7 +662,7 @@ class _LetterEditorState extends State<_LetterEditor> {
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerLeft,
-          child: FilledButton(style: FilledButton.styleFrom(backgroundColor: kRecPurple), onPressed: () {}, child: const Text('Upload Footer Image')),
+          child: FilledButton(style: FilledButton.styleFrom(backgroundColor: hrAccent(context)), onPressed: () {}, child: const Text('Upload Footer Image')),
         ),
         HrField(
           label: 'Footer Image Alignment',
@@ -670,7 +670,7 @@ class _LetterEditorState extends State<_LetterEditor> {
         ),
         HrField(label: 'Footer image path', child: HrWaInput(controller: _footerImage)),
         const SizedBox(height: 16),
-        Align(alignment: Alignment.centerRight, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: kRecPurple), onPressed: _save, child: const Text('Save'))),
+        Align(alignment: Alignment.centerRight, child: FilledButton(style: FilledButton.styleFrom(backgroundColor: hrAccent(context)), onPressed: _save, child: const Text('Save'))),
       ],
     );
   }

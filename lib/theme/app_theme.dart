@@ -71,7 +71,11 @@ class AppTheme {
     final onBrand = _onBrand(brand);
     final scheme = ColorScheme.light(
       primary: brand,
-      secondary: Color.lerp(brand, const Color(0xFF7C3AED), 0.35)!,
+      // Keep secondary on-brand so chips/tabs follow the Themes picker (not a fixed purple).
+      secondary: brand,
+      onSecondary: onBrand,
+      secondaryContainer: Color.lerp(brand, Colors.white, 0.78)!,
+      onSecondaryContainer: brand.computeLuminance() > 0.45 ? const Color(0xFF1F2937) : brand,
       surface: lightSurface,
       error: danger,
       onPrimary: onBrand,
@@ -85,6 +89,14 @@ class AppTheme {
       cardColor: lightCard,
       dividerColor: lightBorder,
       colorScheme: scheme,
+      chipTheme: ChipThemeData(
+        selectedColor: brand,
+        checkmarkColor: onBrand,
+        labelStyle: const TextStyle(color: lightTextPrimary, fontWeight: FontWeight.w600),
+        secondaryLabelStyle: TextStyle(color: onBrand, fontWeight: FontWeight.w600),
+        side: BorderSide(color: lightBorder),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
       textTheme: GoogleFonts.plusJakartaSansTextTheme(
         ThemeData.light().textTheme,
       ).apply(
@@ -138,7 +150,10 @@ class AppTheme {
     final onBrand = _onBrand(brand);
     final scheme = ColorScheme.dark(
       primary: brand,
-      secondary: Color.lerp(brand, const Color(0xFF7C3AED), 0.25)!,
+      secondary: brand,
+      onSecondary: onBrand,
+      secondaryContainer: Color.lerp(brand, Colors.black, 0.45)!,
+      onSecondaryContainer: Colors.white,
       surface: darkSurface,
       error: danger,
       onPrimary: onBrand,
@@ -152,6 +167,14 @@ class AppTheme {
       cardColor: darkCard,
       dividerColor: darkBorder,
       colorScheme: scheme,
+      chipTheme: ChipThemeData(
+        selectedColor: brand,
+        checkmarkColor: onBrand,
+        labelStyle: const TextStyle(color: darkTextPrimary, fontWeight: FontWeight.w600),
+        secondaryLabelStyle: TextStyle(color: onBrand, fontWeight: FontWeight.w600),
+        side: BorderSide(color: darkBorder),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
       textTheme: GoogleFonts.plusJakartaSansTextTheme(
         ThemeData.dark().textTheme,
       ).apply(

@@ -223,7 +223,7 @@ class _JobPostFormState extends State<JobPostForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            color: kRecPurple,
+            color: hrAccent(context),
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
             child: const Row(
               children: [
@@ -411,7 +411,7 @@ class _JobTestFormState extends State<JobTestForm> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(kRecPurple),
+            headingRowColor: WidgetStateProperty.all(hrAccent(context)),
             headingTextStyle: const TextStyle(color: Colors.white, fontSize: 12),
             columns: const [
               DataColumn(label: Text('#')),
