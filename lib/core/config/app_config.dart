@@ -31,6 +31,12 @@ class AppConfig {
     defaultValue: false,
   );
 
+  /// Public organization self sign-up. Off for clients until re-enabled.
+  static const bool allowPublicSignUp = bool.fromEnvironment(
+    'ALLOW_PUBLIC_SIGNUP',
+    defaultValue: false,
+  );
+
   /// Resolved at runtime (not a const) so web uses the current host.
   static String get apiBaseUrl => _normalize(_resolveApiBaseUrl());
 

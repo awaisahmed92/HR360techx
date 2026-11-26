@@ -16,8 +16,28 @@ class SignupController extends Controller
     ) {
     }
 
+    /** Public self sign-up is disabled for clients until re-enabled. */
+    protected function disabledResponse()
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Public sign-up is currently closed. Contact HR360 to open an organization.',
+            'code' => 'signup_disabled',
+        ], 403);
+    }
+
+    protected function signupEnabled(): bool
+    {
+        $flag = strtolower(trim((string) env('HR360_ALLOW_PUBLIC_SIGNUP', '0')));
+
+        return in_array($flag, ['1', 'true', 'yes', 'on'], true);
+    }
+
     public function captcha()
     {
+        if (! $this->signupEnabled()) {
+            return $this->disabledResponse();
+        }
         try {
             return response()->json([
                 'success' => true,
@@ -35,6 +55,9 @@ class SignupController extends Controller
     /** Live check for the Company Code field. */
     public function availability(Request $request)
     {
+        if (! $this->signupEnabled()) {
+            return $this->disabledResponse();
+        }
         $raw = (string) $request->query('code', $request->input('code', ''));
         $code = TenantProvisioner::normalizeCode($raw);
 
@@ -96,6 +119,9 @@ class SignupController extends Controller
     /** Create the organization, its database, and its first admin user. */
     public function store(Request $request)
     {
+        if (! $this->signupEnabled()) {
+            return $this->disabledResponse();
+        }
         $data = $request->validate([
             'name' => 'required|string|max:191',
             'company_name' => 'required|string|max:191',

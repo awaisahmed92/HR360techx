@@ -62,6 +62,7 @@ import 'widgets/hr360tech_nav.dart';
 bool _launchOnSignUp = false;
 
 bool _locationWantsSignUp() {
+  if (!AppConfig.allowPublicSignUp) return false;
   if (browserWantsSignUp()) return true;
   final url = Uri.base;
   final target = '${url.path} ${url.fragment} ${url.query}'.toLowerCase();
@@ -131,10 +132,11 @@ class HR360App extends StatelessWidget {
       },
       onGenerateRoute: (settings) {
         final name = (settings.name ?? '').toLowerCase();
-        final signUp = _launchOnSignUp ||
-            browserWantsSignUp() ||
-            name.contains('sign-up') ||
-            name.contains('signup');
+        final signUp = AppConfig.allowPublicSignUp &&
+            (_launchOnSignUp ||
+                browserWantsSignUp() ||
+                name.contains('sign-up') ||
+                name.contains('signup'));
         final tenantHome = !signUp &&
             AppConfig.tenantCodeFromHost != null &&
             (name.isEmpty || name == '/' || name == '/login' || name.endsWith('/login'));
@@ -199,11 +201,15 @@ class _PublicEntryState extends State<_PublicEntry> {
       if (!mounted || next == _gate) return;
       setState(() => _gate = next);
     });
-    if (_gate == _Gate.signUp) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setBrowserPath('/sign-up');
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!AppConfig.allowPublicSignUp && browserWantsSignUp()) {
+        setBrowserPath('/login');
+        if (_gate == _Gate.signUp) setState(() => _gate = _Gate.login);
+        return;
+      }
+      if (_gate == _Gate.signUp) setBrowserPath('/sign-up');
+    });
   }
 
   void _openLogin() {
@@ -213,6 +219,10 @@ class _PublicEntryState extends State<_PublicEntry> {
   }
 
   void _openSignUp() {
+    if (!AppConfig.allowPublicSignUp) {
+      _openLogin();
+      return;
+    }
     _launchOnSignUp = true;
     setState(() => _gate = _Gate.signUp);
     setBrowserPath('/sign-up');
@@ -220,12 +230,15 @@ class _PublicEntryState extends State<_PublicEntry> {
 
   @override
   Widget build(BuildContext context) {
-    return switch (_gate) {
+    final gate = (!AppConfig.allowPublicSignUp && _gate == _Gate.signUp)
+        ? _Gate.login
+        : _gate;
+    return switch (gate) {
       _Gate.signUp => SignUpView(onBackToLogin: _openLogin),
       _Gate.login => const LoginView(),
       _Gate.intro => ProductIntroView(
           onTryNow: _openLogin,
-          onSignUp: _openSignUp,
+          onSignUp: AppConfig.allowPublicSignUp ? _openSignUp : null,
         ),
     };
   }

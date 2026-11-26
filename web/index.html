@@ -207,28 +207,8 @@
       if (company && host.endsWith('.hr360techx.com') && label && label !== 'www' && label !== 'api') {
         company.value = label;
       }
-      var path = (location.pathname || '').toLowerCase();
-      var isSignUp = path.indexOf('sign-up') !== -1 || path.indexOf('signup') !== -1
-        || (location.hash || '').toLowerCase().indexOf('sign-up') !== -1;
       var el = document.getElementById('boot-login');
-      if (isSignUp) {
-        document.title = 'HR360 TechX — Sign Up';
-        if (el) {
-          el.setAttribute('aria-label', 'Sign Up');
-          var card = el.querySelector('.card');
-          if (card) {
-            card.innerHTML =
-              '<div class="brand-row"><img src="logo-mark.svg" alt=""> HR360</div>' +
-              '<h1>Let\'s get signed up!</h1>' +
-              '<p class="sub">Opening sign-up…</p>';
-          }
-          var hero = el.querySelector('.hero');
-          if (hero) hero.style.display = 'none';
-          var pane = el.querySelector('.pane');
-          if (pane) pane.style.flex = '1';
-        }
-        return;
-      }
+      // Public sign-up is disabled; /sign-up URLs keep the normal login splash.
       var hasSession = !!(
         localStorage.getItem('hr360_auth_session_v1') ||
         localStorage.getItem('flutter.hr360_session_json') ||
