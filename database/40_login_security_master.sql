@@ -1,5 +1,7 @@
--- Login security tables live on hr360_master (applied by bootstrap-hr.php).
--- Kept here so the schema pack documents the feature for ops.
+-- Login security tables on the MASTER database (not the tenant DB).
+-- Applied by: php bootstrap-hr.php
+--   (or)     php bootstrap-hr.php --file=40_login_security_master.sql
+-- USE hr360_master is rewritten to DB_MASTER_DATABASE (e.g. 360_master on production).
 
 USE `hr360_master`;
 

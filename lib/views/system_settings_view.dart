@@ -12,6 +12,7 @@ import '../theme/brand_themes.dart';
 import '../theme/hr_theme.dart';
 import '../widgets/hr_controls.dart';
 import '../widgets/hr_form_kit.dart';
+import 'login_security_view.dart';
 
 /// System Settings hub (HR360tech-style): organization, general, clock faces, etc.
 class SystemSettingsView extends StatefulWidget {
@@ -274,12 +275,12 @@ class _SystemSettingsViewState extends State<SystemSettingsView> {
               app.setClockFace(id);
             },
           ),
+        'Security' => const LoginSecurityView(embedded: true),
         'Rename Fields' ||
         'System Administrators' ||
         'Dashboard Widgets' ||
         'Interface Language' ||
         'IP Restrictions' ||
-        'Security' ||
         'Mobile App' ||
         'Cut off Date' =>
           const _ComingSoonPanel(),

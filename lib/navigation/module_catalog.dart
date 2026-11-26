@@ -74,6 +74,7 @@ class ModuleCatalog {
         HrSubNav(id: 'announcements', label: 'Announcements', icon: Icons.campaign_outlined, screen: 'master', entity: 'announcements'),
         HrSubNav(id: 'letters', label: 'HR Letters', icon: Icons.mail_outline, screen: 'letters_dashboard'),
         HrSubNav(id: 'system_settings', label: 'System Settings', icon: Icons.tune_outlined, screen: 'system_settings'),
+        HrSubNav(id: 'login_security', label: 'Login Security', icon: Icons.security_outlined, screen: 'login_security'),
         HrSubNav(id: 'system_logs', label: 'System Logs', icon: Icons.receipt_long_outlined, screen: 'system_logs'),
       ],
     ),

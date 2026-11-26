@@ -49,10 +49,17 @@ class AuthController extends Controller
             return response()->json(['success' => false, 'message' => 'Admin access required.'], 403);
         }
 
+        $subdomain = strtolower(trim((string) ($claims['subdomain'] ?? '')));
+        // Org admins only see their tenant. Platform superusers may pass ?all=1.
+        $scopeAll = ! empty($claims['is_superuser']) && $request->boolean('all');
+        $scope = $scopeAll ? null : $subdomain;
+
         return response()->json([
             'success' => true,
-            'attempts' => $this->security->recentActivity(150),
-            'ip_blocks' => $this->security->activeBlocks(),
+            'subdomain' => $subdomain,
+            'attempts' => $this->security->recentActivity(200, $scope),
+            'ip_blocks' => $this->security->activeBlocks($scope),
+            'account_locks' => $this->security->accountLocks($scope),
         ]);
     }
 
@@ -64,6 +71,30 @@ class AuthController extends Controller
         }
         $data = $request->validate(['ip' => 'required|string|max:64']);
         $this->security->unblockIp(trim($data['ip']));
+
+        return response()->json(['success' => true]);
+    }
+
+    public function unlockAccount(Request $request)
+    {
+        $claims = $request->attributes->get('hr_claims') ?? [];
+        if ((int) ($claims['user_status'] ?? 0) !== 2 && empty($claims['is_superuser'])) {
+            return response()->json(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+        $data = $request->validate([
+            'username' => 'required|string|max:191',
+            'subdomain' => 'nullable|string|max:100',
+        ]);
+        $sub = strtolower(trim((string) ($data['subdomain'] ?? $claims['subdomain'] ?? '')));
+        if ($sub === '') {
+            return response()->json(['success' => false, 'message' => 'Organization is required.'], 422);
+        }
+        // Org admins can only unlock accounts in their own tenant.
+        $claimSub = strtolower(trim((string) ($claims['subdomain'] ?? '')));
+        if (empty($claims['is_superuser']) && $sub !== $claimSub) {
+            return response()->json(['success' => false, 'message' => 'Not allowed for this organization.'], 403);
+        }
+        $this->security->unlockAccount($sub, trim($data['username']));
 
         return response()->json(['success' => true]);
     }

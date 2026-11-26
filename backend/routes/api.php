@@ -58,6 +58,7 @@ Route::middleware([TenantAuth::class])->group(function () {
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
     Route::get('/auth/security/activity', [AuthController::class, 'securityActivity']);
     Route::post('/auth/security/unblock-ip', [AuthController::class, 'unblockIp']);
+    Route::post('/auth/security/unlock-account', [AuthController::class, 'unlockAccount']);
 
     Route::get('/profile', [SelfServiceController::class, 'profile']);
     Route::post('/profile', [SelfServiceController::class, 'updateProfile']);

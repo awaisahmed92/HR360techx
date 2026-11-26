@@ -222,17 +222,20 @@ SQL);
         ];
     }
 
-    /** Recent suspicious / failed activity for admins. */
-    public function recentActivity(int $limit = 100): array
+    /** Recent login attempts for admins. Pass $subdomain to scope to one organization. */
+    public function recentActivity(int $limit = 100, ?string $subdomain = null): array
     {
         $this->ensureTables();
         if (!$this->hasTable('hr_login_attempts')) {
             return [];
         }
 
-        return DB::connection('master')->table('hr_login_attempts')
-            ->orderByDesc('id')
-            ->limit($limit)
+        $q = DB::connection('master')->table('hr_login_attempts')->orderByDesc('id');
+        if ($subdomain !== null && $subdomain !== '') {
+            $q->where('subdomain', strtolower($subdomain));
+        }
+
+        return $q->limit($limit)
             ->get()
             ->map(fn ($r) => [
                 'id' => (int) $r->id,
@@ -248,21 +251,61 @@ SQL);
             ->all();
     }
 
-    public function activeBlocks(): array
+    public function activeBlocks(?string $subdomain = null): array
     {
         $this->ensureTables();
         if (!$this->hasTable('hr_ip_blocks')) {
             return [];
         }
 
-        return DB::connection('master')->table('hr_ip_blocks')
+        $q = DB::connection('master')->table('hr_ip_blocks')
             ->where('blocked_until', '>', now())
-            ->orderByDesc('blocked_until')
-            ->get()
+            ->orderByDesc('blocked_until');
+
+        // IP blocks are global; when scoped, only show blocks that hit this org recently.
+        if ($subdomain !== null && $subdomain !== '' && $this->hasTable('hr_login_attempts')) {
+            $ips = DB::connection('master')->table('hr_login_attempts')
+                ->where('subdomain', strtolower($subdomain))
+                ->where('created_at', '>=', now()->subDays(30))
+                ->distinct()
+                ->pluck('ip')
+                ->all();
+            if ($ips === []) {
+                return [];
+            }
+            $q->whereIn('ip', $ips);
+        }
+
+        return $q->get()
             ->map(fn ($r) => [
                 'ip' => (string) $r->ip,
                 'reason' => (string) $r->reason,
                 'blocked_until' => (string) $r->blocked_until,
+            ])
+            ->all();
+    }
+
+    public function accountLocks(?string $subdomain = null): array
+    {
+        $this->ensureTables();
+        if (!$this->hasTable('hr_account_locks')) {
+            return [];
+        }
+
+        $q = DB::connection('master')->table('hr_account_locks')
+            ->whereNotNull('locked_until')
+            ->where('locked_until', '>', now())
+            ->orderByDesc('locked_until');
+        if ($subdomain !== null && $subdomain !== '') {
+            $q->where('subdomain', strtolower($subdomain));
+        }
+
+        return $q->get()
+            ->map(fn ($r) => [
+                'subdomain' => (string) $r->subdomain,
+                'username' => (string) $r->username,
+                'fail_count' => (int) $r->fail_count,
+                'locked_until' => (string) $r->locked_until,
             ])
             ->all();
     }
@@ -274,6 +317,22 @@ SQL);
             return;
         }
         DB::connection('master')->table('hr_ip_blocks')->where('ip', $ip)->delete();
+    }
+
+    public function unlockAccount(string $subdomain, string $username): void
+    {
+        $this->ensureTables();
+        if (!$this->hasTable('hr_account_locks')) {
+            return;
+        }
+        DB::connection('master')->table('hr_account_locks')
+            ->where('subdomain', strtolower($subdomain))
+            ->where('username', strtolower($username))
+            ->update([
+                'fail_count' => 0,
+                'locked_until' => null,
+                'updated_at' => now(),
+            ]);
     }
 
     protected function progressiveDelaySeconds(int $fails): int

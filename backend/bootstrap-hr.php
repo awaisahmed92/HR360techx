@@ -13,7 +13,8 @@
  *   php bootstrap-hr.php                 apply pending/changed files, then verify
  *   php bootstrap-hr.php --check         verify only, never write (doctor)
  *   php bootstrap-hr.php --force         re-apply every file
- *   php bootstrap-hr.php --file=29_x.sql apply one file
+ *   php bootstrap-hr.php --file=29_x.sql apply one tenant file
+ *   php bootstrap-hr.php --file=40_login_security_master.sql  master login-security tables
  *   php bootstrap-hr.php --new=my_thing  scaffold the next numbered SQL file
  *   php bootstrap-hr.php --capture       write a SQL file for hand-made local changes
  *   php bootstrap-hr.php --signature     print a diffable list of every column
@@ -176,6 +177,88 @@ function rewriteTenantSql(string $sql, string $appDb): string
     $sql = preg_replace('/\bADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\b/i', 'ADD COLUMN', $sql) ?? $sql;
 
     return $sql;
+}
+
+/** Point every hr360_master reference at the real master database (e.g. 360_master). */
+function rewriteMasterSql(string $sql, string $masterDb): string
+{
+    $safe = str_replace('`', '', $masterDb);
+    $sql = preg_replace('/USE\s+`?hr360_master`?\s*;/i', 'USE `'.$safe.'`;', $sql) ?? $sql;
+    $sql = preg_replace('/`hr360_master`\./i', '`'.$safe.'`.', $sql) ?? $sql;
+    $sql = preg_replace('/\bhr360_master\./i', '`'.$safe.'`.', $sql) ?? $sql;
+
+    return $sql;
+}
+
+/**
+ * Apply database/40_login_security_master.sql on the master connection.
+ * Rewrites USE hr360_master → the real DB_MASTER_DATABASE name.
+ */
+function applyLoginSecurityMaster(PDO $master, string $sqlDir, string $masterDb): void
+{
+    $needed = ['hr_login_attempts', 'hr_ip_blocks', 'hr_account_locks'];
+    $path = $sqlDir.DIRECTORY_SEPARATOR.'40_login_security_master.sql';
+    if (is_file($path)) {
+        $sql = rewriteMasterSql((string) file_get_contents($path), $masterDb);
+        // Already connected to masterDb — drop USE so multi-statement stays on this DB.
+        $sql = preg_replace('/^\s*USE\s+`?[^`;]+`?\s*;\s*/im', '', $sql) ?? $sql;
+        $master->exec($sql);
+        say('applied 40_login_security_master.sql → '.$masterDb);
+    } else {
+        // Fallback if the SQL pack is missing from the image.
+        $master->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS `hr_login_attempts` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ip` VARCHAR(64) NOT NULL,
+  `subdomain` VARCHAR(100) NULL,
+  `username` VARCHAR(191) NULL,
+  `success` TINYINT(1) NOT NULL DEFAULT 0,
+  `reason` VARCHAR(80) NULL,
+  `suspicious` TINYINT(1) NOT NULL DEFAULT 0,
+  `user_agent` VARCHAR(255) NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_login_ip_time` (`ip`, `created_at`),
+  KEY `idx_login_acct_time` (`subdomain`, `username`, `created_at`),
+  KEY `idx_login_suspicious` (`suspicious`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+SQL);
+        $master->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS `hr_ip_blocks` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ip` VARCHAR(64) NOT NULL,
+  `reason` VARCHAR(191) NOT NULL,
+  `blocked_until` DATETIME NOT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ip_blocks_ip` (`ip`),
+  KEY `idx_ip_blocks_until` (`blocked_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+SQL);
+        $master->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS `hr_account_locks` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `subdomain` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(191) NOT NULL,
+  `fail_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `locked_until` DATETIME NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_acct_lock` (`subdomain`, `username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+SQL);
+        say('login security tables created inline (SQL file missing)');
+    }
+
+    foreach ($needed as $table) {
+        $exists = (int) $master->query(
+            'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '.$master->quote($table)
+        )->fetchColumn();
+        if ($exists < 1) {
+            throw new RuntimeException('Login security table missing after apply: '.$table.' on '.$masterDb);
+        }
+    }
+    say('login security OK on '.$masterDb.': '.implode(', ', $needed));
 }
 
 /** Contents of the bracket starting at $openPos, honouring nesting and quotes. */
@@ -660,47 +743,14 @@ CREATE TABLE IF NOT EXISTS `tenant_admins` (
 SQL);
 
         // Login security (rate limit, IP blocks, attempt audit) — master scope.
-        $master->exec(<<<'SQL'
-CREATE TABLE IF NOT EXISTS `hr_login_attempts` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `ip` VARCHAR(64) NOT NULL,
-  `subdomain` VARCHAR(100) NULL,
-  `username` VARCHAR(191) NULL,
-  `success` TINYINT(1) NOT NULL DEFAULT 0,
-  `reason` VARCHAR(80) NULL,
-  `suspicious` TINYINT(1) NOT NULL DEFAULT 0,
-  `user_agent` VARCHAR(255) NULL,
-  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `idx_login_ip_time` (`ip`, `created_at`),
-  KEY `idx_login_acct_time` (`subdomain`, `username`, `created_at`),
-  KEY `idx_login_suspicious` (`suspicious`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-SQL);
-        $master->exec(<<<'SQL'
-CREATE TABLE IF NOT EXISTS `hr_ip_blocks` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `ip` VARCHAR(64) NOT NULL,
-  `reason` VARCHAR(191) NOT NULL,
-  `blocked_until` DATETIME NOT NULL,
-  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_ip_blocks_ip` (`ip`),
-  KEY `idx_ip_blocks_until` (`blocked_until`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-SQL);
-        $master->exec(<<<'SQL'
-CREATE TABLE IF NOT EXISTS `hr_account_locks` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `subdomain` VARCHAR(100) NOT NULL,
-  `username` VARCHAR(191) NOT NULL,
-  `fail_count` INT UNSIGNED NOT NULL DEFAULT 0,
-  `locked_until` DATETIME NULL,
-  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_acct_lock` (`subdomain`, `username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-SQL);
+        // Applies database/40_login_security_master.sql with hr360_master → $masterDb rewrite.
+        applyLoginSecurityMaster($master, $sqlDir, $masterDb);
+
+        // Only apply the login-security master file, then stop.
+        if ($optFile === '40_login_security_master.sql') {
+            say('OK — login security schema complete');
+            exit(0);
+        }
 
         $upsert = $master->prepare(<<<'SQL'
 INSERT INTO tenants (name, subdomain, db_host, db_name, db_user, db_password, status, hr_app)

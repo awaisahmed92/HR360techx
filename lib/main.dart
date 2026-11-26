@@ -56,6 +56,7 @@ import 'core/config/url_strategy_stub.dart'
     if (dart.library.html) 'core/config/url_strategy_web.dart';
 import 'views/account_settings_view.dart';
 import 'views/system_settings_view.dart';
+import 'views/login_security_view.dart';
 import 'widgets/hr360tech_nav.dart';
 
 /// Read once from the real browser address, before Flutter normalizes the route.
@@ -348,6 +349,8 @@ class _MainShellState extends State<MainShell> {
         return const AccountSettingsView();
       case 'system_settings':
         return const SystemSettingsView();
+      case 'login_security':
+        return const LoginSecurityView();
       case 'system_logs':
         return const SystemLogsView();
       case 'approvals':
