@@ -23,6 +23,8 @@ class _SystemLogsViewState extends State<SystemLogsView> {
   bool _busy = true;
   String? _error;
   List<Map<String, dynamic>> _months = [];
+  List<Map<String, dynamic>> _attempts = [];
+  List<Map<String, dynamic>> _ipBlocks = [];
   String _query = '';
 
   @override
@@ -45,6 +47,8 @@ class _SystemLogsViewState extends State<SystemLogsView> {
             'file': 'System-Logs-October-2026.xlsx',
           },
         ];
+        _attempts = const [];
+        _ipBlocks = const [];
       });
       return;
     }
@@ -54,8 +58,11 @@ class _SystemLogsViewState extends State<SystemLogsView> {
     });
     try {
       final api = ApiClient(tokenProvider: () async => auth.session?.token);
-      final res = await api.dio.get('/system-logs/months');
-      final data = res.data;
+      final results = await Future.wait([
+        api.dio.get('/system-logs/months'),
+        api.dio.get('/auth/security/activity'),
+      ]);
+      final data = results[0].data;
       final list = data is Map ? data['months'] : null;
       final months = <Map<String, dynamic>>[];
       if (list is List) {
@@ -63,9 +70,22 @@ class _SystemLogsViewState extends State<SystemLogsView> {
           if (row is Map) months.add(Map<String, dynamic>.from(row));
         }
       }
+      final sec = results[1].data;
+      final attempts = <Map<String, dynamic>>[];
+      final blocks = <Map<String, dynamic>>[];
+      if (sec is Map && sec['success'] == true) {
+        for (final row in ((sec['attempts'] as List?) ?? const [])) {
+          if (row is Map) attempts.add(Map<String, dynamic>.from(row));
+        }
+        for (final row in ((sec['ip_blocks'] as List?) ?? const [])) {
+          if (row is Map) blocks.add(Map<String, dynamic>.from(row));
+        }
+      }
       if (!mounted) return;
       setState(() {
         _months = months;
+        _attempts = attempts;
+        _ipBlocks = blocks;
         _busy = false;
       });
     } on DioException catch (e) {
@@ -84,6 +104,18 @@ class _SystemLogsViewState extends State<SystemLogsView> {
         _busy = false;
         _error = 'Could not load system logs.';
       });
+    }
+  }
+
+  Future<void> _unblock(String ip) async {
+    final auth = context.read<AuthState>();
+    final api = ApiClient(tokenProvider: () async => auth.session?.token);
+    try {
+      await api.dio.post('/auth/security/unblock-ip', data: {'ip': ip});
+      await _load();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not unblock IP.')));
     }
   }
 
@@ -155,6 +187,13 @@ class _SystemLogsViewState extends State<SystemLogsView> {
             style: TextStyle(color: HrUi.muted(context), fontSize: 13),
           ),
           const SizedBox(height: 16),
+          _securityPanel(),
+          const SizedBox(height: 20),
+          Text(
+            'Monthly change logs',
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: HrUi.sectionTitle(context)),
+          ),
+          const SizedBox(height: 10),
           hrQueryBanner(context, query, shown.length, onClear: () => setState(() => _query = '')),
           if (_busy)
             const Padding(
@@ -174,6 +213,67 @@ class _SystemLogsViewState extends State<SystemLogsView> {
             _message(query.trim().isEmpty ? 'No system logs yet.' : 'No monthly file matches that search.')
           else
             ...shown.map((m) => _fileCard(m, query.trim().isNotEmpty)),
+        ],
+      ),
+    );
+  }
+
+  Widget _securityPanel() {
+    final suspicious = _attempts.where((a) => a['suspicious'] == true || a['success'] != true).take(25).toList();
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: HrUi.card(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: HrUi.border(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.security_outlined, size: 18, color: HrTheme.brand(context)),
+              const SizedBox(width: 8),
+              Text(
+                'Login security',
+                style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: HrUi.sectionTitle(context)),
+              ),
+              const Spacer(),
+              Text('${_ipBlocks.length} IP block(s)', style: TextStyle(color: HrUi.muted(context), fontSize: 12)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Failed logins, account lockouts, captcha challenges, and blocked IPs.',
+            style: TextStyle(color: HrUi.muted(context), fontSize: 12.5),
+          ),
+          if (_ipBlocks.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            for (final b in _ipBlocks)
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.block, color: Colors.redAccent, size: 18),
+                title: Text('${b['ip']}'),
+                subtitle: Text('${b['reason']} · until ${b['blocked_until']}'),
+                trailing: TextButton(onPressed: () => _unblock('${b['ip']}'), child: const Text('Unblock')),
+              ),
+          ],
+          const SizedBox(height: 8),
+          if (suspicious.isEmpty)
+            Text('No recent failed or suspicious login activity.', style: TextStyle(color: HrUi.muted(context), fontSize: 12.5))
+          else
+            for (final a in suspicious)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  '${a['created_at']} · ${a['ip']} · ${a['subdomain']}/${a['username']} · ${a['reason']}${a['suspicious'] == true ? ' · suspicious' : ''}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: a['suspicious'] == true ? Colors.red.shade700 : HrUi.label(context),
+                  ),
+                ),
+              ),
         ],
       ),
     );

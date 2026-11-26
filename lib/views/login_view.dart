@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -24,11 +25,15 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
   final _lockedCode = AppConfig.tenantCodeFromHost;
-  final _orgCtrl = TextEditingController(text: AppConfig.tenantCodeFromHost ?? 'demo');
+  final _orgCtrl = TextEditingController(text: AppConfig.tenantCodeFromHost ?? '');
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _captchaCtrl = TextEditingController();
   bool _obscure = true;
-  bool _remember = true;
+  bool _remember = false;
+  bool _showCaptcha = false;
+  String? _captchaToken;
+  String? _captchaImage;
   String? _logoUrl;
   Timer? _brandDebounce;
   static const _prefOrg = 'hr360_login_org';
@@ -64,7 +69,8 @@ class _LoginViewState extends State<LoginView> {
       if (prefs.getBool(_prefRemember) == true) {
         _remember = true;
         if (_lockedCode == null) {
-          _orgCtrl.text = prefs.getString(_prefOrg) ?? 'demo';
+          // Only restore a previously saved org — never invent "demo".
+          _orgCtrl.text = prefs.getString(_prefOrg) ?? '';
         }
         _userCtrl.text = prefs.getString(_prefUser) ?? '';
       }
@@ -120,7 +126,31 @@ class _LoginViewState extends State<LoginView> {
     _orgCtrl.dispose();
     _userCtrl.dispose();
     _passCtrl.dispose();
+    _captchaCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshCaptcha() async {
+    final auth = context.read<AuthState>();
+    final cap = await auth.loadLoginCaptcha();
+    if (!mounted) return;
+    setState(() {
+      _showCaptcha = true;
+      _captchaToken = cap?['token'];
+      _captchaImage = cap?['image'];
+      _captchaCtrl.clear();
+    });
+  }
+
+  Uint8List? _captchaBytes() {
+    final raw = _captchaImage ?? '';
+    final idx = raw.indexOf('base64,');
+    if (idx < 0) return null;
+    try {
+      return base64Decode(raw.substring(idx + 7));
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _submit() async {
@@ -128,22 +158,44 @@ class _LoginViewState extends State<LoginView> {
     final auth = context.read<AuthState>();
     final org = _orgCtrl.text.trim().toLowerCase();
     final user = _userCtrl.text.trim();
+    if (_showCaptcha && _captchaCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: const Text('Enter the verification code.'), backgroundColor: Colors.red.shade700),
+      );
+      return;
+    }
     final ok = await auth.login(
       subdomain: org,
       username: user,
       password: _passCtrl.text,
       preferDemo: false,
+      captchaToken: _showCaptcha ? _captchaToken : null,
+      captchaAnswer: _showCaptcha ? _captchaCtrl.text.trim() : null,
     );
     if (!mounted) return;
     if (!ok) {
+      if (auth.captchaRequired) {
+        await _refreshCaptcha();
+      }
+      final wait = auth.retryAfter;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(auth.error ?? 'Invalid organization or credentials.'),
+          content: Text(
+            wait > 0
+                ? '${auth.error ?? 'Too many attempts.'} Wait ${wait}s.'
+                : (auth.error ?? 'Invalid organization or credentials.'),
+          ),
           backgroundColor: Colors.red.shade700,
         ),
       );
       return;
     }
+    setState(() {
+      _showCaptcha = false;
+      _captchaToken = null;
+      _captchaImage = null;
+      _captchaCtrl.clear();
+    });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefRemember, _remember);
     if (_remember) {
@@ -251,7 +303,7 @@ class _LoginViewState extends State<LoginView> {
                         enableInteractiveSelection: _lockedCode == null,
                         textInputAction: TextInputAction.next,
                         validator: (v) => (v == null || v.trim().isEmpty) ? 'Company name is required' : null,
-                        decoration: _fieldDecoration(_lockedCode ?? 'demo', icon: Icons.apartment_outlined),
+                        decoration: _fieldDecoration(_lockedCode ?? 'Company Name', icon: Icons.apartment_outlined),
                       ),
                       const SizedBox(height: 14),
                       const Text('UserName'),
@@ -279,6 +331,40 @@ class _LoginViewState extends State<LoginView> {
                           ),
                         ),
                       ),
+                      if (_showCaptcha) ...[
+                        const SizedBox(height: 8),
+                        const Text('Human verification', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              width: 168,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEAF3FB),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFD5DEE8)),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: _captchaBytes() == null
+                                  ? const Center(child: Text('Loading…', style: TextStyle(fontSize: 12)))
+                                  : Image.memory(_captchaBytes()!, fit: BoxFit.cover),
+                            ),
+                            IconButton(
+                              tooltip: 'Refresh code',
+                              onPressed: auth.busy ? null : _refreshCaptcha,
+                              icon: const Icon(Icons.refresh),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _captchaCtrl,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: _fieldDecoration('Enter the code', icon: Icons.verified_user_outlined),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       Row(
                         children: [
                           Checkbox(

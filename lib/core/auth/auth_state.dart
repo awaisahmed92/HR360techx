@@ -16,6 +16,8 @@ class AuthState extends ChangeNotifier {
   AuthSession? _session;
   String? _error;
   bool _busy = false;
+  bool _captchaRequired = false;
+  int _retryAfter = 0;
 
   void _hydrateSync() {
     _service.hydrateFromRaw(peekStoredSessionJson());
@@ -33,6 +35,8 @@ class AuthState extends ChangeNotifier {
       _session?.permissions ?? const AuthPermissions();
   String? get error => _error;
   bool get busy => _busy;
+  bool get captchaRequired => _captchaRequired;
+  int get retryAfter => _retryAfter;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   bool get isDemo => _session?.isDemo == true;
 
@@ -57,9 +61,12 @@ class AuthState extends ChangeNotifier {
     required String username,
     required String password,
     bool preferDemo = false,
+    String? captchaToken,
+    String? captchaAnswer,
   }) async {
     _busy = true;
     _error = null;
+    _retryAfter = 0;
     notifyListeners();
     try {
       _session = await _service.login(
@@ -67,14 +74,20 @@ class AuthState extends ChangeNotifier {
         username: username,
         password: password,
         preferDemo: preferDemo,
+        captchaToken: captchaToken,
+        captchaAnswer: captchaAnswer,
       );
       _status = AuthStatus.authenticated;
+      _captchaRequired = false;
+      _retryAfter = 0;
       _busy = false;
       notifyListeners();
       return true;
     } on AuthException catch (e) {
       _error = e.message;
       _status = AuthStatus.unauthenticated;
+      _captchaRequired = e.captchaRequired;
+      _retryAfter = e.retryAfter;
       _busy = false;
       notifyListeners();
       return false;
@@ -86,6 +99,8 @@ class AuthState extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<Map<String, String>?> loadLoginCaptcha() => _service.fetchLoginCaptcha();
 
   /// Reloads company details (including salary currency) after Payroll Options are saved.
   Future<void> refreshCompany() async {

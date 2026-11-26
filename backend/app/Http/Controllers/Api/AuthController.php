@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\LoginSecurityService;
 use App\Services\TenantHost;
 use App\Services\TenantManager;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\Schema;
 
 class AuthController extends Controller
 {
+    public function __construct(protected LoginSecurityService $security)
+    {
+    }
+
     public function login(Request $request)
     {
         try {
@@ -26,12 +31,51 @@ class AuthController extends Controller
         }
     }
 
+    public function loginCaptcha()
+    {
+        try {
+            return response()->json(['success' => true] + $this->security->issueCaptcha());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json(['success' => false, 'message' => 'Captcha unavailable.'], 500);
+        }
+    }
+
+    public function securityActivity(Request $request)
+    {
+        $claims = $request->attributes->get('hr_claims') ?? [];
+        if ((int) ($claims['user_status'] ?? 0) !== 2 && empty($claims['is_superuser'])) {
+            return response()->json(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'attempts' => $this->security->recentActivity(150),
+            'ip_blocks' => $this->security->activeBlocks(),
+        ]);
+    }
+
+    public function unblockIp(Request $request)
+    {
+        $claims = $request->attributes->get('hr_claims') ?? [];
+        if ((int) ($claims['user_status'] ?? 0) !== 2 && empty($claims['is_superuser'])) {
+            return response()->json(['success' => false, 'message' => 'Admin access required.'], 403);
+        }
+        $data = $request->validate(['ip' => 'required|string|max:64']);
+        $this->security->unblockIp(trim($data['ip']));
+
+        return response()->json(['success' => true]);
+    }
+
     protected function attemptLogin(Request $request)
     {
         $data = $request->validate([
             'subdomain' => 'required|string',
             'username' => 'required|string',
             'password' => 'required|string',
+            'captcha_token' => 'nullable|string|max:64',
+            'captcha_answer' => 'nullable|string|max:12',
         ]);
 
         [$subdomain, $rejected] = $this->resolveSubdomain($request, (string) $data['subdomain']);
@@ -40,9 +84,47 @@ class AuthController extends Controller
         }
         $data['subdomain'] = $subdomain;
 
+        $ip = $this->security->clientIp();
+        $ua = substr((string) $request->userAgent(), 0, 255);
+        $username = trim((string) $data['username']);
+        $sub = trim((string) $data['subdomain']);
+
+        $gate = $this->security->precheck($ip, $sub, $username);
+        if (!empty($gate['blocked'])) {
+            $this->security->recordBlocked($ip, $sub, $username, (string) ($gate['code'] ?? 'rate_limited'), $ua);
+
+            return response()->json([
+                'success' => false,
+                'message' => $gate['message'] ?? 'Too many attempts.',
+                'code' => $gate['code'] ?? 'rate_limited',
+                'retry_after' => (int) ($gate['retry_after'] ?? 60),
+                'captcha_required' => true,
+            ], 429);
+        }
+
+        if (!empty($gate['captcha_required'])) {
+            if (!$this->security->verifyCaptcha($data['captcha_token'] ?? null, $data['captcha_answer'] ?? null)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Complete the human verification to continue.',
+                    'code' => 'captcha_required',
+                    'captcha_required' => true,
+                    'retry_after' => 0,
+                ], 422);
+            }
+        }
+
         $tenant = TenantManager::findBySubdomain(trim($data['subdomain']));
         if (!$tenant) {
-            return response()->json(['success' => false, 'message' => 'Organization not found or inactive.'], 404);
+            $fail = $this->security->recordFailure($ip, $sub, $username, 'org_not_found', $ua);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Organization not found or inactive.',
+                'code' => 'org_not_found',
+                'retry_after' => $fail['retry_after'],
+                'captcha_required' => true,
+            ], 404);
         }
         if (isset($tenant->hr_app) && (int) $tenant->hr_app !== 1) {
             return response()->json(['success' => false, 'message' => 'HR application is disabled for this organization.'], 403);
@@ -54,6 +136,7 @@ class AuthController extends Controller
         $suUser = trim((string) ($company?->superuser_username ?? ''));
         $suPass = (string) ($company?->superuser_password ?? '');
         if ($suUser !== '' && strcasecmp($suUser, $data['username']) === 0 && $this->passwordOk($data['password'], $suPass)) {
+            $this->security->recordSuccess($ip, $sub, $username, $ua);
             $token = TenantManager::issueToken([
                 'subdomain' => trim($data['subdomain']),
                 'employee_id' => 0,
@@ -100,7 +183,15 @@ class AuthController extends Controller
 
         $storedPassword = $user ? (string) ($user->password ?? '') : '';
         if (!$user || !$this->passwordOk($data['password'], $storedPassword)) {
-            return response()->json(['success' => false, 'message' => 'Invalid credentials.'], 401);
+            $fail = $this->security->recordFailure($ip, $sub, $username, 'invalid_credentials', $ua);
+
+            return response()->json([
+                'success' => false,
+                'message' => $fail['message'],
+                'code' => !empty($fail['account_locked']) ? 'account_locked' : 'invalid_credentials',
+                'retry_after' => $fail['retry_after'],
+                'captcha_required' => true,
+            ], !empty($fail['account_locked']) ? 429 : 401);
         }
 
         // Rewrite legacy hashes ($2Y$, cost 10, …) to the hasher this app verifies.
@@ -120,6 +211,8 @@ class AuthController extends Controller
         if ($designationId > 0) {
             $designationName = (string) (DB::table('designation')->where('designation_id', $designationId)->value('name') ?? '');
         }
+
+        $this->security->recordSuccess($ip, $sub, $username, $ua);
 
         $token = TenantManager::issueToken([
             'subdomain' => trim($data['subdomain']),

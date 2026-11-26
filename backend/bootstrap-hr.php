@@ -114,7 +114,7 @@ if ($optProvision !== null) {
 }
 
 /** Files that must never run against the tenant DB. */
-$skipFiles = ['01_master.sql', '11_reset_employee_passwords.sql', '31_multi_app_registry.sql', '33_support_inquiries.sql', '34_platform_admins.sql'];
+$skipFiles = ['01_master.sql', '11_reset_employee_passwords.sql', '31_multi_app_registry.sql', '33_support_inquiries.sql', '34_platform_admins.sql', '40_login_security_master.sql'];
 
 // ── --new=name: scaffold the next migration file and stop ────────────────
 if ($optNew !== null) {
@@ -656,6 +656,49 @@ CREATE TABLE IF NOT EXISTS `tenant_admins` (
   PRIMARY KEY (`id`),
   KEY `idx_tenant_admins_tenant` (`tenant_id`),
   KEY `idx_tenant_admins_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+SQL);
+
+        // Login security (rate limit, IP blocks, attempt audit) — master scope.
+        $master->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS `hr_login_attempts` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ip` VARCHAR(64) NOT NULL,
+  `subdomain` VARCHAR(100) NULL,
+  `username` VARCHAR(191) NULL,
+  `success` TINYINT(1) NOT NULL DEFAULT 0,
+  `reason` VARCHAR(80) NULL,
+  `suspicious` TINYINT(1) NOT NULL DEFAULT 0,
+  `user_agent` VARCHAR(255) NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_login_ip_time` (`ip`, `created_at`),
+  KEY `idx_login_acct_time` (`subdomain`, `username`, `created_at`),
+  KEY `idx_login_suspicious` (`suspicious`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+SQL);
+        $master->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS `hr_ip_blocks` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ip` VARCHAR(64) NOT NULL,
+  `reason` VARCHAR(191) NOT NULL,
+  `blocked_until` DATETIME NOT NULL,
+  `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_ip_blocks_ip` (`ip`),
+  KEY `idx_ip_blocks_until` (`blocked_until`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+SQL);
+        $master->exec(<<<'SQL'
+CREATE TABLE IF NOT EXISTS `hr_account_locks` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `subdomain` VARCHAR(100) NOT NULL,
+  `username` VARCHAR(191) NOT NULL,
+  `fail_count` INT UNSIGNED NOT NULL DEFAULT 0,
+  `locked_until` DATETIME NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_acct_lock` (`subdomain`, `username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 SQL);
 

@@ -8,11 +8,11 @@ use RuntimeException;
 /** Short-lived image code for the public sign-up form. */
 class SignupCaptcha
 {
-    public function issue(): array
+    public function issue(string $purpose = 'signup'): array
     {
         $code = $this->code();
         $token = bin2hex(random_bytes(16));
-        $this->store()->put($this->key($token), hash('sha256', $code), now()->addMinutes(10));
+        $this->store()->put($this->key($token, $purpose), hash('sha256', $code), now()->addMinutes(10));
 
         $payload = [
             'token' => $token,
@@ -25,7 +25,7 @@ class SignupCaptcha
         return $payload;
     }
 
-    public function check(?string $token, ?string $answer): bool
+    public function check(?string $token, ?string $answer, string $purpose = 'signup'): bool
     {
         $token = trim((string) $token);
         $answer = strtoupper(preg_replace('/\s+/', '', (string) $answer) ?? '');
@@ -33,12 +33,12 @@ class SignupCaptcha
             return false;
         }
 
-        $expected = $this->store()->get($this->key($token));
+        $expected = $this->store()->get($this->key($token, $purpose));
         if (! is_string($expected) || ! hash_equals($expected, hash('sha256', $answer))) {
             return false;
         }
 
-        $this->store()->forget($this->key($token));
+        $this->store()->forget($this->key($token, $purpose));
 
         return true;
     }
@@ -50,9 +50,11 @@ class SignupCaptcha
         return Cache::store($name);
     }
 
-    private function key(string $token): string
+    private function key(string $token, string $purpose = 'signup'): string
     {
-        return 'signup_captcha:'.$token;
+        $purpose = preg_replace('/[^a-z0-9_]/', '', strtolower($purpose)) ?: 'signup';
+
+        return $purpose.'_captcha:'.$token;
     }
 
     private function code(): string

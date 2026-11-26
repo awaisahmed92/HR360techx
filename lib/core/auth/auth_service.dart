@@ -9,8 +9,17 @@ import 'auth_models.dart';
 import 'session_vault.dart';
 
 class AuthException implements Exception {
-  AuthException(this.message);
+  AuthException(
+    this.message, {
+    this.code,
+    this.retryAfter = 0,
+    this.captchaRequired = false,
+  });
+
   final String message;
+  final String? code;
+  final int retryAfter;
+  final bool captchaRequired;
 
   @override
   String toString() => message;
@@ -75,6 +84,8 @@ class AuthService {
     required String username,
     required String password,
     bool preferDemo = false,
+    String? captchaToken,
+    String? captchaAnswer,
   }) async {
     final cleanedSub = subdomain.trim().toLowerCase();
     final cleanedUser = username.trim();
@@ -101,14 +112,14 @@ class AuthService {
           'subdomain': cleanedSub,
           'username': cleanedUser,
           'password': password,
+          if (captchaToken != null && captchaToken.isNotEmpty) 'captcha_token': captchaToken,
+          if (captchaAnswer != null && captchaAnswer.isNotEmpty) 'captcha_answer': captchaAnswer,
         },
       );
 
       final data = response.data;
       if (data is! Map || data['success'] != true) {
-        final msg = (data is Map ? data['message'] : null)?.toString() ??
-            'Login failed.';
-        throw AuthException(msg);
+        throw _loginFailure(data is Map ? data : null, fallback: 'Login failed.');
       }
 
       final session = AuthSession.fromJson({
@@ -121,10 +132,12 @@ class AuthService {
       });
       await _persist(session);
       return session;
+    } on AuthException {
+      rethrow;
     } on DioException catch (e) {
       final body = e.response?.data;
-      if (body is Map && body['message'] != null) {
-        throw AuthException(body['message'].toString());
+      if (body is Map) {
+        throw _loginFailure(body);
       }
       if (e.type == DioExceptionType.connectionError ||
           e.type == DioExceptionType.connectionTimeout) {
@@ -136,6 +149,29 @@ class AuthService {
       }
       throw AuthException('Network error: ${e.message}');
     }
+  }
+
+  AuthException _loginFailure(Map? body, {String fallback = 'Invalid credentials.'}) {
+    return AuthException(
+      (body?['message'] ?? fallback).toString(),
+      code: body?['code']?.toString(),
+      retryAfter: (body?['retry_after'] as num?)?.toInt() ?? 0,
+      captchaRequired: body?['captcha_required'] == true,
+    );
+  }
+
+  Future<Map<String, String>?> fetchLoginCaptcha() async {
+    try {
+      final response = await _api.dio.get('/auth/login-captcha');
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return {
+          'token': '${data['token'] ?? ''}',
+          'image': '${data['image'] ?? ''}',
+        };
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> logout() async {

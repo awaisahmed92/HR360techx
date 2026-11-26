@@ -35,6 +35,7 @@ use App\Http\Middleware\TenantAuth;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/auth/login-captcha', [AuthController::class, 'loginCaptcha']);
 Route::get('/auth/branding', [AuthController::class, 'branding']);
 
 // Public self sign-up: creates an organization, its database and its first admin.
@@ -55,6 +56,8 @@ Route::get('/calendar/google/callback', [CalendarController::class, 'googleCallb
 Route::middleware([TenantAuth::class])->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
+    Route::get('/auth/security/activity', [AuthController::class, 'securityActivity']);
+    Route::post('/auth/security/unblock-ip', [AuthController::class, 'unblockIp']);
 
     Route::get('/profile', [SelfServiceController::class, 'profile']);
     Route::post('/profile', [SelfServiceController::class, 'updateProfile']);
