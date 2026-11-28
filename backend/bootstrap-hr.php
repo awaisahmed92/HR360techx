@@ -836,7 +836,19 @@ SQL);
     }
 
     if ($plan === []) {
-        throw new RuntimeException($optFile !== null ? 'No such SQL file: '.$optFile : 'No SQL files found in '.$sqlDir);
+        // Master-only SQL files are intentionally skipped from the tenant plan.
+        // Apply them here if --file pointed at one (covers older call paths).
+        if ($optFile === '40_login_security_master.sql' && !$readOnly && $optProvision === null) {
+            $master = pdo($host, $port, $appUser, $appPass, $masterDb);
+            applyLoginSecurityMaster($master, $sqlDir, $masterDb);
+            say('OK — login security schema complete');
+            exit(0);
+        }
+        $hint = '';
+        if ($optFile === '40_login_security_master.sql') {
+            $hint = ' (master file — redeploy api so database-sql/40_login_security_master.sql is in the image, then re-run)';
+        }
+        throw new RuntimeException(($optFile !== null ? 'No such SQL file: '.$optFile : 'No SQL files found in '.$sqlDir).$hint);
     }
 
     $tables = loadTables($tenant);
